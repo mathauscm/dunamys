@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  REJECTED
+}
+
+enum NotificationType {
+  SCHEDULE_ASSIGNMENT
+  SCHEDULE_UPDATE
+  SCHEDULE_CANCELLATION
+  SCHEDULE_REMINDER
+  CUSTOM_NOTIFICATION
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+  EMAIL_WHATSAPP
+  BOTH
+}
+
+enum NotificationStatus {
+  SENT
+  FAILED
+  PENDING
+}
+
+model User {
+  id               Int      @id @default(autoincrement())
+  name             String
+  email            String   @unique
+  password         String
+  phone            String
+  role             UserRole @default(MEMBER)
+  status           UserStatus @default(PENDING)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  lastLogin        DateTime?
+
+  // Relacionamentos
+  schedules        ScheduleMember[]
+  unavailabilities Unavailability[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Schedule {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  date        DateTime
+  time        String
+  location    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  members       ScheduleMember[]
+  notifications Notification[]
+
+  @@map("schedules")
+}
+
+model ScheduleMember {
+  id         Int @id @default(autoincrement())
+  userId     Int
+  scheduleId Int
+
+  // Relacionamentos
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scheduleId])
+  @@map("schedule_members")
+}
+
+model Unavailability {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("unavailabilities")
+}
+
+model Notification {
+  id         Int                 @id @default(autoincrement())
+  userId     Int
+  scheduleId Int?
+  type       NotificationType
+  channel    NotificationChannel
+  status     NotificationStatus
+  message    String?
+  error      String?
+  sentAt     DateTime            @default(now())
+
+  // Relacionamentos
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedule Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  targetId    Int?
+  userId      Int?
+  description String
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

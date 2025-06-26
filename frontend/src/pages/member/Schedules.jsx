@@ -1,0 +1,173 @@
+import React, { useState } from 'react';
+import { Calendar, Clock, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useApi } from '../../hooks/useApi';
+import Loading from '../../components/common/Loading';
+import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+const MemberSchedules = () => {
+    const [currentDate, setCurrentDate] = useState(new Date());
+
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+
+    const { data: schedules, loading, refresh } = useApi('/members/schedules', {
+        immediate: true,
+        dependencies: [month, year]
+    });
+
+    const handlePreviousMonth = () => {
+        setCurrentDate(subMonths(currentDate, 1));
+    };
+
+    const handleNextMonth = () => {
+        setCurrentDate(addMonths(currentDate, 1));
+    };
+
+    const handleToday = () => {
+        setCurrentDate(new Date());
+    };
+
+    if (loading) {
+        return <Loading fullScreen />;
+    }
+
+    const monthSchedules = schedules || [];
+    const currentMonthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Minhas Escalas</h1>
+                    <p className="text-gray-600">Acompanhe suas escalas de serviço</p>
+                </div>
+
+                <div className="mt-4 sm:mt-0 flex items-center space-x-4">
+                    <button
+                        onClick={handleToday}
+                        className="btn btn-secondary btn-sm"
+                    >
+                        Hoje
+                    </button>
+                    <button
+                        onClick={refresh}
+                        className="btn btn-primary btn-sm"
+                    >
+                        Atualizar
+                    </button>
+                </div>
+            </div>
+
+            {/* Month Navigation */}
+            <div className="card">
+                <div className="card-body">
+                    <div className="flex items-center justify-between">
+                        <button
+                            onClick={handlePreviousMonth}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </button>
+
+                        <h2 className="text-lg font-semibold text-gray-900 capitalize">
+                            {currentMonthName}
+                        </h2>
+
+                        <button
+                            onClick={handleNextMonth}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            <ChevronRight className="h-5 w-5" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Schedules List */}
+            <div className="card">
+                <div className="card-body">
+                    {monthSchedules.length === 0 ? (
+                        <div className="text-center py-12">
+                            <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+                            <h3 className="mt-2 text-sm font-medium text-gray-900">
+                                Nenhuma escala neste mês
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Você não possui escalas agendadas para {currentMonthName.toLowerCase()}.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {monthSchedules.map((schedule) => (
+                                <div
+                                    key={schedule.id}
+                                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                                >
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center space-x-3 mb-3">
+                                                <h3 className="text-lg font-medium text-gray-900">
+                                                    {schedule.title}
+                                                </h3>
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${new Date(schedule.date) < new Date()
+                                                        ? 'bg-gray-100 text-gray-800'
+                                                        : 'bg-primary-100 text-primary-800'
+                                                    }`}>
+                                                    {new Date(schedule.date) < new Date() ? 'Concluído' : 'Agendado'}
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
+                                                <div className="flex items-center">
+                                                    <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                                    {format(new Date(schedule.date), "dd/MM/yyyy", { locale: ptBR })}
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                                                    {schedule.time}
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                                                    {schedule.location}
+                                                </div>
+                                            </div>
+
+                                            {schedule.description && (
+                                                <p className="mt-3 text-sm text-gray-600">
+                                                    {schedule.description}
+                                                </p>
+                                            )}
+
+                                            {schedule.members && schedule.members.length > 0 && (
+                                                <div className="mt-3">
+                                                    <div className="flex items-center text-sm text-gray-600">
+                                                        <Users className="h-4 w-4 mr-2 text-gray-400" />
+                                                        <span>Equipe ({schedule.members.length}):</span>
+                                                    </div>
+                                                    <div className="mt-1 flex flex-wrap gap-2">
+                                                        {schedule.members.map((member) => (
+                                                            <span
+                                                                key={member.user.id}
+                                                                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800"
+                                                            >
+                                                                {member.user.name}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default MemberSchedules;

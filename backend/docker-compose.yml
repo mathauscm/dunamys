@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: igreja-postgres
+    environment:
+      POSTGRES_DB: igreja_membros
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - igreja-network
+
+  # Redis para filas
+  redis:
+    image: redis:7-alpine
+    container_name: igreja-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - igreja-network
+
+  # Backend API
+  backend:
+    build: .
+    container_name: igreja-backend
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/igreja_membros?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: sua_chave_secreta_super_forte_aqui
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: seu_email@gmail.com
+      SMTP_PASS: sua_senha_de_app
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./logs:/app/logs
+      - ./whatsapp-session:/app/whatsapp-session
+    networks:
+      - igreja-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  igreja-network:
+    driver: bridge
+
+// ===== BACKEND/DOCS/SWAGGER.JS =====
+const swaggerJsdoc = require('swagger-jsdoc');
+
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Igreja Membros API',
+      version: '1.0.0',
+      description: 'API para sistema de gerenciamento de membros e escalas da igreja',
+      contact: {
+        name: 'Suporte',
+        email: 'suporte@igreja.com'
+      }
+    },
+    servers: [
+      {
+        url: process.env.API_URL || 'http://localhost:5000',
+        description: 'Servidor de desenvolvimento'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      },
+      schemas: {
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            name: { type: 'string' },
+            email: { type: 'string' },
+            phone: { type: 'string' },
+            role: { type: 'string', enum: ['ADMIN', 'MEMBER'] },
+            status: { type: 'string', enum: ['PENDING', 'ACTIVE', 'INACTIVE', 'REJECTED'] },
+            createdAt: { type: 'string', format: 'date-time' }
+          }
+        },
+        Schedule: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            date: { type: 'string', format: 'date' },
+            time: { type: 'string' },
+            location: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            members: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/User' }
+            }
+          }
+        },
+        Error: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            details: {
+              type: 'array',
+              items: { type: 'string' }
+            }
+          }
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: []
+      }
+    ]
+  },
+  apis: ['./src/routes/*.js']
+};
+
+const specs = swaggerJsdoc(options);
+
+module.exports = specs;
