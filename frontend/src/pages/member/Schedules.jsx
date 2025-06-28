@@ -15,7 +15,6 @@ const MemberSchedules = () => {
         immediate: true,
         dependencies: [month, year]
     });
-    // console.log('>> Todas escalas recebidas do backend:', schedules);
 
     const handlePreviousMonth = () => {
         setCurrentDate(subMonths(currentDate, 1));

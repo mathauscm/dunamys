@@ -17,7 +17,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
     } = useForm({
         defaultValues: {
             title: schedule?.title || '',
-            description: schedule?.description || '',
+            description: schedule?.description || ' ', // Espaço vazio para validar entrada sem descrição
             date: schedule?.date ? new Date(schedule.date).toISOString().split('T')[0] : '',
             time: schedule?.time || '',
             location: schedule?.location || '',

@@ -38,6 +38,11 @@ const MemberAvailability = () => {
     } = useForm();
 
     const onSubmit = async (data) => {
+        // Remove o campo reason se estiver vazio
+        if (!data.reason?.trim()) {
+            delete data.reason;
+        }
+
         await createUnavailability(data);
         reset();
     };
@@ -77,9 +82,7 @@ const MemberAvailability = () => {
                         <AlertCircle className="h-5 w-5 text-blue-400" />
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-blue-800">
-                            Como funciona?
-                        </h3>
+                        <h3 className="text-sm font-medium text-blue-800">Como funciona?</h3>
                         <div className="mt-2 text-sm text-blue-700">
                             <p>
                                 Defina os períodos em que você não estará disponível para servir.
@@ -186,7 +189,9 @@ const MemberAvailability = () => {
                         <textarea
                             className="input min-h-[100px] resize-vertical"
                             placeholder="Ex: Viagem, compromisso pessoal..."
-                            {...register('reason')}
+                            {...register('reason', {
+                                setValueAs: value => value?.trim() || undefined
+                            })}
                         />
                     </div>
 
