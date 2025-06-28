@@ -50,6 +50,11 @@ const authReducer = (state, action) => {
                 ...state,
                 loading: action.payload
             };
+        case 'CLEAR_ERROR':
+            return {
+                ...state,
+                error: null
+            };
         default:
             return state;
     }
@@ -61,21 +66,44 @@ export const AuthProvider = ({ children }) => {
     // Verificar token ao carregar a aplicação
     useEffect(() => {
         const initAuth = async () => {
-            const token = localStorage.getItem('@igreja:token');
-
-            if (token) {
-                try {
-                    const user = await authService.verifyToken(token);
-                    dispatch({
-                        type: 'LOGIN_SUCCESS',
-                        payload: { user, token }
-                    });
-                } catch (error) {
-                    localStorage.removeItem('@igreja:token');
+            try {
+                dispatch({ type: 'SET_LOADING', payload: true });
+                
+                const token = localStorage.getItem('@igreja:token');
+                
+                if (token) {
+                    console.log('Token encontrado, verificando...', token.substring(0, 20) + '...');
+                    
+                    try {
+                        const user = await authService.verifyToken(token);
+                        console.log('Usuário verificado:', user);
+                        
+                        dispatch({
+                            type: 'LOGIN_SUCCESS',
+                            payload: { user, token }
+                        });
+                    } catch (error) {
+                        console.error('Token inválido ou expirado:', error);
+                        
+                        // Remove token inválido
+                        localStorage.removeItem('@igreja:token');
+                        
+                        dispatch({ 
+                            type: 'LOGIN_FAILURE', 
+                            payload: 'Sessão expirada' 
+                        });
+                    }
+                } else {
+                    console.log('Nenhum token encontrado');
                     dispatch({ type: 'SET_LOADING', payload: false });
                 }
-            } else {
-                dispatch({ type: 'SET_LOADING', payload: false });
+            } catch (error) {
+                console.error('Erro na inicialização da autenticação:', error);
+                localStorage.removeItem('@igreja:token');
+                dispatch({ 
+                    type: 'LOGIN_FAILURE', 
+                    payload: 'Erro na verificação de autenticação' 
+                });
             }
         };
 
@@ -83,11 +111,14 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (email, password) => {
+        console.log('Tentando fazer login com:', email);
         dispatch({ type: 'LOGIN_START' });
 
         try {
             const response = await authService.login(email, password);
+            console.log('Login bem-sucedido:', response);
 
+            // Salvar token no localStorage
             localStorage.setItem('@igreja:token', response.token);
 
             dispatch({
@@ -95,10 +126,17 @@ export const AuthProvider = ({ children }) => {
                 payload: response
             });
 
-            toast.success(`Bem-vindo(a), ${response.user.name}!`);
+            // Mensagem de sucesso baseada no status
+            if (response.user.status === 'PENDING') {
+                toast.info(`Olá, ${response.user.name}! Sua conta está aguardando aprovação.`);
+            } else {
+                toast.success(`Bem-vindo(a), ${response.user.name}!`);
+            }
 
             return response;
         } catch (error) {
+            console.error('Erro no login:', error);
+            
             const errorMessage = error.response?.data?.error || 'Erro ao fazer login';
 
             dispatch({
@@ -112,17 +150,21 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (userData) => {
+        console.log('Tentando registrar usuário:', userData.email);
         dispatch({ type: 'LOGIN_START' });
 
         try {
             const response = await authService.register(userData);
+            console.log('Registro bem-sucedido:', response);
 
             dispatch({ type: 'SET_LOADING', payload: false });
 
-            toast.success(response.message);
+            toast.success(response.message || 'Cadastro realizado com sucesso! Aguarde aprovação.');
 
             return response;
         } catch (error) {
+            console.error('Erro no registro:', error);
+            
             const errorMessage = error.response?.data?.error || 'Erro ao registrar';
 
             dispatch({
@@ -136,12 +178,20 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
+        console.log('Fazendo logout...');
+        
+        // Remove token do localStorage
         localStorage.removeItem('@igreja:token');
+        
+        // Reseta o estado
         dispatch({ type: 'LOGOUT' });
+        
         toast.info('Você foi desconectado');
     };
 
     const updateUser = (userData) => {
+        console.log('Atualizando dados do usuário:', userData);
+        
         dispatch({
             type: 'UPDATE_USER',
             payload: userData
@@ -159,13 +209,29 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const clearError = () => {
+        dispatch({ type: 'CLEAR_ERROR' });
+    };
+
+    // Log do estado atual para debug
+    useEffect(() => {
+        console.log('Estado da autenticação:', {
+            user: state.user ? `${state.user.name} (${state.user.role})` : null,
+            status: state.user?.status,
+            loading: state.loading,
+            error: state.error,
+            hasToken: !!localStorage.getItem('@igreja:token')
+        });
+    }, [state]);
+
     const value = {
         ...state,
         login,
         register,
         logout,
         updateUser,
-        changePassword
+        changePassword,
+        clearError
     };
 
     return (
