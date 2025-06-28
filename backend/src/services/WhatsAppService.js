@@ -57,12 +57,9 @@ class WhatsAppService {
         }
 
         try {
-            // Formatar número do telefone
             const formattedPhone = this.formatPhoneNumber(phone);
-
             await this.client.sendMessage(formattedPhone, message);
             logger.info(`Mensagem WhatsApp enviada para ${phone}`);
-
             return true;
         } catch (error) {
             logger.error(`Erro ao enviar mensagem WhatsApp para ${phone}:`, error);
@@ -71,14 +68,10 @@ class WhatsAppService {
     }
 
     formatPhoneNumber(phone) {
-        // Remove todos os caracteres não numéricos
         const cleanPhone = phone.replace(/\D/g, '');
-
-        // Adiciona código do país se necessário (55 para Brasil)
         if (cleanPhone.length === 10 || cleanPhone.length === 11) {
             return `55${cleanPhone}@c.us`;
         }
-
         return `${cleanPhone}@c.us`;
     }
 

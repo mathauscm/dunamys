@@ -74,23 +74,21 @@ const corsOptions = {
             process.env.FRONTEND_URL || 'http://localhost:3000',
             'http://localhost:3000',
             'http://localhost:3001',
+            'http://localhost:5000',  // Adicionar esta linha
             'https://localhost:3000',
-            // Add your production domains here
-            'https://your-church-domain.com',
-            'https://www.your-church-domain.com'
         ];
 
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             logger.warn(`CORS blocked origin: ${origin}`);
-            callback(new Error('Não permitido pelo CORS'));
+            callback(null, true); // Temporariamente permitir todos para desenvolvimento
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
+    optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));

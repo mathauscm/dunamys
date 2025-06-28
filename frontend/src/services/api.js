@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// Configuração base do axios
+// Configuração base do axios - USANDO URL DIRETA
 export const api = axios.create({
-    baseURL: '/api',
+    baseURL: 'http://localhost:5000/api',  // URL DIRETA ao invés de '/api'
     timeout: 30000,
     headers: {
         'Content-Type': 'application/json'

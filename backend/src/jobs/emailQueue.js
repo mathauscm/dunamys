@@ -26,27 +26,6 @@ emailQueue.process('send-email', async (job) => {
     }
 });
 
-// Processar lembretes de escala
-emailQueue.process('schedule-reminders', async (job) => {
-    const NotificationService = require('../services/NotificationService');
-
-    try {
-        await NotificationService.sendScheduleReminders();
-        logger.info('Lembretes de escala enviados com sucesso');
-        return { success: true };
-    } catch (error) {
-        logger.error('Erro ao enviar lembretes:', error);
-        throw error;
-    }
-});
-
-// Agendar lembretes diários às 20h
-emailQueue.add('schedule-reminders', {}, {
-    repeat: { cron: '0 20 * * *' }, // Todo dia às 20h
-    removeOnComplete: 10,
-    removeOnFail: 5
-});
-
 // Event listeners
 emailQueue.on('completed', (job) => {
     logger.info(`Job ${job.id} completado`);
@@ -54,10 +33,6 @@ emailQueue.on('completed', (job) => {
 
 emailQueue.on('failed', (job, err) => {
     logger.error(`Job ${job.id} falhou:`, err);
-});
-
-emailQueue.on('stalled', (job) => {
-    logger.warn(`Job ${job.id} travado`);
 });
 
 module.exports = emailQueue;
