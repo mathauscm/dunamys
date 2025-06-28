@@ -6,6 +6,10 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config();
 
+// Debug environment variables
+console.log('🌍 NODE_ENV:', process.env.NODE_ENV || 'undefined');
+console.log('🔧 FRONTEND_URL:', process.env.FRONTEND_URL || 'undefined');
+
 // Database connection
 const { connectDatabase } = require('./config/database');
 const { connectRedis } = require('./config/redis');
@@ -64,9 +68,14 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// CORS configuration
+// ===== CORS CONFIGURATION - CORRIGIDA =====
 const corsOptions = {
     origin: function (origin, callback) {
+        // PERMITIR TODAS AS ORIGENS EM DESENVOLVIMENTO
+        if (process.env.NODE_ENV === 'development') {
+            return callback(null, true);
+        }
+
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
@@ -74,7 +83,7 @@ const corsOptions = {
             process.env.FRONTEND_URL || 'http://localhost:3000',
             'http://localhost:3000',
             'http://localhost:3001',
-            'http://localhost:5000',  // Adicionar esta linha
+            'http://localhost:5000',
             'http://localhost:5173',
             'https://localhost:3000',
         ];
@@ -83,7 +92,7 @@ const corsOptions = {
             callback(null, true);
         } else {
             logger.warn(`CORS blocked origin: ${origin}`);
-            callback(null, true); // Temporariamente permitir todos para desenvolvimento
+            callback(null, true); // Permitir todos em desenvolvimento
         }
     },
     credentials: true,
@@ -94,16 +103,35 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Middleware adicional para desenvolvimento - MELHORADO
+if (process.env.NODE_ENV === 'development') {
+    console.log('🚀 MODO DESENVOLVIMENTO: CORS e Rate Limiting flexibilizados');
+    
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        
+        // Handle preflight requests
+        if (req.method === 'OPTIONS') {
+            return res.sendStatus(200);
+        }
+        
+        next();
+    });
+}
+
 /**
  * ============================================================================
- * RATE LIMITING - CONFIGURAÇÃO CORRIGIDA
+ * RATE LIMITING - CONFIGURAÇÃO CORRIGIDA PARA DESENVOLVIMENTO
  * ============================================================================
  */
 
-// General rate limiting - Mais permissivo em desenvolvimento
+// General rate limiting - MUITO mais permissivo em desenvolvimento
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: process.env.NODE_ENV === 'development' ? 1000 : 100, // 1000 em dev, 100 em prod
+    max: process.env.NODE_ENV === 'development' ? 10000 : 100, // 10.000 em dev, 100 em prod
     message: {
         error: 'Muitas tentativas. Tente novamente em 15 minutos.',
         retryAfter: '15 minutes'
@@ -111,38 +139,42 @@ const generalLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-        // Skip rate limiting for health checks
+        // Skip rate limiting for health checks E DESENVOLVIMENTO
+        if (process.env.NODE_ENV === 'development') {
+            return true; // Pular completamente em desenvolvimento
+        }
         return req.path === '/health' || req.path === '/api/health';
     }
 });
 
-// Rate limiting para auth - MUITO mais permissivo em desenvolvimento
+// Rate limiting para auth - DESABILITADO EM DESENVOLVIMENTO
 const authLimiter = rateLimit({
-    windowMs: process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000, // 1 min em dev, 15 min em prod
-    max: process.env.NODE_ENV === 'development' ? 100 : 5, // 100 tentativas em dev, 5 em prod
+    windowMs: process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000,
+    max: process.env.NODE_ENV === 'development' ? 10000 : 5, // 10.000 em dev
     message: {
         error: process.env.NODE_ENV === 'development' 
-            ? 'Muitas tentativas de login. Tente novamente em 1 minuto.' 
+            ? 'Rate limiting desabilitado em desenvolvimento' 
             : 'Muitas tentativas de login. Tente novamente em 15 minutos.',
-        retryAfter: process.env.NODE_ENV === 'development' ? '1 minute' : '15 minutes'
+        retryAfter: process.env.NODE_ENV === 'development' ? '0 minutes' : '15 minutes'
     },
     standardHeaders: true,
     legacyHeaders: false,
-    skipSuccessfulRequests: true // Don't count successful requests
+    skipSuccessfulRequests: true,
+    skip: (req) => {
+        // Pular completamente em desenvolvimento
+        return process.env.NODE_ENV === 'development';
+    }
 });
 
-// Apply rate limiting - Condicionalmente em desenvolvimento
+// Apply rate limiting - CONDICIONAL PARA DESENVOLVIMENTO
 if (process.env.NODE_ENV === 'production') {
+    console.log('🔒 MODO PRODUÇÃO: Rate limiting ativo');
     app.use('/api/', generalLimiter);
     app.use('/api/auth/login', authLimiter);
     app.use('/api/auth/register', authLimiter);
 } else {
-    // Em desenvolvimento, aplicar limites muito mais permissivos
-    console.log('🚀 MODO DESENVOLVIMENTO: Rate limiting reduzido');
-    app.use('/api/', generalLimiter); // Ainda aplica o geral mas com limite maior
-    // Opcional: comentar as linhas abaixo para remover completamente em dev
-    app.use('/api/auth/login', authLimiter);
-    app.use('/api/auth/register', authLimiter);
+    console.log('🚀 MODO DESENVOLVIMENTO: Rate limiting DESABILITADO');
+    // Em desenvolvimento, não aplicar nenhum rate limiting
 }
 
 /**
@@ -174,15 +206,23 @@ app.use(express.urlencoded({
 
 /**
  * ============================================================================
- * REQUEST LOGGING
+ * REQUEST LOGGING - MELHORADO
  * ============================================================================
  */
 
-// Request logging middleware
+// Request logging middleware - MELHORADO
 app.use((req, res, next) => {
     const startTime = Date.now();
 
-    // Log request
+    // Log request com mais detalhes em desenvolvimento
+    if (process.env.NODE_ENV === 'development') {
+        console.log(`📥 ${req.method} ${req.path}`, {
+            origin: req.get('Origin'),
+            userAgent: req.get('User-Agent')?.substring(0, 50),
+            authorization: req.get('Authorization') ? 'Present' : 'Missing'
+        });
+    }
+
     logger.info(`${req.method} ${req.path}`, {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
@@ -192,6 +232,11 @@ app.use((req, res, next) => {
     // Log response time
     res.on('finish', () => {
         const duration = Date.now() - startTime;
+        
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`📤 ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+        }
+        
         logger.info(`${req.method} ${req.path} - ${res.statusCode}`, {
             duration: `${duration}ms`,
             ip: req.ip,
@@ -240,6 +285,27 @@ app.get('/api/health', (req, res) => {
         }
     });
 });
+
+// Debug endpoint for development - NOVO
+if (process.env.NODE_ENV === 'development') {
+    app.get('/api/debug', (req, res) => {
+        res.json({
+            status: 'OK',
+            environment: process.env.NODE_ENV,
+            timestamp: new Date().toISOString(),
+            headers: req.headers,
+            cors_enabled: true,
+            rate_limiting: false,
+            services: {
+                database: 'connected',
+                redis: 'connected',
+                whatsapp: WhatsAppService.isConnected() ? 'connected' : 'disconnected'
+            },
+            memory: process.memoryUsage(),
+            uptime: process.uptime()
+        });
+    });
+}
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -454,31 +520,47 @@ async function gracefulShutdown(signal) {
 
 /**
  * ============================================================================
- * INITIALIZATION
+ * INITIALIZATION - COM MELHOR ERROR HANDLING
  * ============================================================================
  */
 
-// Initialize services when app starts
+// Initialize services when app starts - COM MELHOR ERROR HANDLING
 const initializeServices = async () => {
     try {
+        console.log('🔄 Inicializando serviços...');
+
         // Connect to database
         await connectDatabase();
         logger.info('Database connection established');
+        console.log('✅ Database conectado');
 
         // Connect to Redis
         await connectRedis();
         logger.info('Redis connection established');
+        console.log('✅ Redis conectado');
 
-        // Verify email configuration
-        await verifyEmailConfig();
-        logger.info('Email configuration verified');
+        // Verify email configuration (não falhar se não configurado)
+        try {
+            await verifyEmailConfig();
+            logger.info('Email configuration verified');
+            console.log('✅ Email configurado');
+        } catch (emailError) {
+            console.log('⚠️ Email não configurado (opcional):', emailError.message);
+        }
 
-        // Initialize WhatsApp service
-        WhatsAppService.initialize();
-        logger.info('WhatsApp service initialized');
+        // Initialize WhatsApp service (não falhar se não configurado)
+        try {
+            WhatsAppService.initialize();
+            logger.info('WhatsApp service initialized');
+            console.log('✅ WhatsApp iniciado');
+        } catch (whatsappError) {
+            console.log('⚠️ WhatsApp não configurado (opcional):', whatsappError.message);
+        }
 
+        console.log('🎉 Todos os serviços principais iniciados com sucesso!');
         logger.info('All services initialized successfully');
     } catch (error) {
+        console.error('❌ Erro crítico na inicialização:', error);
         logger.error('Error initializing services:', error);
         process.exit(1);
     }
@@ -508,7 +590,7 @@ module.exports = app;
  * 
  * 1. Helmet - Security headers
  * 2. CORS - Cross-origin resource sharing control
- * 3. Rate Limiting - Prevent brute force attacks
+ * 3. Rate Limiting - Prevent brute force attacks (disabled in development)
  * 4. Request Size Limits - Prevent DoS attacks
  * 5. JSON Validation - Prevent malformed requests
  * 6. Trust Proxy - For deployment behind reverse proxy
@@ -520,6 +602,7 @@ module.exports = app;
  * 2. Response Time Tracking - Performance monitoring
  * 3. Health Check Endpoints - Service status monitoring
  * 4. Error Tracking - Comprehensive error logging
+ * 5. Debug Endpoint - Development debugging (dev only)
  * 
  * DEVELOPMENT FEATURES:
  * 
@@ -527,4 +610,5 @@ module.exports = app;
  * 2. Swagger Documentation - Interactive API docs
  * 3. Development-specific logging
  * 4. Hot reload support
+ * 5. Flexible CORS and Rate Limiting
  */

@@ -1,28 +1,23 @@
 import React from 'react';
 import { Calendar, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
-import { memberService, scheduleService } from '../../services/members';
 import Loading from '../../components/common/Loading';
-import { format, isToday, isTomorrow, addDays } from 'date-fns';
+import { format, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const MemberDashboard = () => {
-    const { data: upcomingSchedules, loading: loadingSchedules } = useApi('/schedules', {
-        immediate: true,
-        onSuccess: (data) => {
-            // Filtrar apenas próximas escalas
-            const upcoming = data.filter(schedule =>
-                new Date(schedule.date) >= new Date()
-            ).slice(0, 5);
-            return upcoming;
-        }
-    });
-
+    // REMOVIDO: dependencies e onSuccess que causavam loops
+    const { data: upcomingSchedules, loading: loadingSchedules } = useApi('/schedules');
     const { data: profile, loading: loadingProfile } = useApi('/members/profile');
 
     if (loadingProfile || loadingSchedules) {
         return <Loading fullScreen />;
     }
+
+    // Filtrar próximas escalas no componente, não no hook
+    const filteredSchedules = upcomingSchedules?.filter(schedule =>
+        new Date(schedule.date) >= new Date()
+    ).slice(0, 5) || [];
 
     const getDateLabel = (date) => {
         const scheduleDate = new Date(date);
@@ -43,7 +38,7 @@ const MemberDashboard = () => {
             {/* Welcome Header */}
             <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg p-6 text-white">
                 <h1 className="text-2xl font-bold mb-2">
-                    Bem-vindo(a), {profile?.name}!
+                    Bem-vindo(a), {profile?.name || 'Usuário'}!
                 </h1>
                 <p className="text-primary-100">
                     Acompanhe suas escalas e gerencie sua disponibilidade
@@ -60,7 +55,7 @@ const MemberDashboard = () => {
                             </div>
                             <div className="ml-4">
                                 <div className="text-2xl font-bold text-gray-900">
-                                    {upcomingSchedules?.length || 0}
+                                    {filteredSchedules.length}
                                 </div>
                                 <div className="text-sm text-gray-600">Próximas Escalas</div>
                             </div>
@@ -105,7 +100,7 @@ const MemberDashboard = () => {
                     <h2 className="text-lg font-medium text-gray-900">Próximas Escalas</h2>
                 </div>
                 <div className="card-body">
-                    {!upcomingSchedules || upcomingSchedules.length === 0 ? (
+                    {filteredSchedules.length === 0 ? (
                         <div className="text-center py-8">
                             <Calendar className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-2 text-sm font-medium text-gray-900">
@@ -117,7 +112,7 @@ const MemberDashboard = () => {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {upcomingSchedules.map((schedule) => (
+                            {filteredSchedules.map((schedule) => (
                                 <div
                                     key={schedule.id}
                                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
