@@ -75,6 +75,7 @@ const corsOptions = {
             'http://localhost:3000',
             'http://localhost:3001',
             'http://localhost:5000',  // Adicionar esta linha
+            'http://localhost:5173',
             'https://localhost:3000',
         ];
 
@@ -95,43 +96,54 @@ app.use(cors(corsOptions));
 
 /**
  * ============================================================================
- * RATE LIMITING
+ * RATE LIMITING - CONFIGURAÇÃO CORRIGIDA
  * ============================================================================
  */
 
-// General rate limiting
+// General rate limiting - Mais permissivo em desenvolvimento
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: process.env.NODE_ENV === 'development' ? 1000 : 100, // 1000 em dev, 100 em prod
     message: {
         error: 'Muitas tentativas. Tente novamente em 15 minutos.',
         retryAfter: '15 minutes'
     },
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    standardHeaders: true,
+    legacyHeaders: false,
     skip: (req) => {
         // Skip rate limiting for health checks
         return req.path === '/health' || req.path === '/api/health';
     }
 });
 
-// Strict rate limiting for auth endpoints
+// Rate limiting para auth - MUITO mais permissivo em desenvolvimento
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 login requests per windowMs
+    windowMs: process.env.NODE_ENV === 'development' ? 1 * 60 * 1000 : 15 * 60 * 1000, // 1 min em dev, 15 min em prod
+    max: process.env.NODE_ENV === 'development' ? 100 : 5, // 100 tentativas em dev, 5 em prod
     message: {
-        error: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
-        retryAfter: '15 minutes'
+        error: process.env.NODE_ENV === 'development' 
+            ? 'Muitas tentativas de login. Tente novamente em 1 minuto.' 
+            : 'Muitas tentativas de login. Tente novamente em 15 minutos.',
+        retryAfter: process.env.NODE_ENV === 'development' ? '1 minute' : '15 minutes'
     },
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true // Don't count successful requests
 });
 
-// Apply rate limiting
-app.use('/api/', generalLimiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+// Apply rate limiting - Condicionalmente em desenvolvimento
+if (process.env.NODE_ENV === 'production') {
+    app.use('/api/', generalLimiter);
+    app.use('/api/auth/login', authLimiter);
+    app.use('/api/auth/register', authLimiter);
+} else {
+    // Em desenvolvimento, aplicar limites muito mais permissivos
+    console.log('🚀 MODO DESENVOLVIMENTO: Rate limiting reduzido');
+    app.use('/api/', generalLimiter); // Ainda aplica o geral mas com limite maior
+    // Opcional: comentar as linhas abaixo para remover completamente em dev
+    app.use('/api/auth/login', authLimiter);
+    app.use('/api/auth/register', authLimiter);
+}
 
 /**
  * ============================================================================
