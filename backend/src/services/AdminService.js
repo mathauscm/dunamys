@@ -161,11 +161,15 @@ class AdminService {
     }
 
     // Verificar indisponibilidades
+    // Se date é "YYYY-MM-DD", converte para "YYYY-MM-DDT00:00:00"
+    const dateISO = date.length === 10 ? date + 'T00:00:00' : date;
+    const dateObj = new Date(dateISO);
+
     const unavailabilities = await prisma.unavailability.findMany({
       where: {
         userId: { in: memberIds },
-        startDate: { lte: new Date(date) },
-        endDate: { gte: new Date(date) }
+        startDate: { lte: dateObj },
+        endDate: { gte: dateObj }
       },
       include: {
         user: { select: { name: true } }
@@ -181,7 +185,7 @@ class AdminService {
       data: {
         title,
         description,
-        date: new Date(date),
+        date: dateObj,
         time,
         location,
         members: {
@@ -242,13 +246,21 @@ class AdminService {
       }
     }
 
+    // Ajuste aqui: Prisma espera DateTime ou ISO completo
+    let dateObj;
+    if (date && typeof date === 'string' && date.length === 10) {
+      dateObj = new Date(date + 'T00:00:00');
+    } else if (date) {
+      dateObj = new Date(date);
+    }
+
     // Atualizar escala
     const schedule = await prisma.schedule.update({
       where: { id: scheduleId },
       data: {
         title,
         description,
-        date: date ? new Date(date) : undefined,
+        date: date ? dateObj : undefined,
         time,
         location,
         ...(memberIds && {

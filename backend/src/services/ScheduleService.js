@@ -3,16 +3,19 @@ const { prisma } = require('../config/database');
 class ScheduleService {
   static async getSchedules(filters = {}) {
     const { month, year, upcoming } = filters;
-    
     let dateFilter = {};
-    
+
     if (upcoming) {
-      dateFilter = {
-        date: { gte: new Date() }
-      };
+      // Hoje, início do dia local
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dateFilter = { date: { gte: today } };
     } else if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0);
+      // Data inicial: primeiro dia do mês, 00:00
+      const startDate = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`);
+      // Último dia do mês, 23:59:59
+      const endDay = new Date(year, month, 0).getDate();
+      const endDate = new Date(`${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}T23:59:59`);
       dateFilter = {
         date: {
           gte: startDate,
@@ -20,7 +23,7 @@ class ScheduleService {
         }
       };
     }
-    
+
     const schedules = await prisma.schedule.findMany({
       where: dateFilter,
       include: {
@@ -37,7 +40,7 @@ class ScheduleService {
         { time: 'asc' }
       ]
     });
-    
+
     return schedules;
   }
 
@@ -54,10 +57,9 @@ class ScheduleService {
         }
       }
     });
-    
+
     return schedule;
   }
 }
 
 module.exports = ScheduleService;
-

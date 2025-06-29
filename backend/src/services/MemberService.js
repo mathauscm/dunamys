@@ -47,8 +47,11 @@ class MemberService {
 
     let dateFilter = {};
     if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0);
+      // Início do mês, 00:00:00
+      const startDate = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`);
+      // Último dia do mês, 23:59:59
+      const endDay = new Date(year, month, 0).getDate();
+      const endDate = new Date(`${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}T23:59:59`);
       dateFilter = {
         date: {
           gte: startDate,
@@ -87,14 +90,18 @@ class MemberService {
   static async setUnavailability(userId, data) {
     const { startDate, endDate, reason } = data;
 
+    // Garante que datas sejam ISO completas para DateTime
+    const startDateISO = startDate.length === 10 ? startDate + 'T00:00:00' : startDate;
+    const endDateISO = endDate.length === 10 ? endDate + 'T23:59:59' : endDate;
+
     // Verificar se já existe indisponibilidade no período
     const existing = await prisma.unavailability.findFirst({
       where: {
         userId,
         OR: [
           {
-            startDate: { lte: new Date(endDate) },
-            endDate: { gte: new Date(startDate) }
+            startDate: { lte: new Date(endDateISO) },
+            endDate: { gte: new Date(startDateISO) }
           }
         ]
       }
@@ -107,8 +114,8 @@ class MemberService {
     const unavailability = await prisma.unavailability.create({
       data: {
         userId,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate: new Date(startDateISO),
+        endDate: new Date(endDateISO),
         reason
       }
     });
