@@ -142,4 +142,204 @@
     .table-body tr:hover {
         @apply bg-gray-50;
     }
+
+    /* ============================================
+       COMPONENTES DE DATA/HORA - NOVOS ESTILOS
+       ============================================ */
+
+    /* Animações para os componentes de data/hora */
+    .calendar-dropdown {
+        @apply animate-slide-down;
+    }
+
+    .time-dropdown {
+        @apply animate-slide-down;
+    }
+
+    /* Melhorias para inputs de data e hora */
+    .datetime-input {
+        @apply relative transition-all duration-200;
+    }
+
+    .datetime-input:hover {
+        @apply border-gray-400 shadow-sm;
+    }
+
+    .datetime-input:focus-within {
+        @apply ring-2 ring-blue-500 ring-opacity-20 border-blue-500;
+    }
+
+    /* Botões do calendário */
+    .calendar-day {
+        @apply w-8 h-8 text-sm rounded-full transition-all duration-150 
+               flex items-center justify-center relative;
+    }
+
+    .calendar-day:hover:not(:disabled) {
+        @apply bg-gray-100 scale-105;
+    }
+
+    .calendar-day.selected {
+        @apply bg-blue-600 text-white shadow-md;
+    }
+
+    .calendar-day.today {
+        @apply bg-blue-100 text-blue-600 font-medium;
+    }
+
+    .calendar-day.disabled {
+        @apply text-gray-300 cursor-not-allowed;
+    }
+
+    /* Horários no dropdown */
+    .time-option {
+        @apply px-4 py-2 text-left hover:bg-gray-100 transition-colors cursor-pointer;
+    }
+
+    .time-option.selected {
+        @apply bg-blue-50 text-blue-600 font-medium;
+    }
+
+    .time-option:hover {
+        @apply bg-gray-100;
+    }
+
+    /* Estados de erro para componentes customizados */
+    .datetime-error {
+        @apply border-red-300 focus:ring-red-500 focus:border-red-500;
+    }
+
+    /* Overlay escuro para modais de data */
+    .date-overlay {
+        @apply fixed inset-0 bg-black bg-opacity-10 z-10;
+    }
+
+    /* Container do calendário */
+    .calendar-container {
+        @apply bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4;
+        min-width: 320px;
+    }
+
+    /* Grid do calendário */
+    .calendar-grid {
+        @apply grid grid-cols-7 gap-1;
+    }
+
+    /* Cabeçalho dos dias da semana */
+    .calendar-weekday {
+        @apply text-center text-xs font-medium text-gray-500 py-2;
+    }
+
+    /* Navegação do mês */
+    .month-nav-button {
+        @apply p-1 hover:bg-gray-100 rounded transition-colors;
+    }
+
+    /* Título do mês */
+    .month-title {
+        @apply font-medium text-gray-900 capitalize text-center;
+    }
+
+    /* Ações rápidas do calendário */
+    .calendar-actions {
+        @apply mt-4 pt-3 border-t border-gray-200 flex justify-between;
+    }
+
+    .calendar-action-btn {
+        @apply text-sm transition-colors;
+    }
+
+    .calendar-action-btn.primary {
+        @apply text-blue-600 hover:text-blue-700;
+    }
+
+    .calendar-action-btn.secondary {
+        @apply text-gray-500 hover:text-gray-700;
+    }
+
+    /* Container do time picker */
+    .time-container {
+        @apply bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto;
+    }
+
+    /* Scrollbar customizada para dropdown de horários */
+    .time-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .time-container::-webkit-scrollbar-track {
+        @apply bg-gray-100 rounded;
+    }
+
+    .time-container::-webkit-scrollbar-thumb {
+        @apply bg-gray-300 rounded;
+    }
+
+    .time-container::-webkit-scrollbar-thumb:hover {
+        @apply bg-gray-400;
+    }
+
+    /* Indicador de seleção múltipla */
+    .range-selection {
+        @apply bg-blue-100;
+    }
+
+    .range-start {
+        @apply bg-blue-600 text-white;
+    }
+
+    .range-end {
+        @apply bg-blue-600 text-white;
+    }
+
+    .range-middle {
+        @apply bg-blue-100;
+    }
+
+    /* Estados de loading */
+    .datetime-loading {
+        @apply opacity-50 pointer-events-none;
+    }
+
+    /* Feedback visual para seleção */
+    .datetime-selected {
+        @apply ring-2 ring-blue-500 ring-opacity-20;
+    }
+
+    /* Melhorias de acessibilidade */
+    .calendar-day:focus {
+        @apply outline-none ring-2 ring-blue-500 ring-opacity-50;
+    }
+
+    .time-option:focus {
+        @apply outline-none bg-blue-50;
+    }
+
+    /* Animações suaves */
+    .calendar-enter {
+        @apply opacity-0 transform scale-95;
+    }
+
+    .calendar-enter-active {
+        @apply opacity-100 transform scale-100 transition-all duration-200;
+    }
+
+    .calendar-exit {
+        @apply opacity-100 transform scale-100;
+    }
+
+    .calendar-exit-active {
+        @apply opacity-0 transform scale-95 transition-all duration-150;
+    }
+
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 640px) {
+        .calendar-container {
+            @apply w-full max-w-sm;
+        }
+
+        .datetime-input {
+            @apply text-base; /* Evita zoom em iOS */
+        }
+    }
 }

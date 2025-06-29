@@ -1,3 +1,4 @@
+// frontend/src/pages/member/Availability.jsx - COMPLETO
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Calendar, Plus, Trash2, AlertCircle } from 'lucide-react';
@@ -5,11 +6,14 @@ import { useApi, useMutation } from '../../hooks/useApi';
 import { memberService } from '../../services/members';
 import Loading from '../../components/common/Loading';
 import Modal from '../../components/common/Modal';
+import { DateRangePicker } from '../../components/forms/DateTimePicker';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const MemberAvailability = () => {
     const [showModal, setShowModal] = useState(false);
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
 
     const { data: unavailabilities, loading, refresh } = useApi('/members/unavailability');
 
@@ -18,6 +22,8 @@ const MemberAvailability = () => {
         {
             onSuccess: () => {
                 setShowModal(false);
+                setStartDate(null);
+                setEndDate(null);
                 refresh();
             }
         }
@@ -38,12 +44,23 @@ const MemberAvailability = () => {
     } = useForm();
 
     const onSubmit = async (data) => {
-        // Remove o campo reason se estiver vazio
-        if (!data.reason?.trim()) {
-            delete data.reason;
+        // Validar se as datas foram selecionadas
+        if (!startDate) {
+            alert('Por favor, selecione a data de início');
+            return;
+        }
+        if (!endDate) {
+            alert('Por favor, selecione a data de fim');
+            return;
         }
 
-        await createUnavailability(data);
+        const formData = {
+            startDate: startDate.toISOString().split('T')[0], // YYYY-MM-DD
+            endDate: endDate.toISOString().split('T')[0], // YYYY-MM-DD
+            reason: data.reason?.trim() || undefined
+        };
+
+        await createUnavailability(formData);
         reset();
     };
 
@@ -51,6 +68,13 @@ const MemberAvailability = () => {
         if (window.confirm('Tem certeza que deseja remover esta indisponibilidade?')) {
             await removeUnavailability(id);
         }
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setStartDate(null);
+        setEndDate(null);
+        reset();
     };
 
     if (loading) {
@@ -148,41 +172,24 @@ const MemberAvailability = () => {
             {/* Modal for creating unavailability */}
             <Modal
                 isOpen={showModal}
-                onClose={() => setShowModal(false)}
+                onClose={handleCloseModal}
                 title="Nova Indisponibilidade"
             >
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="label">Data Início</label>
-                            <input
-                                type="date"
-                                className={`input ${errors.startDate ? 'input-error' : ''}`}
-                                min={new Date().toISOString().split('T')[0]}
-                                {...register('startDate', {
-                                    required: 'Data de início é obrigatória'
-                                })}
-                            />
-                            {errors.startDate && (
-                                <p className="error-message">{errors.startDate.message}</p>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="label">Data Fim</label>
-                            <input
-                                type="date"
-                                className={`input ${errors.endDate ? 'input-error' : ''}`}
-                                min={new Date().toISOString().split('T')[0]}
-                                {...register('endDate', {
-                                    required: 'Data de fim é obrigatória'
-                                })}
-                            />
-                            {errors.endDate && (
-                                <p className="error-message">{errors.endDate.message}</p>
-                            )}
-                        </div>
-                    </div>
+                    {/* Date Range - USANDO COMPONENTE OTIMIZADO */}
+                    <DateRangePicker
+                        startDate={startDate}
+                        endDate={endDate}
+                        onStartDateChange={setStartDate}
+                        onEndDateChange={setEndDate}
+                        startLabel="Data Início"
+                        endLabel="Data Fim"
+                        startPlaceholder="Selecione a data de início"
+                        endPlaceholder="Selecione a data de fim"
+                        required={true}
+                        startError={!startDate && 'Data de início é obrigatória'}
+                        endError={!endDate && 'Data de fim é obrigatória'}
+                    />
 
                     <div>
                         <label className="label">Motivo (Opcional)</label>
@@ -198,14 +205,14 @@ const MemberAvailability = () => {
                     <div className="flex justify-end space-x-3">
                         <button
                             type="button"
-                            onClick={() => setShowModal(false)}
+                            onClick={handleCloseModal}
                             className="btn btn-secondary"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
-                            disabled={creating}
+                            disabled={creating || !startDate || !endDate}
                             className="btn btn-primary"
                         >
                             {creating ? 'Salvando...' : 'Salvar'}

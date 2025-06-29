@@ -1,12 +1,18 @@
+// frontend/src/components/forms/ScheduleForm.jsx - ATUALIZADO
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Calendar, Clock, MapPin, Users, FileText } from 'lucide-react';
+import { Users, FileText } from 'lucide-react';
 import { adminService } from '../../services/members';
 import Loading from '../common/Loading';
+import { DateTimePicker } from './DateTimePicker';
 
 const ScheduleForm = ({ schedule, onSubmit, loading }) => {
     const [members, setMembers] = useState([]);
     const [loadingMembers, setLoadingMembers] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(
+        schedule?.date ? new Date(schedule.date) : null
+    );
+    const [selectedTime, setSelectedTime] = useState(schedule?.time || '');
 
     const {
         register,
@@ -17,9 +23,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
     } = useForm({
         defaultValues: {
             title: schedule?.title || '',
-            description: schedule?.description || ' ', // Espaço vazio para validar entrada sem descrição
-            date: schedule?.date ? new Date(schedule.date).toISOString().split('T')[0] : '',
-            time: schedule?.time || '',
+            description: schedule?.description || '',
             location: schedule?.location || '',
             memberIds: schedule?.members?.map(m => m.userId) || []
         }
@@ -51,12 +55,32 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
         setValue('memberIds', newIds);
     };
 
+    const handleFormSubmit = (data) => {
+        // Validar se data e hora foram selecionadas
+        if (!selectedDate) {
+            alert('Por favor, selecione uma data');
+            return;
+        }
+        if (!selectedTime) {
+            alert('Por favor, selecione um horário');
+            return;
+        }
+
+        const formData = {
+            ...data,
+            date: selectedDate.toISOString().split('T')[0], // YYYY-MM-DD
+            time: selectedTime
+        };
+
+        onSubmit(formData);
+    };
+
     if (loadingMembers) {
         return <Loading />;
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             {/* Title Field */}
             <div>
                 <label className="label">Título da Escala</label>
@@ -92,64 +116,30 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
                 />
             </div>
 
-            {/* Date and Time Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="label">Data</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Calendar className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                            type="date"
-                            className={`input pl-10 ${errors.date ? 'input-error' : ''}`}
-                            min={new Date().toISOString().split('T')[0]}
-                            {...register('date', {
-                                required: 'Data é obrigatória'
-                            })}
-                        />
-                    </div>
-                    {errors.date && (
-                        <p className="error-message">{errors.date.message}</p>
-                    )}
-                </div>
-
-                <div>
-                    <label className="label">Horário</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Clock className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                            type="time"
-                            className={`input pl-10 ${errors.time ? 'input-error' : ''}`}
-                            {...register('time', {
-                                required: 'Horário é obrigatório'
-                            })}
-                        />
-                    </div>
-                    {errors.time && (
-                        <p className="error-message">{errors.time.message}</p>
-                    )}
-                </div>
-            </div>
+            {/* Date and Time - USANDO COMPONENTES OTIMIZADOS */}
+            <DateTimePicker
+                dateValue={selectedDate}
+                timeValue={selectedTime}
+                onDateChange={setSelectedDate}
+                onTimeChange={setSelectedTime}
+                dateLabel="Data"
+                timeLabel="Horário"
+                required={true}
+                dateError={!selectedDate && 'Data é obrigatória'}
+                timeError={!selectedTime && 'Horário é obrigatório'}
+            />
 
             {/* Location Field */}
             <div>
                 <label className="label">Local</label>
-                <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <MapPin className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                        type="text"
-                        className={`input pl-10 ${errors.location ? 'input-error' : ''}`}
-                        placeholder="Ex: Igreja Central, Auditório Principal"
-                        {...register('location', {
-                            required: 'Local é obrigatório'
-                        })}
-                    />
-                </div>
+                <input
+                    type="text"
+                    className={`input ${errors.location ? 'input-error' : ''}`}
+                    placeholder="Ex: Igreja Central, Auditório Principal"
+                    {...register('location', {
+                        required: 'Local é obrigatório'
+                    })}
+                />
                 {errors.location && (
                     <p className="error-message">{errors.location.message}</p>
                 )}
@@ -203,7 +193,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
             <div className="flex justify-end space-x-3">
                 <button
                     type="submit"
-                    disabled={loading || !selectedMemberIds || selectedMemberIds.length === 0}
+                    disabled={loading || !selectedMemberIds || selectedMemberIds.length === 0 || !selectedDate || !selectedTime}
                     className="btn btn-primary"
                 >
                     {loading ? 'Salvando...' : (schedule ? 'Atualizar Escala' : 'Criar Escala')}
