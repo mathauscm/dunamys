@@ -1,5 +1,7 @@
+// backend/src/services/AdminService.js - VERSÃO CORRIGIDA
 const { prisma } = require('../config/database');
 const NotificationService = require('./NotificationService');
+const logger = require('../utils/logger');
 
 class AdminService {
   static async getDashboardStats() {
@@ -91,57 +93,89 @@ class AdminService {
   }
 
   static async approveMember(memberId) {
-    const member = await prisma.user.findUnique({
-      where: { id: memberId, role: 'MEMBER' }
-    });
+    try {
+      const member = await prisma.user.findUnique({
+        where: { id: memberId, role: 'MEMBER' }
+      });
 
-    if (!member) {
-      throw new Error('Membro não encontrado');
+      if (!member) {
+        throw new Error('Membro não encontrado');
+      }
+
+      if (member.status === 'ACTIVE') {
+        throw new Error('Membro já está ativo');
+      }
+
+      // PRIMEIRO: Atualizar status do membro no banco
+      const updatedMember = await prisma.user.update({
+        where: { id: memberId },
+        data: { status: 'ACTIVE' }
+      });
+
+      // SEGUNDO: Criar log de auditoria
+      await this.createAuditLog({
+        action: 'MEMBER_APPROVED',
+        targetId: memberId,
+        description: `Membro ${member.name} foi aprovado`
+      });
+
+      // TERCEIRO: Tentar enviar notificação (não bloquear se falhar)
+      try {
+        await NotificationService.sendMemberApproval(member);
+        logger.info(`Notificação de aprovação enviada para ${member.email}`);
+      } catch (notificationError) {
+        // Log do erro, mas não falhar a aprovação
+        logger.error(`Erro ao enviar notificação de aprovação para ${member.email}:`, notificationError);
+        logger.warn('Aprovação do membro continuou apesar do erro na notificação');
+      }
+
+      return updatedMember;
+
+    } catch (error) {
+      logger.error(`Erro ao aprovar membro ${memberId}:`, error);
+      throw error;
     }
-
-    if (member.status === 'ACTIVE') {
-      throw new Error('Membro já está ativo');
-    }
-
-    await prisma.user.update({
-      where: { id: memberId },
-      data: { status: 'ACTIVE' }
-    });
-
-    // Criar log de auditoria
-    await this.createAuditLog({
-      action: 'MEMBER_APPROVED',
-      targetId: memberId,
-      description: `Membro ${member.name} foi aprovado`
-    });
-
-    // Enviar notificação de aprovação
-    await NotificationService.sendMemberApproval(member);
   }
 
   static async rejectMember(memberId, reason) {
-    const member = await prisma.user.findUnique({
-      where: { id: memberId, role: 'MEMBER' }
-    });
+    try {
+      const member = await prisma.user.findUnique({
+        where: { id: memberId, role: 'MEMBER' }
+      });
 
-    if (!member) {
-      throw new Error('Membro não encontrado');
+      if (!member) {
+        throw new Error('Membro não encontrado');
+      }
+
+      // PRIMEIRO: Atualizar status do membro no banco
+      const updatedMember = await prisma.user.update({
+        where: { id: memberId },
+        data: { status: 'REJECTED' }
+      });
+
+      // SEGUNDO: Criar log de auditoria
+      await this.createAuditLog({
+        action: 'MEMBER_REJECTED',
+        targetId: memberId,
+        description: `Membro ${member.name} foi rejeitado. Motivo: ${reason || 'Não informado'}`
+      });
+
+      // TERCEIRO: Tentar enviar notificação (não bloquear se falhar)
+      try {
+        await NotificationService.sendMemberRejection(member, reason);
+        logger.info(`Notificação de rejeição enviada para ${member.email}`);
+      } catch (notificationError) {
+        // Log do erro, mas não falhar a rejeição
+        logger.error(`Erro ao enviar notificação de rejeição para ${member.email}:`, notificationError);
+        logger.warn('Rejeição do membro continuou apesar do erro na notificação');
+      }
+
+      return updatedMember;
+
+    } catch (error) {
+      logger.error(`Erro ao rejeitar membro ${memberId}:`, error);
+      throw error;
     }
-
-    await prisma.user.update({
-      where: { id: memberId },
-      data: { status: 'REJECTED' }
-    });
-
-    // Criar log de auditoria
-    await this.createAuditLog({
-      action: 'MEMBER_REJECTED',
-      targetId: memberId,
-      description: `Membro ${member.name} foi rejeitado. Motivo: ${reason || 'Não informado'}`
-    });
-
-    // Enviar notificação de rejeição
-    await NotificationService.sendMemberRejection(member, reason);
   }
 
   static async createSchedule(data) {
@@ -211,8 +245,14 @@ class AdminService {
       description: `Escala "${title}" criada para ${date}`
     });
 
-    // Enviar notificações para os membros escalados
-    await NotificationService.sendScheduleAssignment(schedule);
+    // Tentar enviar notificações (não bloquear se falhar)
+    try {
+      await NotificationService.sendScheduleAssignment(schedule);
+      logger.info(`Notificações de escala enviadas para ${schedule.members.length} membros`);
+    } catch (notificationError) {
+      logger.error('Erro ao enviar notificações de escala:', notificationError);
+      logger.warn('Criação da escala continuou apesar do erro nas notificações');
+    }
 
     return schedule;
   }
@@ -288,8 +328,14 @@ class AdminService {
       description: `Escala "${title}" foi atualizada`
     });
 
-    // Enviar notificações sobre alterações
-    await NotificationService.sendScheduleUpdate(schedule);
+    // Tentar enviar notificações sobre alterações (não bloquear se falhar)
+    try {
+      await NotificationService.sendScheduleUpdate(schedule);
+      logger.info(`Notificações de atualização enviadas para ${schedule.members.length} membros`);
+    } catch (notificationError) {
+      logger.error('Erro ao enviar notificações de atualização:', notificationError);
+      logger.warn('Atualização da escala continuou apesar do erro nas notificações');
+    }
 
     return schedule;
   }
@@ -306,8 +352,14 @@ class AdminService {
       throw new Error('Escala não encontrada');
     }
 
-    // Notificar membros sobre cancelamento
-    await NotificationService.sendScheduleCancellation(schedule);
+    // Tentar notificar membros sobre cancelamento (não bloquear se falhar)
+    try {
+      await NotificationService.sendScheduleCancellation(schedule);
+      logger.info(`Notificações de cancelamento enviadas para ${schedule.members.length} membros`);
+    } catch (notificationError) {
+      logger.error('Erro ao enviar notificações de cancelamento:', notificationError);
+      logger.warn('Remoção da escala continuará apesar do erro nas notificações');
+    }
 
     // Deletar escala
     await prisma.schedule.delete({
@@ -338,7 +390,13 @@ class AdminService {
       throw new Error('Escala não encontrada');
     }
 
-    await NotificationService.sendCustomNotification(schedule, type, message);
+    try {
+      await NotificationService.sendCustomNotification(schedule, type, message);
+      logger.info(`Notificação customizada enviada para ${schedule.members.length} membros`);
+    } catch (notificationError) {
+      logger.error('Erro ao enviar notificação customizada:', notificationError);
+      throw new Error('Erro ao enviar notificação: ' + notificationError.message);
+    }
   }
 
   static async getAuditLogs(filters = {}) {
@@ -381,17 +439,62 @@ class AdminService {
   }
 
   static async createAuditLog(data) {
-    const { action, targetId, userId, description } = data;
+    try {
+      const { action, targetId, userId, description } = data;
 
-    await prisma.auditLog.create({
-      data: {
-        action,
-        targetId,
-        userId,
-        description,
-        createdAt: new Date()
+      await prisma.auditLog.create({
+        data: {
+          action,
+          targetId,
+          userId,
+          description,
+          createdAt: new Date()
+        }
+      });
+    } catch (error) {
+      logger.error('Erro ao criar log de auditoria:', error);
+      // Não falhar a operação principal por causa do log
+    }
+  }
+
+  /**
+   * ============================================================================
+   * MÉTODOS AUXILIARES PARA TESTES E DEPURAÇÃO
+   * ============================================================================
+   */
+
+  static async testNotificationServices() {
+    try {
+      const testResults = await NotificationService.testNotificationServices();
+      logger.info('Resultado dos testes de notificação:', testResults);
+      return testResults;
+    } catch (error) {
+      logger.error('Erro ao testar serviços de notificação:', error);
+      return { email: false, whatsapp: false, database: false };
+    }
+  }
+
+  static async sendTestNotification(userId, type = 'EMAIL') {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        throw new Error('Usuário não encontrado');
       }
-    });
+
+      if (type === 'APPROVAL') {
+        await NotificationService.sendMemberApproval(user);
+      } else if (type === 'REJECTION') {
+        await NotificationService.sendMemberRejection(user, 'Teste de notificação');
+      }
+
+      return { success: true, message: 'Notificação de teste enviada' };
+    } catch (error) {
+      logger.error('Erro ao enviar notificação de teste:', error);
+      throw error;
+    }
   }
 }
 
