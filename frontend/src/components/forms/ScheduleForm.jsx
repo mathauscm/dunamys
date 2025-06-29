@@ -1,10 +1,10 @@
-// frontend/src/components/forms/ScheduleForm.jsx - ATUALIZADO
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Users, FileText } from 'lucide-react';
 import { adminService } from '../../services/members';
 import Loading from '../common/Loading';
 import { DateTimePicker } from './DateTimePicker';
+import { api } from '../../services/api'; // Adicionado para buscar campuses
 
 const ScheduleForm = ({ schedule, onSubmit, loading }) => {
     const [members, setMembers] = useState([]);
@@ -13,6 +13,10 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
         schedule?.date ? new Date(schedule.date) : null
     );
     const [selectedTime, setSelectedTime] = useState(schedule?.time || '');
+
+    // Campus state
+    const [campuses, setCampuses] = useState([]);
+    const [loadingCampuses, setLoadingCampuses] = useState(true);
 
     const {
         register,
@@ -31,6 +35,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
 
     const selectedMemberIds = watch('memberIds');
 
+    // Carrega membros
     useEffect(() => {
         const fetchMembers = async () => {
             try {
@@ -42,8 +47,15 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
                 setLoadingMembers(false);
             }
         };
-
         fetchMembers();
+    }, []);
+
+    // Carrega campuses
+    useEffect(() => {
+        api.get('/campus/public')
+            .then(res => setCampuses(res.data))
+            .catch(() => setCampuses([]))
+            .finally(() => setLoadingCampuses(false));
     }, []);
 
     const handleMemberToggle = (memberId) => {
@@ -75,7 +87,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
         onSubmit(formData);
     };
 
-    if (loadingMembers) {
+    if (loadingMembers || loadingCampuses) {
         return <Loading />;
     }
 
@@ -129,17 +141,22 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
                 timeError={!selectedTime && 'Horário é obrigatório'}
             />
 
-            {/* Location Field */}
+            {/* Campus Field (substitui o antigo Local) */}
             <div>
-                <label className="label">Local</label>
-                <input
-                    type="text"
+                <label className="label">Campus</label>
+                <select
                     className={`input ${errors.location ? 'input-error' : ''}`}
-                    placeholder="Ex: Igreja Central, Auditório Principal"
-                    {...register('location', {
-                        required: 'Local é obrigatório'
-                    })}
-                />
+                    {...register('location', { required: 'Campus é obrigatório' })}
+                    disabled={loadingCampuses}
+                    defaultValue=""
+                >
+                    <option value="">Selecione o campus</option>
+                    {campuses.map(campus => (
+                        <option key={campus.id} value={campus.name}>
+                            {campus.name}{campus.city ? ` - ${campus.city}` : ''}
+                        </option>
+                    ))}
+                </select>
                 {errors.location && (
                     <p className="error-message">{errors.location.message}</p>
                 )}

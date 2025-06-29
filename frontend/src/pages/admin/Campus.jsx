@@ -1,4 +1,3 @@
-// frontend/src/pages/admin/Campus.jsx - VERSÃO COMPLETA
 import React, { useState } from 'react';
 import {
    MapPin,
@@ -182,29 +181,7 @@ const AdminCampus = () => {
            </div>
 
            {/* Debug Info - Remover em produção */}
-           {process.env.NODE_ENV === 'development' && (
-               <div className="card bg-blue-50 border-blue-200">
-                   <div className="card-body">
-                       <h3 className="text-sm font-medium text-blue-800 mb-2">Debug Info</h3>
-                       <div className="text-xs text-blue-700">
-                           <p>Total de campus carregados: {campuses.length}</p>
-                           <p>Dados dos campus:</p>
-                           <pre className="mt-2 p-2 bg-blue-100 rounded text-xs overflow-auto">
-                               {JSON.stringify(
-                                   campuses.map(c => ({
-                                       id: c.id,
-                                       name: c.name,
-                                       userCount: c._count?.users,
-                                       hasCount: !!c._count
-                                   })),
-                                   null,
-                                   2
-                               )}
-                           </pre>
-                       </div>
-                   </div>
-               </div>
-           )}
+           {/* BLOCO DE DEBUG REMOVIDO */}
 
            {/* Filters */}
            <div className="card">
@@ -331,12 +308,6 @@ const AdminCampus = () => {
                                    <div className="flex items-center text-sm text-gray-600">
                                        <Users className="h-4 w-4 mr-2 text-gray-400" />
                                        {campus._count?.users || 0} membro{(campus._count?.users || 0) !== 1 ? 's' : ''}
-                                       {/* Debug info */}
-                                       {process.env.NODE_ENV === 'development' && (
-                                           <span className="ml-2 text-xs text-blue-500">
-                                               (debug: {campus._count ? 'hasCount' : 'noCount'})
-                                           </span>
-                                       )}
                                    </div>
                                    <div className="flex items-center text-sm text-gray-600">
                                        <MapPin className="h-4 w-4 mr-2 text-gray-400" />
