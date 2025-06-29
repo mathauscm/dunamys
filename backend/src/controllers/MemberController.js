@@ -1,3 +1,4 @@
+// backend/src/controllers/MemberController.js
 const MemberService = require('../services/MemberService');
 const logger = require('../utils/logger');
 
@@ -36,13 +37,41 @@ class MemberController {
     try {
       const { month, year } = req.query;
       
+      // Log para debug
+      console.log('MemberController.getSchedules - Query params:', { month, year });
+      console.log('User ID:', req.user.id);
+      
+      // Validar parâmetros
+      let monthInt, yearInt;
+      
+      if (month) {
+        monthInt = parseInt(month, 10);
+        if (isNaN(monthInt) || monthInt < 1 || monthInt > 12) {
+          return res.status(400).json({
+            error: 'Mês deve ser um número entre 1 e 12'
+          });
+        }
+      }
+      
+      if (year) {
+        yearInt = parseInt(year, 10);
+        if (isNaN(yearInt) || yearInt < 1900 || yearInt > 2100) {
+          return res.status(400).json({
+            error: 'Ano deve ser um número válido'
+          });
+        }
+      }
+      
       const schedules = await MemberService.getUserSchedules(req.user.id, {
-        month: month ? parseInt(month) : undefined,
-        year: year ? parseInt(year) : undefined
+        month: monthInt,
+        year: yearInt
       });
+      
+      console.log(`Retornando ${schedules.length} escalas para o usuário ${req.user.id}`);
       
       res.json(schedules);
     } catch (error) {
+      console.error('Erro em MemberController.getSchedules:', error);
       next(error);
     }
   }
@@ -50,6 +79,13 @@ class MemberController {
   static async setUnavailability(req, res, next) {
     try {
       const { startDate, endDate, reason } = req.body;
+      
+      console.log('MemberController.setUnavailability - Dados recebidos:', {
+        userId: req.user.id,
+        startDate,
+        endDate,
+        reason
+      });
       
       const unavailability = await MemberService.setUnavailability(req.user.id, {
         startDate,
@@ -64,6 +100,7 @@ class MemberController {
         unavailability
       });
     } catch (error) {
+      console.error('Erro em MemberController.setUnavailability:', error);
       next(error);
     }
   }

@@ -1,3 +1,4 @@
+// frontend/src/pages/member/Schedules.jsx
 import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
@@ -11,10 +12,14 @@ const MemberSchedules = () => {
     const month = currentDate.getMonth() + 1;
     const year = currentDate.getFullYear();
 
-    const { data: schedules, loading, refresh } = useApi('/members/schedules', {
-        immediate: true,
-        dependencies: [month, year]
-    });
+    // CORREÇÃO: Passando os parâmetros corretamente na URL
+    const { data: schedules, loading, refresh } = useApi(
+        `/members/schedules?month=${month}&year=${year}`,
+        {
+            immediate: true,
+            // REMOVIDO: dependencies que causavam loops
+        }
+    );
 
     const handlePreviousMonth = () => {
         setCurrentDate(subMonths(currentDate, 1));
@@ -28,12 +33,22 @@ const MemberSchedules = () => {
         setCurrentDate(new Date());
     };
 
+    // ADICIONADO: Força atualização quando o mês/ano mudar
+    React.useEffect(() => {
+        console.log('Mês/ano alterado:', { month, year });
+        refresh();
+    }, [month, year, refresh]);
+
     if (loading) {
         return <Loading fullScreen />;
     }
 
     const monthSchedules = schedules || [];
     const currentMonthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
+
+    // DEBUG: Log para verificar os dados
+    console.log('Escalas recebidas:', monthSchedules);
+    console.log('Mês atual:', month, 'Ano atual:', year);
 
     return (
         <div className="space-y-6">
@@ -82,6 +97,13 @@ const MemberSchedules = () => {
                             <ChevronRight className="h-5 w-5" />
                         </button>
                     </div>
+                    
+                    {/* ADICIONADO: Informações de debug */}
+                    {process.env.NODE_ENV === 'development' && (
+                        <div className="mt-2 text-xs text-gray-500 text-center">
+                            Debug: Mês {month}/{year} - {monthSchedules.length} escalas encontradas
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,3 +1,4 @@
+// backend/src/services/MemberService.js
 const { prisma } = require('../config/database');
 
 class MemberService {
@@ -45,13 +46,18 @@ class MemberService {
   static async getUserSchedules(userId, filters = {}) {
     const { month, year } = filters;
 
+    console.log('MemberService.getUserSchedules chamado com:', { userId, month, year });
+
     let dateFilter = {};
+    
     if (month && year) {
-      // Início do mês, 00:00:00
-      const startDate = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`);
-      // Último dia do mês, 23:59:59
-      const endDay = new Date(year, month, 0).getDate();
-      const endDate = new Date(`${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}T23:59:59`);
+      // CORREÇÃO: Criar filtro de data mais preciso
+      const startDate = new Date(year, month - 1, 1); // month - 1 porque Date usa 0-11
+      const endDate = new Date(year, month, 0); // Último dia do mês
+      endDate.setHours(23, 59, 59, 999); // Fim do dia
+      
+      console.log('Filtro de data:', { startDate, endDate });
+      
       dateFilter = {
         date: {
           gte: startDate,
@@ -84,15 +90,50 @@ class MemberService {
       ]
     });
 
+    console.log(`Encontradas ${schedules.length} escalas para o usuário ${userId} no mês ${month}/${year}`);
+    
+    // Log detalhado das datas para debug
+    schedules.forEach(schedule => {
+      console.log(`Escala: ${schedule.title} - Data: ${schedule.date}`);
+    });
+
     return schedules;
   }
 
   static async setUnavailability(userId, data) {
     const { startDate, endDate, reason } = data;
 
-    // Garante que datas sejam ISO completas para DateTime
-    const startDateISO = startDate.length === 10 ? startDate + 'T00:00:00' : startDate;
-    const endDateISO = endDate.length === 10 ? endDate + 'T23:59:59' : endDate;
+    // CORREÇÃO: Melhor tratamento de datas
+    let startDateObj, endDateObj;
+
+    try {
+      // Se a data vier como string YYYY-MM-DD, converter para DateTime
+      if (typeof startDate === 'string' && startDate.length === 10) {
+        startDateObj = new Date(startDate + 'T00:00:00.000Z');
+      } else {
+        startDateObj = new Date(startDate);
+      }
+
+      if (typeof endDate === 'string' && endDate.length === 10) {
+        endDateObj = new Date(endDate + 'T23:59:59.999Z');
+      } else {
+        endDateObj = new Date(endDate);
+      }
+
+      // Validar se as datas são válidas
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+        throw new Error('Datas inválidas fornecidas');
+      }
+
+      // Verificar se a data de início não é posterior à data de fim
+      if (startDateObj > endDateObj) {
+        throw new Error('Data de início não pode ser posterior à data de fim');
+      }
+
+    } catch (error) {
+      console.error('Erro ao processar datas:', error);
+      throw new Error('Formato de data inválido');
+    }
 
     // Verificar se já existe indisponibilidade no período
     const existing = await prisma.unavailability.findFirst({
@@ -100,8 +141,8 @@ class MemberService {
         userId,
         OR: [
           {
-            startDate: { lte: new Date(endDateISO) },
-            endDate: { gte: new Date(startDateISO) }
+            startDate: { lte: endDateObj },
+            endDate: { gte: startDateObj }
           }
         ]
       }
@@ -114,9 +155,9 @@ class MemberService {
     const unavailability = await prisma.unavailability.create({
       data: {
         userId,
-        startDate: new Date(startDateISO),
-        endDate: new Date(endDateISO),
-        reason
+        startDate: startDateObj,
+        endDate: endDateObj,
+        reason: reason || null
       }
     });
 

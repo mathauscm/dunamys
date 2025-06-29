@@ -1,3 +1,4 @@
+// frontend/src/hooks/useApi.js
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 import { toast } from 'react-toastify';
@@ -7,9 +8,10 @@ export const useApi = (endpoint, options = {}) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     
-    // Use ref para evitar loops infinitos
+    // Use ref para controlar execução e cancelamento
     const hasExecuted = useRef(false);
     const currentRequest = useRef(null);
+    const lastEndpoint = useRef(null);
 
     const {
         immediate = true,
@@ -31,11 +33,14 @@ export const useApi = (endpoint, options = {}) => {
             setLoading(true);
             setError(null);
 
+            console.log('Executando requisição para:', customEndpoint);
+
             const response = await api.get(customEndpoint, {
                 ...config,
                 cancelToken: source?.token
             });
 
+            console.log('Resposta recebida para', customEndpoint, ':', response.data);
             setData(response.data);
 
             if (onSuccess) {
@@ -45,11 +50,12 @@ export const useApi = (endpoint, options = {}) => {
             return response.data;
         } catch (err) {
             if (api.isCancel && api.isCancel(err)) {
-                console.log('Requisição cancelada');
+                console.log('Requisição cancelada para:', customEndpoint);
                 return;
             }
 
             const errorMessage = err.response?.data?.error || 'Erro ao carregar dados';
+            console.error('Erro na requisição para', customEndpoint, ':', errorMessage);
             setError(errorMessage);
 
             if (onError) {
@@ -66,24 +72,27 @@ export const useApi = (endpoint, options = {}) => {
     }, [endpoint, onSuccess, onError]);
 
     const refresh = useCallback(() => {
-        hasExecuted.current = false;
+        console.log('Refresh chamado para:', endpoint);
         return execute();
     }, [execute]);
 
-    // UseEffect MUITO mais simples - só executa UMA vez
+    // UseEffect que monitora mudanças no endpoint
     useEffect(() => {
-        if (immediate && endpoint && !hasExecuted.current) {
+        // Se o endpoint mudou ou é a primeira execução
+        if (immediate && endpoint && (endpoint !== lastEndpoint.current || !hasExecuted.current)) {
+            console.log('UseEffect executando para endpoint:', endpoint);
             hasExecuted.current = true;
+            lastEndpoint.current = endpoint;
             execute();
         }
 
-        // Cleanup: cancelar requisição ao desmontar
+        // Cleanup: cancelar requisição ao desmontar ou endpoint mudar
         return () => {
             if (currentRequest.current) {
-                currentRequest.current.cancel('Componente desmontado');
+                currentRequest.current.cancel('Endpoint mudou ou componente desmontado');
             }
         };
-    }, [immediate, endpoint]); // APENAS estas dependências
+    }, [immediate, endpoint, execute]);
 
     return {
         data,
