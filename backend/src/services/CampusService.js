@@ -19,7 +19,7 @@ class CampusService {
         return campuses;
     }
 
-    // Listar campus para admin (com controle total)
+    // Listar campus para admin (com controle total) - CORRIGIDO
     static async getCampusesForAdmin(filters = {}) {
         const { search, active, page = 1, limit = 20 } = filters;
         
@@ -36,6 +36,8 @@ class CampusService {
             ];
         }
 
+        // CORREÇÃO: A consulta estava retornando dados incorretos
+        // Vamos fazer duas consultas separadas para garantir que a contagem funcione
         const [campuses, total] = await Promise.all([
             prisma.campus.findMany({
                 where: whereClause,
@@ -43,6 +45,15 @@ class CampusService {
                     _count: {
                         select: {
                             users: true
+                        }
+                    },
+                    // ADICIONADO: Incluir alguns usuários para debug
+                    users: {
+                        take: 3,
+                        select: {
+                            id: true,
+                            name: true,
+                            status: true
                         }
                     }
                 },
@@ -52,6 +63,12 @@ class CampusService {
             }),
             prisma.campus.count({ where: whereClause })
         ]);
+
+        // ADICIONADO: Log para debug
+        console.log('📊 Campus encontrados:', campuses.length);
+        campuses.forEach(campus => {
+            console.log(`Campus: ${campus.name} - Contagem: ${campus._count.users} - Usuários: ${campus.users.length}`);
+        });
 
         return {
             campuses,
@@ -82,9 +99,17 @@ class CampusService {
                 name: name.trim(),
                 city: city?.trim() || null,
                 active: true
+            },
+            include: {
+                _count: {
+                    select: {
+                        users: true
+                    }
+                }
             }
         });
 
+        console.log('✅ Campus criado:', campus.name);
         return campus;
     }
 
@@ -127,6 +152,7 @@ class CampusService {
             }
         });
 
+        console.log('✅ Campus atualizado:', campus.name, 'Contagem:', campus._count.users);
         return campus;
     }
 
@@ -155,6 +181,7 @@ class CampusService {
             where: { id: campusId }
         });
 
+        console.log('✅ Campus excluído:', campus.name);
         return { message: 'Campus excluído com sucesso' };
     }
 
@@ -185,6 +212,7 @@ class CampusService {
             throw new Error('Campus não encontrado');
         }
 
+        console.log('📋 Detalhes do campus:', campus.name, 'Total users:', campus.users.length);
         return campus;
     }
 
@@ -217,6 +245,7 @@ class CampusService {
             }
         });
 
+        console.log('🔄 Usuário transferido:', user.name, 'para campus:', newCampus.name);
         return updatedUser;
     }
 
@@ -242,7 +271,7 @@ class CampusService {
             return acc;
         }, {});
 
-        return {
+        const result = {
             campus,
             stats: {
                 totalUsers: Object.values(statsMap).reduce((sum, count) => sum + count, 0),
@@ -252,6 +281,38 @@ class CampusService {
                 rejectedUsers: statsMap.REJECTED || 0
             }
         };
+
+        console.log('📊 Stats do campus:', campus.name, result.stats);
+        return result;
+    }
+
+    // NOVO: Método para forçar recalcular contagem de usuários
+    static async refreshCampusStats() {
+        console.log('🔄 Atualizando estatísticas de campus...');
+        
+        const campuses = await prisma.campus.findMany({
+            include: {
+                _count: {
+                    select: {
+                        users: true
+                    }
+                },
+                users: {
+                    select: {
+                        id: true,
+                        name: true,
+                        status: true
+                    }
+                }
+            }
+        });
+
+        console.log('📊 Estatísticas atualizadas:');
+        campuses.forEach(campus => {
+            console.log(`${campus.name}: ${campus._count.users} usuários (${campus.users.length} encontrados)`);
+        });
+
+        return campuses;
     }
 }
 

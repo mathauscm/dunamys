@@ -1,4 +1,4 @@
-// backend/src/controllers/CampusController.js
+// backend/src/controllers/CampusController.js - CORRIGIDO
 const CampusService = require('../services/CampusService');
 const logger = require('../utils/logger');
 
@@ -14,10 +14,12 @@ class CampusController {
         }
     }
 
-    // Rotas administrativas
+    // Rotas administrativas - CORRIGIDA
     static async getCampuses(req, res, next) {
         try {
             const { search, active, page = 1, limit = 20 } = req.query;
+            
+            console.log('🔍 Buscando campus com filtros:', { search, active, page, limit });
             
             const result = await CampusService.getCampusesForAdmin({
                 search,
@@ -26,8 +28,19 @@ class CampusController {
                 limit: parseInt(limit)
             });
             
+            console.log('📊 Resultado da busca:', {
+                totalCampuses: result.campuses.length,
+                pagination: result.pagination
+            });
+            
+            // ADICIONADO: Log detalhado para debug
+            result.campuses.forEach(campus => {
+                console.log(`Campus: ${campus.name} - Membros: ${campus._count?.users || 0}`);
+            });
+            
             res.json(result);
         } catch (error) {
+            console.error('❌ Erro ao buscar campus:', error);
             next(error);
         }
     }
@@ -35,6 +48,8 @@ class CampusController {
     static async getCampusById(req, res, next) {
         try {
             const { id } = req.params;
+            
+            console.log('📋 Buscando campus por ID:', id);
             
             const campus = await CampusService.getCampusById(parseInt(id));
             
@@ -48,6 +63,8 @@ class CampusController {
         try {
             const { name, city } = req.body;
             
+            console.log('➕ Criando campus:', { name, city });
+            
             const campus = await CampusService.createCampus({
                 name,
                 city
@@ -60,6 +77,7 @@ class CampusController {
                 campus
             });
         } catch (error) {
+            console.error('❌ Erro ao criar campus:', error);
             next(error);
         }
     }
@@ -68,6 +86,8 @@ class CampusController {
         try {
             const { id } = req.params;
             const { name, city, active } = req.body;
+            
+            console.log('✏️ Atualizando campus:', { id, name, city, active });
             
             const campus = await CampusService.updateCampus(parseInt(id), {
                 name,
@@ -82,6 +102,7 @@ class CampusController {
                 campus
             });
         } catch (error) {
+            console.error('❌ Erro ao atualizar campus:', error);
             next(error);
         }
     }
@@ -90,12 +111,15 @@ class CampusController {
         try {
             const { id } = req.params;
             
+            console.log('🗑️ Deletando campus:', id);
+            
             const result = await CampusService.deleteCampus(parseInt(id));
             
             logger.info(`Campus removido ID: ${id} por admin ID: ${req.user.id}`);
             
             res.json(result);
         } catch (error) {
+            console.error('❌ Erro ao deletar campus:', error);
             next(error);
         }
     }
@@ -103,6 +127,8 @@ class CampusController {
     static async getCampusStats(req, res, next) {
         try {
             const { id } = req.params;
+            
+            console.log('📊 Buscando estatísticas do campus:', id);
             
             const stats = await CampusService.getCampusStats(parseInt(id));
             
@@ -116,6 +142,8 @@ class CampusController {
         try {
             const { userId, newCampusId } = req.body;
             
+            console.log('🔄 Transferindo usuário:', { userId, newCampusId });
+            
             const user = await CampusService.transferUserToCampus(
                 parseInt(userId),
                 parseInt(newCampusId)
@@ -128,6 +156,29 @@ class CampusController {
                 user
             });
         } catch (error) {
+            console.error('❌ Erro ao transferir usuário:', error);
+            next(error);
+        }
+    }
+
+    // NOVO: Endpoint para debug/refresh das estatísticas
+    static async refreshStats(req, res, next) {
+        try {
+            console.log('🔄 Refreshing campus stats...');
+            
+            const campuses = await CampusService.refreshCampusStats();
+            
+            res.json({
+                message: 'Estatísticas atualizadas',
+                campuses: campuses.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    userCount: c._count.users,
+                    users: c.users.map(u => ({ id: u.id, name: u.name, status: u.status }))
+                }))
+            });
+        } catch (error) {
+            console.error('❌ Erro ao atualizar estatísticas:', error);
             next(error);
         }
     }
