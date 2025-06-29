@@ -4,7 +4,7 @@ import { Users, FileText } from 'lucide-react';
 import { adminService } from '../../services/members';
 import Loading from '../common/Loading';
 import { DateTimePicker } from './DateTimePicker';
-import { api } from '../../services/api'; // Adicionado para buscar campuses
+import { api } from '../../services/api';
 
 const ScheduleForm = ({ schedule, onSubmit, loading }) => {
     const [members, setMembers] = useState([]);
@@ -18,6 +18,9 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
     const [campuses, setCampuses] = useState([]);
     const [loadingCampuses, setLoadingCampuses] = useState(true);
 
+    // Filtro para membros por campus
+    const [filterCampusId, setFilterCampusId] = useState('all');
+
     const {
         register,
         handleSubmit,
@@ -28,6 +31,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
         defaultValues: {
             title: schedule?.title || '',
             description: schedule?.description || '',
+            // O campo "location" armazena o nome do campus, mantendo compatibilidade com seu uso atual
             location: schedule?.location || '',
             memberIds: schedule?.members?.map(m => m.userId) || []
         }
@@ -52,11 +56,23 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
 
     // Carrega campuses
     useEffect(() => {
-        api.get('/campus/public')
-            .then(res => setCampuses(res.data))
-            .catch(() => setCampuses([]))
-            .finally(() => setLoadingCampuses(false));
+        const fetchCampuses = async () => {
+            try {
+                const response = await api.get('/campus/public');
+                setCampuses(response.data);
+            } catch (error) {
+                setCampuses([]);
+            } finally {
+                setLoadingCampuses(false);
+            }
+        };
+        fetchCampuses();
     }, []);
+
+    // Filtro robusto por campusId (de membro) igual ao id do campus selecionado
+    const filteredMembers = filterCampusId === 'all'
+        ? members
+        : members.filter(m => m.campusId && String(m.campusId) === String(filterCampusId));
 
     const handleMemberToggle = (memberId) => {
         const currentIds = selectedMemberIds || [];
@@ -128,7 +144,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
                 />
             </div>
 
-            {/* Date and Time - USANDO COMPONENTES OTIMIZADOS */}
+            {/* Date and Time */}
             <DateTimePicker
                 dateValue={selectedDate}
                 timeValue={selectedTime}
@@ -141,7 +157,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
                 timeError={!selectedTime && 'Horário é obrigatório'}
             />
 
-            {/* Campus Field (substitui o antigo Local) */}
+            {/* Campus Field */}
             <div>
                 <label className="label">Campus</label>
                 <select
@@ -162,20 +178,37 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
                 )}
             </div>
 
-            {/* Members Selection */}
+            {/* Filtro de membros por campus */}
+            <div>
+                <label className="label">Filtrar membros por campus</label>
+                <select
+                    className="input"
+                    value={filterCampusId}
+                    onChange={e => setFilterCampusId(e.target.value)}
+                >
+                    <option value="all">Todos os membros</option>
+                    {campuses.map(campus => (
+                        <option key={campus.id} value={String(campus.id)}>
+                            {campus.name}{campus.city ? ` - ${campus.city}` : ''}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Lista de membros disponíveis */}
             <div>
                 <label className="label flex items-center">
                     <Users className="h-4 w-4 mr-2" />
-                    Membros Escalados
+                    Membros Disponíveis
                 </label>
                 <div className="mt-2 max-h-60 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                    {members.length === 0 ? (
+                    {filteredMembers.length === 0 ? (
                         <p className="text-gray-500 text-center py-4">
-                            Nenhum membro ativo encontrado
+                            Nenhum membro disponível encontrado
                         </p>
                     ) : (
                         <div className="space-y-2">
-                            {members.map((member) => (
+                            {filteredMembers.map((member) => (
                                 <label
                                     key={member.id}
                                     className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
@@ -192,6 +225,13 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
                                         </div>
                                         <div className="text-xs text-gray-500">
                                             {member.email}
+                                            {/* Exibe o campus do membro para debug/clareza */}
+                                            {member.campus && member.campus.name
+                                                ? <span style={{marginLeft: 8, color: '#bbb'}}>({member.campus.name})</span>
+                                                : member.campusId && campuses.find(c => c.id === member.campusId)
+                                                    ? <span style={{marginLeft: 8, color: '#bbb'}}>({campuses.find(c => c.id === member.campusId).name})</span>
+                                                    : null
+                                            }
                                         </div>
                                     </div>
                                 </label>
