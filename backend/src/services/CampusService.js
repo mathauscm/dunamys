@@ -1,8 +1,8 @@
-// backend/src/services/CampusService.js
+// backend/src/services/CampusService.js - CORRIGIDO
 const { prisma } = require('../config/database');
 
 class CampusService {
-    // Listar todos os campus (público para registro)
+    // Listar todos os campus (público para registro) - CORRIGIDO
     static async getAllCampuses() {
         const campuses = await prisma.campus.findMany({
             where: { active: true },
@@ -11,14 +11,8 @@ class CampusService {
                 id: true,
                 name: true,
                 city: true,
-                active: true,
-                _count: {
-                    select: {
-                        users: {
-                            where: { status: 'ACTIVE' }
-                        }
-                    }
-                }
+                active: true
+                // REMOVIDO: _count que estava causando o problema
             }
         });
 

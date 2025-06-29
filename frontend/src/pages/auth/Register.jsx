@@ -1,4 +1,4 @@
-// frontend/src/pages/auth/Register.jsx - ATUALIZADO COM CAMPUS E TELEFONE
+// frontend/src/pages/auth/Register.jsx - TELEFONE CORRIGIDO
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -6,7 +6,48 @@ import { Church, User, Mail, Phone, Lock, Eye, EyeOff, MapPin } from 'lucide-rea
 import { useAuth } from '../../hooks/useAuth';
 import { api } from '../../services/api';
 import Loading from '../../components/common/Loading';
-import { formatPhoneNumber, cleanPhoneNumber, validatePhoneNumber } from '../../utils/phoneFormatter';
+
+// Funções de telefone simplificadas (inline)
+const formatPhoneNumber = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    const limitedNumbers = numbers.slice(0, 11);
+    
+    if (limitedNumbers.length <= 2) {
+        return limitedNumbers;
+    } else if (limitedNumbers.length <= 6) {
+        return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2)}`;
+    } else if (limitedNumbers.length <= 10) {
+        return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 6)}-${limitedNumbers.slice(6)}`;
+    } else {
+        return `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7)}`;
+    }
+};
+
+const cleanPhoneNumber = (formattedPhone) => {
+    return formattedPhone.replace(/\D/g, '');
+};
+
+const validatePhoneNumber = (phone) => {
+    const numbers = cleanPhoneNumber(phone);
+    
+    if (numbers.length < 10 || numbers.length > 11) {
+        return false;
+    }
+    
+    const ddd = parseInt(numbers.slice(0, 2));
+    if (ddd < 11 || ddd > 99) {
+        return false;
+    }
+    
+    if (numbers.length === 11) {
+        const firstDigit = numbers[2];
+        if (firstDigit !== '9') {
+            return false;
+        }
+    }
+    
+    return true;
+};
 
 const Register = () => {
     const { register: registerUser, loading } = useAuth();
@@ -14,7 +55,6 @@ const Register = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [campuses, setCampuses] = useState([]);
     const [loadingCampuses, setLoadingCampuses] = useState(true);
-    const [phoneValue, setPhoneValue] = useState('');
 
     const {
         register,
@@ -25,6 +65,7 @@ const Register = () => {
     } = useForm();
 
     const password = watch('password');
+    const phoneValue = watch('phone') || '';
 
     // Carregar campus disponíveis
     useEffect(() => {
@@ -42,28 +83,39 @@ const Register = () => {
         fetchCampuses();
     }, []);
 
-    // Manipular mudança no telefone
+    // Manipular mudança no telefone - CORRIGIDO
     const handlePhoneChange = (e) => {
-        const formatted = formatPhoneNumber(e.target.value);
-        setPhoneValue(formatted);
-        setValue('phone', formatted);
+        const rawValue = e.target.value;
+        const formatted = formatPhoneNumber(rawValue);
+        setValue('phone', formatted, { shouldValidate: true });
     };
 
     const onSubmit = async (data) => {
         try {
-            // Limpar telefone antes de enviar
             const cleanPhone = cleanPhoneNumber(data.phone);
             
             await registerUser({
                 name: data.name,
                 email: data.email,
-                phone: cleanPhone, // Enviar apenas números
+                phone: cleanPhone,
                 password: data.password,
                 campusId: parseInt(data.campusId)
             });
         } catch (error) {
             // Error is handled in the context
         }
+    };
+
+    const formatCampusDisplay = (campus) => {
+        if (!campus) return '';
+        
+        let display = campus.name;
+        
+        if (campus.city && campus.city.trim() !== '') {
+            display += ` - ${campus.city}`;
+        }
+        
+        return display;
     };
 
     if (loadingCampuses) {
@@ -143,7 +195,7 @@ const Register = () => {
                             )}
                         </div>
 
-                        {/* Phone Field - ATUALIZADO */}
+                        {/* Phone Field - TOTALMENTE CORRIGIDO */}
                         <div>
                             <label className="label">Telefone</label>
                             <div className="relative">
@@ -159,7 +211,8 @@ const Register = () => {
                                     {...register('phone', {
                                         required: 'Telefone é obrigatório',
                                         validate: (value) => {
-                                            return validatePhoneNumber(value) || 'Telefone inválido';
+                                            if (!value) return 'Telefone é obrigatório';
+                                            return validatePhoneNumber(value) || 'Formato: (11) 99999-9999';
                                         }
                                     })}
                                 />
@@ -167,12 +220,9 @@ const Register = () => {
                             {errors.phone && (
                                 <p className="error-message">{errors.phone.message}</p>
                             )}
-                            <p className="text-xs text-gray-500 mt-1">
-                                A formatação será aplicada automaticamente
-                            </p>
                         </div>
 
-                        {/* Campus Field - NOVO */}
+                        {/* Campus Field */}
                         <div>
                             <label className="label">Campus</label>
                             <div className="relative">
@@ -188,9 +238,7 @@ const Register = () => {
                                     <option value="">Selecione seu campus</option>
                                     {campuses.map((campus) => (
                                         <option key={campus.id} value={campus.id}>
-                                            {campus.name}
-                                            {campus.city && ` - ${campus.city}`}
-                                            {campus._count?.users && ` (${campus._count.users} membros)`}
+                                            {formatCampusDisplay(campus)}
                                         </option>
                                     ))}
                                 </select>

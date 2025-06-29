@@ -1,4 +1,4 @@
-// ===== BACKEND/SRC/APP.JS =====
+// ===== BACKEND/SRC/APP.JS - VERSÃO COMPLETA E CORRIGIDA =====
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -20,11 +20,12 @@ const errorHandler = require('./middlewares/errorHandler');
 const { authenticateToken } = require('./middlewares/auth');
 const logger = require('./utils/logger');
 
-// Routes
+// Routes - CORRIGIDO COM TODAS AS ROTAS
 const authRoutes = require('./routes/auth');
 const memberRoutes = require('./routes/members');
 const scheduleRoutes = require('./routes/schedules');
 const adminRoutes = require('./routes/admin');
+const campusRoutes = require('./routes/campus');
 
 // Swagger documentation
 const swaggerUi = require('swagger-ui-express');
@@ -307,11 +308,12 @@ if (process.env.NODE_ENV === 'development') {
     });
 }
 
-// API Routes
+// API Routes - TODAS AS ROTAS INCLUÍDAS
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/campus', campusRoutes); // ROTA DE CAMPUS ADICIONADA
 
 /**
  * ============================================================================
@@ -578,37 +580,3 @@ if (require.main === module) {
  */
 
 module.exports = app;
-
-/**
- * ============================================================================
- * DOCUMENTATION COMMENTS
- * ============================================================================
- */
-
-/**
- * SECURITY FEATURES IMPLEMENTED:
- * 
- * 1. Helmet - Security headers
- * 2. CORS - Cross-origin resource sharing control
- * 3. Rate Limiting - Prevent brute force attacks (disabled in development)
- * 4. Request Size Limits - Prevent DoS attacks
- * 5. JSON Validation - Prevent malformed requests
- * 6. Trust Proxy - For deployment behind reverse proxy
- * 7. Graceful Shutdown - Clean resource cleanup
- * 
- * MONITORING FEATURES:
- * 
- * 1. Request Logging - All requests logged with details
- * 2. Response Time Tracking - Performance monitoring
- * 3. Health Check Endpoints - Service status monitoring
- * 4. Error Tracking - Comprehensive error logging
- * 5. Debug Endpoint - Development debugging (dev only)
- * 
- * DEVELOPMENT FEATURES:
- * 
- * 1. Test Endpoints - Email/WhatsApp testing in dev mode
- * 2. Swagger Documentation - Interactive API docs
- * 3. Development-specific logging
- * 4. Hot reload support
- * 5. Flexible CORS and Rate Limiting
- */

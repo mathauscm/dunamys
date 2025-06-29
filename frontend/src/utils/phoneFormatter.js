@@ -1,4 +1,6 @@
-// frontend/src/utils/phoneFormatter.js
+// frontend/src/utils/phoneFormatter.js - CORRIGIDO
+import { useState } from 'react';
+
 export const formatPhoneNumber = (value) => {
     // Remove tudo que não é número
     const numbers = value.replace(/\D/g, '');
@@ -50,7 +52,7 @@ export const validatePhoneNumber = (phone) => {
     return true;
 };
 
-// Hook personalizado para input de telefone
+// Hook personalizado para input de telefone - CORRIGIDO
 export const usePhoneInput = (initialValue = '') => {
     const [value, setValue] = useState(formatPhoneNumber(initialValue));
     
