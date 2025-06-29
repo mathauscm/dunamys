@@ -1,37 +1,78 @@
-import React, { useState } from 'react';
+// frontend/src/pages/auth/Register.jsx - ATUALIZADO COM CAMPUS E TELEFONE
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Church, User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { Church, User, Mail, Phone, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
 import Loading from '../../components/common/Loading';
+import { formatPhoneNumber, cleanPhoneNumber, validatePhoneNumber } from '../../utils/phoneFormatter';
 
 const Register = () => {
     const { register: registerUser, loading } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [campuses, setCampuses] = useState([]);
+    const [loadingCampuses, setLoadingCampuses] = useState(true);
+    const [phoneValue, setPhoneValue] = useState('');
 
     const {
         register,
         handleSubmit,
         watch,
+        setValue,
         formState: { errors }
     } = useForm();
 
     const password = watch('password');
 
+    // Carregar campus disponíveis
+    useEffect(() => {
+        const fetchCampuses = async () => {
+            try {
+                const response = await api.get('/campus/public');
+                setCampuses(response.data);
+            } catch (error) {
+                console.error('Erro ao carregar campus:', error);
+            } finally {
+                setLoadingCampuses(false);
+            }
+        };
+
+        fetchCampuses();
+    }, []);
+
+    // Manipular mudança no telefone
+    const handlePhoneChange = (e) => {
+        const formatted = formatPhoneNumber(e.target.value);
+        setPhoneValue(formatted);
+        setValue('phone', formatted);
+    };
+
     const onSubmit = async (data) => {
         try {
+            // Limpar telefone antes de enviar
+            const cleanPhone = cleanPhoneNumber(data.phone);
+            
             await registerUser({
                 name: data.name,
                 email: data.email,
-                phone: data.phone,
-                password: data.password
+                phone: cleanPhone, // Enviar apenas números
+                password: data.password,
+                campusId: parseInt(data.campusId)
             });
-            // Redirect will be handled by the context
         } catch (error) {
             // Error is handled in the context
         }
     };
+
+    if (loadingCampuses) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
+                <Loading />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -102,7 +143,7 @@ const Register = () => {
                             )}
                         </div>
 
-                        {/* Phone Field */}
+                        {/* Phone Field - ATUALIZADO */}
                         <div>
                             <label className="label">Telefone</label>
                             <div className="relative">
@@ -113,17 +154,49 @@ const Register = () => {
                                     type="tel"
                                     className={`input pl-10 ${errors.phone ? 'input-error' : ''}`}
                                     placeholder="(11) 99999-9999"
+                                    value={phoneValue}
+                                    onChange={handlePhoneChange}
                                     {...register('phone', {
                                         required: 'Telefone é obrigatório',
-                                        pattern: {
-                                            value: /^\(\d{2}\)\s\d{4,5}-\d{4}$/,
-                                            message: 'Formato: (11) 99999-9999'
+                                        validate: (value) => {
+                                            return validatePhoneNumber(value) || 'Telefone inválido';
                                         }
                                     })}
                                 />
                             </div>
                             {errors.phone && (
                                 <p className="error-message">{errors.phone.message}</p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">
+                                A formatação será aplicada automaticamente
+                            </p>
+                        </div>
+
+                        {/* Campus Field - NOVO */}
+                        <div>
+                            <label className="label">Campus</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <MapPin className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <select
+                                    className={`input pl-10 ${errors.campusId ? 'input-error' : ''}`}
+                                    {...register('campusId', {
+                                        required: 'Selecione um campus'
+                                    })}
+                                >
+                                    <option value="">Selecione seu campus</option>
+                                    {campuses.map((campus) => (
+                                        <option key={campus.id} value={campus.id}>
+                                            {campus.name}
+                                            {campus.city && ` - ${campus.city}`}
+                                            {campus._count?.users && ` (${campus._count.users} membros)`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            {errors.campusId && (
+                                <p className="error-message">{errors.campusId.message}</p>
                             )}
                         </div>
 
@@ -196,10 +269,19 @@ const Register = () => {
                             )}
                         </div>
 
+                        {/* Campus Info */}
+                        {campuses.length === 0 && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                <p className="text-sm text-yellow-800">
+                                    Nenhum campus disponível no momento. Entre em contato com a administração.
+                                </p>
+                            </div>
+                        )}
+
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || campuses.length === 0}
                             className="btn btn-primary w-full flex items-center justify-center"
                         >
                             {loading ? (

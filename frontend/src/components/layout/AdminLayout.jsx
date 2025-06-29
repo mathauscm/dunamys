@@ -1,3 +1,4 @@
+// frontend/src/components/layout/AdminLayout.jsx - ATUALIZADO
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import {
@@ -8,7 +9,8 @@ import {
     Home,
     Menu,
     X,
-    LogOut
+    LogOut,
+    MapPin // NOVO ÍCONE
 } from 'lucide-react';
 import Header from '../common/Header';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,6 +25,7 @@ const AdminLayout = () => {
         { name: 'Dashboard', href: '/admin', icon: Home, exact: true },
         { name: 'Membros', href: '/admin/members', icon: Users },
         { name: 'Escalas', href: '/admin/schedules', icon: Calendar },
+        { name: 'Campus', href: '/admin/campus', icon: MapPin }, // NOVA ROTA
         { name: 'Logs', href: '/admin/logs', icon: FileText },
     ];
 
@@ -95,7 +98,10 @@ const AdminLayout = () => {
                         </div>
                         <div className="ml-3">
                             <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                            <p className="text-xs text-gray-500">Administrador</p>
+                            <p className="text-xs text-gray-500">
+                                Administrador
+                                {user?.campus && ` - ${user.campus.name}`}
+                            </p>
                         </div>
                     </div>
                     <button

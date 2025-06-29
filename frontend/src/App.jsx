@@ -1,3 +1,4 @@
+// frontend/src/App.jsx - VERSÃO FINAL LIMPA E COMPLETA
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
@@ -18,6 +19,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminMembers from './pages/admin/Members';
 import AdminSchedules from './pages/admin/Schedules';
+import AdminCampus from './pages/admin/Campus'; // NOVA IMPORTAÇÃO
 import AdminLogs from './pages/admin/Logs';
 
 // Protected Route Component
@@ -85,6 +87,11 @@ const PendingApproval = () => {
                                 <p className="text-sm text-gray-600 mt-1">
                                     <strong>Email:</strong> {user?.email}
                                 </p>
+                                {user?.campus && (
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        <strong>Campus:</strong> {user.campus.name}
+                                    </p>
+                                )}
                             </div>
 
                             <button
@@ -203,6 +210,7 @@ function App() {
                     <Route index element={<AdminDashboard />} />
                     <Route path="members" element={<AdminMembers />} />
                     <Route path="schedules" element={<AdminSchedules />} />
+                    <Route path="campus" element={<AdminCampus />} />
                     <Route path="logs" element={<AdminLogs />} />
                 </Route>
 

@@ -1,3 +1,5 @@
+// backend/prisma/schema.prisma - ATUALIZAÇÃO COM CAMPUS
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -40,6 +42,21 @@ enum NotificationStatus {
   PENDING
 }
 
+// NOVO MODEL: Campus
+model Campus {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  city      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamento: Um campus pode ter vários usuários
+  users User[]
+
+  @@map("campuses")
+}
+
 model User {
   id               Int      @id @default(autoincrement())
   name             String
@@ -48,11 +65,15 @@ model User {
   phone            String
   role             UserRole @default(MEMBER)
   status           UserStatus @default(PENDING)
+  campusId         Int?     // NOVO CAMPO: Referência ao campus
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   lastLogin        DateTime?
 
-  // Relacionamentos
+  // NOVO RELACIONAMENTO: Usuário pertence a um campus
+  campus           Campus?  @relation(fields: [campusId], references: [id], onDelete: SetNull)
+
+  // Relacionamentos existentes
   schedules        ScheduleMember[]
   unavailabilities Unavailability[]
   notifications    Notification[]

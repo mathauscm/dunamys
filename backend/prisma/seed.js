@@ -1,3 +1,4 @@
+// backend/prisma/seed.js - ATUALIZADO COM CAMPUS
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -5,6 +6,29 @@ const prisma = new PrismaClient();
 
 async function main() {
     console.log('🌱 Iniciando seed do banco de dados...');
+
+    // PRIMEIRO: Criar campus
+    const campusUbajara = await prisma.campus.upsert({
+        where: { name: 'Ubajara' },
+        update: {},
+        create: {
+            name: 'Ubajara',
+            city: 'Ubajara',
+            active: true
+        }
+    });
+
+    const campusTiangua = await prisma.campus.upsert({
+        where: { name: 'Tianguá' },
+        update: {},
+        create: {
+            name: 'Tianguá',
+            city: 'Tianguá',
+            active: true
+        }
+    });
+
+    console.log('✅ Campus criados:', [campusUbajara.name, campusTiangua.name]);
 
     // Criar usuário administrador padrão
     const adminPassword = await bcrypt.hash('admin123', 12);
@@ -18,13 +42,14 @@ async function main() {
             password: adminPassword,
             phone: '11999999999',
             role: 'ADMIN',
-            status: 'ACTIVE'
+            status: 'ACTIVE',
+            campusId: campusUbajara.id // Admin do campus Ubajara
         }
     });
 
     console.log('✅ Administrador criado:', admin.email);
 
-    // Criar alguns membros de exemplo
+    // Criar alguns membros de exemplo com campus
     const memberPassword = await bcrypt.hash('123456', 12);
 
     const members = await Promise.all([
@@ -37,7 +62,8 @@ async function main() {
                 password: memberPassword,
                 phone: '11888888888',
                 role: 'MEMBER',
-                status: 'ACTIVE'
+                status: 'ACTIVE',
+                campusId: campusUbajara.id
             }
         }),
         prisma.user.upsert({
@@ -49,7 +75,8 @@ async function main() {
                 password: memberPassword,
                 phone: '11777777777',
                 role: 'MEMBER',
-                status: 'ACTIVE'
+                status: 'ACTIVE',
+                campusId: campusTiangua.id
             }
         }),
         prisma.user.upsert({
@@ -61,7 +88,8 @@ async function main() {
                 password: memberPassword,
                 phone: '11666666666',
                 role: 'MEMBER',
-                status: 'PENDING'
+                status: 'PENDING',
+                campusId: campusUbajara.id
             }
         })
     ]);
@@ -78,11 +106,11 @@ async function main() {
             description: 'Culto de adoração dominical das 9h',
             date: nextSunday,
             time: '09:00',
-            location: 'Igreja Central',
+            location: 'Igreja Central - Ubajara',
             members: {
                 create: [
                     { userId: members[0].id },
-                    { userId: members[1].id }
+                    { userId: members[2].id } // Apenas membros do mesmo campus
                 ]
             }
         }
@@ -92,14 +120,19 @@ async function main() {
 
     console.log('🎉 Seed concluído com sucesso!');
     console.log('');
+    console.log('🏫 Campus disponíveis:');
+    console.log('   - Ubajara');
+    console.log('   - Tianguá');
+    console.log('');
     console.log('👤 Login do administrador:');
     console.log('   Email: admin@igreja.com');
     console.log('   Senha: admin123');
+    console.log('   Campus: Ubajara');
     console.log('');
     console.log('👥 Membros de exemplo:');
-    console.log('   joao@email.com / 123456 (ATIVO)');
-    console.log('   maria@email.com / 123456 (ATIVO)');
-    console.log('   pedro@email.com / 123456 (PENDENTE)');
+    console.log('   joao@email.com / 123456 (ATIVO - Ubajara)');
+    console.log('   maria@email.com / 123456 (ATIVO - Tianguá)');
+    console.log('   pedro@email.com / 123456 (PENDENTE - Ubajara)');
 }
 
 main()
