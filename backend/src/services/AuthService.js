@@ -1,4 +1,3 @@
-// backend/src/services/AuthService.js - CORRIGIDO
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../config/database');
@@ -17,12 +16,13 @@ class AuthService {
       throw new Error('Email já cadastrado no sistema');
     }
 
-    // Verificar se o campus existe e está ativo
+    // Verificar se o campus existe e está ativo (se campusId for informado)
+    let campus = null;
     if (campusId) {
-      const campus = await prisma.campus.findFirst({
-        where: { 
+      campus = await prisma.campus.findFirst({
+        where: {
           id: campusId,
-          active: true 
+          active: true
         }
       });
 
@@ -40,10 +40,10 @@ class AuthService {
         name,
         email,
         password: hashedPassword,
-        phone, // Já vem limpo do frontend
+        phone,
         campusId: campusId || null,
         role: 'MEMBER',
-        status: 'PENDING' // Aguardando aprovação
+        status: 'PENDING'
       },
       select: {
         id: true,
