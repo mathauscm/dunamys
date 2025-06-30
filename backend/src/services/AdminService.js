@@ -41,7 +41,7 @@ class AdminService {
     };
   }
 
-  // FUNÇÃO ATUALIZADA: getMembers agora inclui ministério
+  // FUNÇÃO CORRIGIDA: getMembers agora inclui ministério e campusId
   static async getMembers(filters = {}) {
     const { status, search, page = 1, limit = 20 } = filters;
 
@@ -69,6 +69,7 @@ class AdminService {
           status: true,
           createdAt: true,
           lastLogin: true,
+          campusId: true, // ✅ ADICIONADO: Campo campusId que estava faltando
           campus: {
             select: {
               id: true,
@@ -95,6 +96,14 @@ class AdminService {
       }),
       prisma.user.count({ where: whereClause })
     ]);
+
+    // LOG para debug - pode ser removido em produção
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 AdminService.getMembers - Membros retornados:');
+      members.forEach(member => {
+        console.log(`  ${member.name}: campusId=${member.campusId}, campus=${member.campus?.name}`);
+      });
+    }
 
     return {
       members,

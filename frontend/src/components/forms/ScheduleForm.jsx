@@ -31,7 +31,6 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
         defaultValues: {
             title: schedule?.title || '',
             description: schedule?.description || '',
-            // O campo "location" armazena o nome do campus, mantendo compatibilidade com seu uso atual
             location: schedule?.location || '',
             memberIds: schedule?.members?.map(m => m.userId) || []
         }
@@ -44,6 +43,20 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
         const fetchMembers = async () => {
             try {
                 const response = await adminService.getMembers({ status: 'ACTIVE', limit: 100 });
+                console.log('🔍 Membros carregados:', response.members);
+                
+                // Log detalhado dos membros para debug
+                response.members.forEach(member => {
+                    const campusIdFromField = member.campusId;
+                    const campusIdFromObject = member.campus?.id;
+                    const campusName = member.campus?.name;
+                    
+                    console.log(`Membro: ${member.name}`);
+                    console.log(`  - campusId (campo): ${campusIdFromField}`);
+                    console.log(`  - campus.id: ${campusIdFromObject}`);
+                    console.log(`  - campus.name: ${campusName}`);
+                });
+                
                 setMembers(response.members);
             } catch (error) {
                 console.error('Erro ao carregar membros:', error);
@@ -59,8 +72,10 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
         const fetchCampuses = async () => {
             try {
                 const response = await api.get('/campus/public');
+                console.log('🏫 Campus carregados:', response.data);
                 setCampuses(response.data);
             } catch (error) {
+                console.error('Erro ao carregar campus:', error);
                 setCampuses([]);
             } finally {
                 setLoadingCampuses(false);
@@ -69,10 +84,68 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
         fetchCampuses();
     }, []);
 
-    // Filtro robusto por campusId (de membro) igual ao id do campus selecionado
-    const filteredMembers = filterCampusId === 'all'
-        ? members
-        : members.filter(m => m.campusId && String(m.campusId) === String(filterCampusId));
+    // FUNÇÃO HELPER: Obter campus ID do membro (com fallback)
+    const getMemberCampusId = (member) => {
+        // Primeiro tenta usar o campo campusId
+        if (member.campusId !== null && member.campusId !== undefined) {
+            return member.campusId;
+        }
+        
+        // Fallback: usar campus.id se disponível
+        if (member.campus && member.campus.id !== null && member.campus.id !== undefined) {
+            return member.campus.id;
+        }
+        
+        return null;
+    };
+
+    // FILTRO ROBUSTO: Com fallback para campus.id
+    const filteredMembers = React.useMemo(() => {
+        if (filterCampusId === 'all') {
+            console.log('🔍 Exibindo todos os membros:', members.length);
+            return members;
+        }
+        
+        // Converter para número para comparação
+        const campusIdToFilter = parseInt(filterCampusId, 10);
+        
+        const filtered = members.filter(member => {
+            const memberCampusId = getMemberCampusId(member);
+            
+            console.log(`Comparando membro ${member.name}:`);
+            console.log(`  - Campus ID do membro: ${memberCampusId} (tipo: ${typeof memberCampusId})`);
+            console.log(`  - Filtro: ${campusIdToFilter} (tipo: ${typeof campusIdToFilter})`);
+            
+            if (memberCampusId === null || memberCampusId === undefined) {
+                console.log(`  - ❌ Membro sem campus`);
+                return false;
+            }
+            
+            const matches = parseInt(memberCampusId, 10) === campusIdToFilter;
+            console.log(`  - ${matches ? '✅' : '❌'} Resultado: ${matches}`);
+            
+            return matches;
+        });
+        
+        console.log(`🔍 Filtro aplicado - Campus ID: ${campusIdToFilter}, Membros filtrados: ${filtered.length}`);
+        console.log('Membros filtrados:', filtered.map(m => ({ 
+            name: m.name, 
+            campusId: getMemberCampusId(m), 
+            campusName: m.campus?.name 
+        })));
+        
+        return filtered;
+    }, [members, filterCampusId]);
+
+    // CONTADOR DE MEMBROS POR CAMPUS: Usando a função helper
+    const getMembersCountForCampus = (campusId) => {
+        return members.filter(member => {
+            const memberCampusId = getMemberCampusId(member);
+            return memberCampusId !== null && 
+                   memberCampusId !== undefined && 
+                   parseInt(memberCampusId, 10) === campusId;
+        }).length;
+    };
 
     const handleMemberToggle = (memberId) => {
         const currentIds = selectedMemberIds || [];
@@ -102,6 +175,16 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
 
         onSubmit(formData);
     };
+
+    // Log do estado atual para debug
+    useEffect(() => {
+        console.log('📊 Estado atual do filtro:', {
+            filterCampusId,
+            totalMembers: members.length,
+            filteredMembers: filteredMembers.length,
+            campuses: campuses.length
+        });
+    }, [filterCampusId, members.length, filteredMembers.length, campuses.length]);
 
     if (loadingMembers || loadingCampuses) {
         return <Loading />;
@@ -178,67 +261,117 @@ const ScheduleForm = ({ schedule, onSubmit, loading }) => {
                 )}
             </div>
 
-            {/* Filtro de membros por campus */}
+            {/* Filtro de membros por campus - MELHORADO */}
             <div>
-                <label className="label">Filtrar membros por campus</label>
+                <label className="label">
+                    Filtrar membros por campus
+                    <span className="text-xs text-gray-500 font-normal ml-2">
+                        ({filteredMembers.length} membro{filteredMembers.length !== 1 ? 's' : ''} encontrado{filteredMembers.length !== 1 ? 's' : ''})
+                    </span>
+                </label>
                 <select
                     className="input"
                     value={filterCampusId}
-                    onChange={e => setFilterCampusId(e.target.value)}
+                    onChange={(e) => {
+                        console.log('🔄 Alterando filtro para:', e.target.value);
+                        setFilterCampusId(e.target.value);
+                    }}
                 >
-                    <option value="all">Todos os membros</option>
-                    {campuses.map(campus => (
-                        <option key={campus.id} value={String(campus.id)}>
-                            {campus.name}{campus.city ? ` - ${campus.city}` : ''}
-                        </option>
-                    ))}
+                    <option value="all">Todos os membros ({members.length})</option>
+                    {campuses.map(campus => {
+                        // Contar membros deste campus usando a função helper
+                        const membersInCampus = getMembersCountForCampus(campus.id);
+                        
+                        return (
+                            <option key={campus.id} value={String(campus.id)}>
+                                {campus.name}{campus.city ? ` - ${campus.city}` : ''} ({membersInCampus})
+                            </option>
+                        );
+                    })}
                 </select>
+                
+
             </div>
 
-            {/* Lista de membros disponíveis */}
+            {/* Lista de membros disponíveis - MELHORADA */}
             <div>
                 <label className="label flex items-center">
                     <Users className="h-4 w-4 mr-2" />
                     Membros Disponíveis
+                    {filterCampusId !== 'all' && (
+                        <span className="ml-2 text-xs text-blue-600">
+                            (Filtrados por campus)
+                        </span>
+                    )}
                 </label>
+                
                 <div className="mt-2 max-h-60 overflow-y-auto border border-gray-300 rounded-lg p-3">
                     {filteredMembers.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">
-                            Nenhum membro disponível encontrado
-                        </p>
+                        <div className="text-center py-8">
+                            <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                            <p className="text-gray-500 text-sm">
+                                {filterCampusId === 'all' 
+                                    ? 'Nenhum membro ativo encontrado'
+                                    : `Nenhum membro encontrado no campus selecionado`
+                                }
+                            </p>
+                            {filterCampusId !== 'all' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setFilterCampusId('all')}
+                                    className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+                                >
+                                    Ver todos os membros
+                                </button>
+                            )}
+                        </div>
                     ) : (
                         <div className="space-y-2">
-                            {filteredMembers.map((member) => (
-                                <label
-                                    key={member.id}
-                                    className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                                        checked={selectedMemberIds?.includes(member.id) || false}
-                                        onChange={() => handleMemberToggle(member.id)}
-                                    />
-                                    <div className="flex-1">
-                                        <div className="text-sm font-medium text-gray-900">
-                                            {member.name}
+                            {filteredMembers.map((member) => {
+                                const memberCampusId = getMemberCampusId(member);
+                                
+                                return (
+                                    <label
+                                        key={member.id}
+                                        className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                            checked={selectedMemberIds?.includes(member.id) || false}
+                                            onChange={() => handleMemberToggle(member.id)}
+                                        />
+                                        <div className="flex-1">
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {member.name}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {member.email}
+                                                {/* Mostrar informações do campus - melhorado */}
+                                                {member.campus?.name && (
+                                                    <span className="ml-2 text-blue-600">
+                                                        📍 {member.campus.name}
+                                                    </span>
+                                                )}
+                                                {!member.campus?.name && memberCampusId && (
+                                                    <span className="ml-2 text-orange-600">
+                                                        📍 Campus ID: {memberCampusId}
+                                                    </span>
+                                                )}
+                                                {memberCampusId === null && (
+                                                    <span className="ml-2 text-gray-400">
+                                                        📍 Sem campus
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-gray-500">
-                                            {member.email}
-                                            {/* Exibe o campus do membro para debug/clareza */}
-                                            {member.campus && member.campus.name
-                                                ? <span style={{marginLeft: 8, color: '#bbb'}}>({member.campus.name})</span>
-                                                : member.campusId && campuses.find(c => c.id === member.campusId)
-                                                    ? <span style={{marginLeft: 8, color: '#bbb'}}>({campuses.find(c => c.id === member.campusId).name})</span>
-                                                    : null
-                                            }
-                                        </div>
-                                    </div>
-                                </label>
-                            ))}
+                                    </label>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
+                
                 {(!selectedMemberIds || selectedMemberIds.length === 0) && (
                     <p className="text-danger-600 text-sm mt-1">
                         Selecione pelo menos um membro
