@@ -65,6 +65,12 @@ export const adminService = {
         return response.data;
     },
 
+    // ✅ NOVO MÉTODO: Excluir membro
+    async deleteMember(id) {
+        const response = await api.delete(`/admin/members/${id}`);
+        return response.data;
+    },
+
     async createSchedule(data) {
         const response = await api.post('/admin/schedules', data);
         return response.data;
