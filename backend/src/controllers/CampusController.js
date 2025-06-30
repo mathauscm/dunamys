@@ -1,4 +1,3 @@
-// backend/src/controllers/CampusController.js - CORRIGIDO
 const CampusService = require('../services/CampusService');
 const logger = require('../utils/logger');
 

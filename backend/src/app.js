@@ -1,4 +1,3 @@
-// ===== BACKEND/SRC/APP.JS - VERSÃO COMPLETA E CORRIGIDA =====
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');

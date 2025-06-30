@@ -1,4 +1,3 @@
-// frontend/src/components/layout/AdminLayout.jsx - ATUALIZADO
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import {

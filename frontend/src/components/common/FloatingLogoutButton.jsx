@@ -1,4 +1,3 @@
-// frontend/src/components/common/FloatingLogoutButton.jsx
 import React, { useState } from 'react';
 import { LogOut, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';

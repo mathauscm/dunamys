@@ -1,4 +1,3 @@
-// frontend/src/App.jsx - VERSÃO FINAL LIMPA E COMPLETA
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';

@@ -1,4 +1,3 @@
-// frontend/src/pages/member/Schedules.jsx
 import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';

@@ -1,4 +1,3 @@
-// ===== FRONTEND/SRC/HOOKS/USEAUTH.JS =====
 import { useContext } from 'react';
 import { useAuthContext } from '../context/AuthContext';
 

@@ -1,4 +1,3 @@
-// backend/src/routes/admin.js - VERSÃO CORRIGIDA
 const express = require('express');
 const AdminController = require('../controllers/AdminController');
 const { authenticateToken } = require('../middlewares/auth');

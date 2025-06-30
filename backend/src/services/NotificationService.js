@@ -1,4 +1,3 @@
-// backend/src/services/NotificationService.js - VERSÃO CORRIGIDA COMPLETA
 const EmailService = require('./EmailService');
 const WhatsAppService = require('./WhatsAppService');
 const { prisma } = require('../config/database');

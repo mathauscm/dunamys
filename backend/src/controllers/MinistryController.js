@@ -1,4 +1,3 @@
-// backend/src/controllers/MinistryController.js
 const MinistryService = require('../services/MinistryService');
 const logger = require('../utils/logger');
 

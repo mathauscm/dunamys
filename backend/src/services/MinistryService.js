@@ -1,4 +1,3 @@
-// backend/src/services/MinistryService.js
 const { prisma } = require('../config/database');
 
 class MinistryService {

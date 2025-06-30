@@ -1,4 +1,3 @@
-
 export const validators = {
     required: (value) => {
         if (!value || (typeof value === 'string' && !value.trim())) {

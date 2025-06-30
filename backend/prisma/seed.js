@@ -1,4 +1,3 @@
-// backend/prisma/seed.js - ATUALIZADO COM MINISTÉRIOS
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 

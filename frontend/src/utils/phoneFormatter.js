@@ -1,4 +1,3 @@
-// frontend/src/utils/phoneFormatter.js - CORRIGIDO
 import { useState } from 'react';
 
 export const formatPhoneNumber = (value) => {

@@ -1,4 +1,3 @@
-// frontend/src/pages/member/Availability.jsx - COMPLETO
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Calendar, Plus, Trash2, AlertCircle } from 'lucide-react';

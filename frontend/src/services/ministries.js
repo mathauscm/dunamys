@@ -1,4 +1,3 @@
-// frontend/src/services/ministries.js
 import { api } from './api';
 
 export const ministryService = {

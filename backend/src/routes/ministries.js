@@ -1,4 +1,3 @@
-// backend/src/routes/ministries.js
 const express = require('express');
 const MinistryController = require('../controllers/MinistryController');
 const { authenticateToken } = require('../middlewares/auth');

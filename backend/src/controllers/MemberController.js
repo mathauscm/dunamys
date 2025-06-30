@@ -1,4 +1,3 @@
-// backend/src/controllers/MemberController.js
 const MemberService = require('../services/MemberService');
 const logger = require('../utils/logger');
 

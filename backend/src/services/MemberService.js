@@ -1,4 +1,3 @@
-// backend/src/services/MemberService.js
 const { prisma } = require('../config/database');
 
 class MemberService {

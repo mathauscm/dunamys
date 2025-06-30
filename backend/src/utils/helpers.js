@@ -1,4 +1,3 @@
-// ===== BACKEND/SRC/UTILS/HELPERS.JS =====
 const crypto = require('crypto');
 const { format, addDays, parseISO, isValid } = require('date-fns');
 const { ptBR } = require('date-fns/locale');

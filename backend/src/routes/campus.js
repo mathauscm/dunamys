@@ -1,4 +1,3 @@
-// backend/src/routes/campus.js - CORRIGIDO
 const express = require('express');
 const CampusController = require('../controllers/CampusController');
 const { authenticateToken } = require('../middlewares/auth');

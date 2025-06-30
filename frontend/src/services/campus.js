@@ -1,4 +1,3 @@
-// frontend/src/services/campus.js
 import { api } from './api';
 
 export const campusService = {

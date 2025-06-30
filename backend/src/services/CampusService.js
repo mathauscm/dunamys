@@ -1,4 +1,3 @@
-// backend/src/services/CampusService.js - CORRIGIDO
 const { prisma } = require('../config/database');
 
 class CampusService {
