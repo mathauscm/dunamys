@@ -432,18 +432,14 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ---
 
-**Desenvolvido com ❤️ para servir à comunidade cristã**
+**Desenvolvido com ❤️ para servir à comunidade cristã Dunamys**
 
 ## 🎯 Roadmap
 
 ### v2.0 (Próxima versão)
-- [ ] App mobile (React Native)
 - [ ] Integração com calendário Google
-- [ ] Sistema de check-in por QR Code
 - [ ] Relatórios avançados
 - [ ] Multi-tenancy (várias igrejas)
-- [ ] Integração com sistema de som
-- [ ] API para transmissões ao vivo
 
 ### v1.1 (Melhorias)
 - [ ] Dark mode
