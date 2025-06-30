@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Church } from 'lucide-react';
 import LoginForm from '../../components/forms/LoginForm';
 
 const Login = () => {
@@ -9,8 +8,13 @@ const Login = () => {
             <div className="max-w-md w-full space-y-8">
                 {/* Header */}
                 <div className="text-center">
-                    <div className="mx-auto h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center">
-                        <Church className="h-8 w-8 text-white" />
+                    <div className="mx-auto h-16 w-16 bg-black rounded-full flex items-center justify-center overflow-hidden">
+                        {/* Imagem do logo */}
+                        <img
+                            src="/logoprincipal.jpg"
+                            alt="Logo da Igreja"
+                            className="h-12 w-12 object-contain"
+                        />
                     </div>
                     <h2 className="mt-6 text-3xl font-bold text-gray-900">
                         Área de Membros
@@ -51,7 +55,7 @@ const Login = () => {
                 {/* Footer */}
                 <div className="text-center text-xs text-gray-500">
                     <p>Sistema de Gerenciamento de Membros</p>
-                    <p className="mt-1">© 2024 Igreja. Todos os direitos reservados.</p>
+                    <p className="mt-1">© 2025 Dunamys. Todos os direitos reservados.</p>
                 </div>
             </div>
         </div>

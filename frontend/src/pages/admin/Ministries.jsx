@@ -1,4 +1,3 @@
-// frontend/src/pages/admin/Ministries.jsx
 import React, { useState } from 'react';
 import {
    Church,
@@ -352,7 +351,12 @@ const MinistryForm = ({ ministry, onSubmit, loading, onCancel }) => {
            alert('Nome do ministério é obrigatório');
            return;
        }
-       onSubmit(formData);
+       // Remover "active" do payload ao criar
+       const dataToSend = { ...formData };
+       if (!ministry) {
+           delete dataToSend.active;
+       }
+       onSubmit(dataToSend);
    };
 
    return (

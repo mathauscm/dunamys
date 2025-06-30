@@ -1,8 +1,7 @@
-// frontend/src/pages/auth/Register.jsx - TELEFONE CORRIGIDO
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Church, User, Mail, Phone, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
+import { User, Mail, Phone, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { api } from '../../services/api';
 import Loading from '../../components/common/Loading';
@@ -131,8 +130,13 @@ const Register = () => {
             <div className="max-w-md w-full space-y-8">
                 {/* Header */}
                 <div className="text-center">
-                    <div className="mx-auto h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center">
-                        <Church className="h-8 w-8 text-white" />
+                    <div className="mx-auto h-16 w-16 bg-black rounded-full flex items-center justify-center overflow-hidden">
+                        {/* Imagem do logo */}
+                        <img
+                            src="/logoprincipal.jpg"
+                            alt="Logo da Igreja"
+                            className="h-12 w-12 object-contain"
+                        />
                     </div>
                     <h2 className="mt-6 text-3xl font-bold text-gray-900">
                         Cadastre-se
@@ -354,7 +358,7 @@ const Register = () => {
                 {/* Footer */}
                 <div className="text-center text-xs text-gray-500">
                     <p>Ao criar uma conta, você concorda com nossos termos de uso</p>
-                    <p className="mt-1">© 2024 Igreja. Todos os direitos reservados.</p>
+                    <p className="mt-1">© 2025 Dunamys. Todos os direitos reservados.</p>
                 </div>
             </div>
         </div>
