@@ -202,6 +202,116 @@ class AdminService {
     }
   }
 
+  /**
+   * NOVO MÉTODO: Excluir membro
+   * Remove completamente um membro do sistema
+   */
+  static async deleteMember(memberId) {
+    try {
+      const member = await prisma.user.findUnique({
+        where: { id: memberId, role: 'MEMBER' },
+        include: {
+          campus: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          ministry: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          _count: {
+            select: {
+              schedules: true,
+              unavailabilities: true
+            }
+          }
+        }
+      });
+
+      if (!member) {
+        throw new Error('Membro não encontrado');
+      }
+
+      // Verificar se o membro tem escalas futuras
+      const futureSchedules = await prisma.scheduleUser.count({
+        where: {
+          userId: memberId,
+          schedule: {
+            date: {
+              gte: new Date()
+            }
+          }
+        }
+      });
+
+      if (futureSchedules > 0) {
+        throw new Error(`Não é possível excluir este membro pois ele possui ${futureSchedules} escala(s) futura(s). Remova-o das escalas futuras primeiro.`);
+      }
+
+      // Executar exclusão em transação
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Remover de todas as escalas (passadas)
+        await tx.scheduleUser.deleteMany({
+          where: { userId: memberId }
+        });
+
+        // 2. Remover indisponibilidades
+        await tx.unavailability.deleteMany({
+          where: { userId: memberId }
+        });
+
+        // 3. Remover notificações
+        await tx.notification.deleteMany({
+          where: { userId: memberId }
+        });
+
+        // 4. Remover logs de auditoria onde o usuário é o target
+        await tx.auditLog.deleteMany({
+          where: { 
+            OR: [
+              { userId: memberId },
+              { targetId: memberId }
+            ]
+          }
+        });
+
+        // 5. Finalmente, excluir o usuário
+        const deletedUser = await tx.user.delete({
+          where: { id: memberId }
+        });
+
+        return deletedUser;
+      });
+
+      // Criar log de auditoria para a exclusão
+      await this.createAuditLog({
+        action: 'MEMBER_DELETED',
+        targetId: memberId,
+        description: `Membro ${member.name} foi excluído do sistema. Campus: ${member.campus?.name || 'N/A'}, Ministério: ${member.ministry?.name || 'N/A'}`
+      });
+
+      logger.info(`Membro excluído: ${member.name} (ID: ${memberId})`);
+
+      return {
+        success: true,
+        message: 'Membro excluído com sucesso',
+        deletedMember: {
+          id: member.id,
+          name: member.name,
+          email: member.email
+        }
+      };
+
+    } catch (error) {
+      logger.error(`Erro ao excluir membro ${memberId}:`, error);
+      throw error;
+    }
+  }
+
   // NOVA FUNÇÃO: Atualizar ministério de um membro
   static async updateMemberMinistry(memberId, ministryId) {
     try {

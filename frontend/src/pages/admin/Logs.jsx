@@ -14,7 +14,9 @@ import {
     AlertTriangle,
     CheckCircle,
     XCircle,
-    Info
+    Info,
+    Trash2,
+    Heart
 } from 'lucide-react';
 import { useApi, useMutation } from '../../hooks/useApi';
 import { adminService } from '../../services/members';
@@ -73,6 +75,10 @@ const AdminLogs = () => {
         const icons = {
             'MEMBER_APPROVED': <CheckCircle className="h-5 w-5 text-success-500" />,
             'MEMBER_REJECTED': <XCircle className="h-5 w-5 text-danger-500" />,
+            'MEMBER_CREATED': <User className="h-5 w-5 text-primary-500" />,
+            'MEMBER_DELETED': <Trash2 className="h-5 w-5 text-danger-500" />, // ✅ NOVO
+            'MEMBER_MINISTRY_UPDATED': <Heart className="h-5 w-5 text-purple-500" />, // ✅ NOVO
+            'MEMBER_MINISTRY_REMOVED': <Heart className="h-5 w-5 text-gray-500" />, // ✅ NOVO
             'SCHEDULE_CREATED': <Calendar className="h-5 w-5 text-primary-500" />,
             'SCHEDULE_UPDATED': <FileText className="h-5 w-5 text-warning-500" />,
             'SCHEDULE_DELETED': <XCircle className="h-5 w-5 text-danger-500" />,
@@ -89,6 +95,9 @@ const AdminLogs = () => {
             'MEMBER_APPROVED': 'Membro Aprovado',
             'MEMBER_REJECTED': 'Membro Rejeitado',
             'MEMBER_CREATED': 'Membro Cadastrado',
+            'MEMBER_DELETED': 'Membro Excluído', // ✅ NOVO
+            'MEMBER_MINISTRY_UPDATED': 'Ministério Atualizado', // ✅ NOVO
+            'MEMBER_MINISTRY_REMOVED': 'Ministério Removido', // ✅ NOVO
             'SCHEDULE_CREATED': 'Escala Criada',
             'SCHEDULE_UPDATED': 'Escala Atualizada',
             'SCHEDULE_DELETED': 'Escala Removida',
@@ -107,6 +116,9 @@ const AdminLogs = () => {
             'MEMBER_APPROVED': 'badge badge-success',
             'MEMBER_REJECTED': 'badge badge-danger',
             'MEMBER_CREATED': 'badge badge-primary',
+            'MEMBER_DELETED': 'badge badge-danger', // ✅ NOVO
+            'MEMBER_MINISTRY_UPDATED': 'badge badge-purple', // ✅ NOVO
+            'MEMBER_MINISTRY_REMOVED': 'badge badge-gray', // ✅ NOVO
             'SCHEDULE_CREATED': 'badge badge-success',
             'SCHEDULE_UPDATED': 'badge badge-warning',
             'SCHEDULE_DELETED': 'badge badge-danger',
@@ -179,13 +191,22 @@ const AdminLogs = () => {
                             onChange={(e) => handleFilterChange('action', e.target.value)}
                         >
                             <option value="">Todas as ações</option>
-                            <option value="MEMBER_APPROVED">Membro Aprovado</option>
-                            <option value="MEMBER_REJECTED">Membro Rejeitado</option>
-                            <option value="SCHEDULE_CREATED">Escala Criada</option>
-                            <option value="SCHEDULE_UPDATED">Escala Atualizada</option>
-                            <option value="SCHEDULE_DELETED">Escala Removida</option>
-                            <option value="USER_LOGIN">Login</option>
-                            <option value="NOTIFICATION_SENT">Notificação Enviada</option>
+                            <optgroup label="Membros">
+                                <option value="MEMBER_APPROVED">Membro Aprovado</option>
+                                <option value="MEMBER_REJECTED">Membro Rejeitado</option>
+                                <option value="MEMBER_DELETED">Membro Excluído</option>
+                                <option value="MEMBER_MINISTRY_UPDATED">Ministério Atualizado</option>
+                                <option value="MEMBER_MINISTRY_REMOVED">Ministério Removido</option>
+                            </optgroup>
+                            <optgroup label="Escalas">
+                                <option value="SCHEDULE_CREATED">Escala Criada</option>
+                                <option value="SCHEDULE_UPDATED">Escala Atualizada</option>
+                                <option value="SCHEDULE_DELETED">Escala Removida</option>
+                            </optgroup>
+                            <optgroup label="Sistema">
+                                <option value="USER_LOGIN">Login</option>
+                                <option value="NOTIFICATION_SENT">Notificação Enviada</option>
+                            </optgroup>
                         </select>
 
                         {/* User Filter */}
@@ -267,13 +288,13 @@ const AdminLogs = () => {
                     <div className="card-body">
                         <div className="flex items-center">
                             <div className="flex-shrink-0">
-                                <User className="h-8 w-8 text-purple-600" />
+                                <Heart className="h-8 w-8 text-purple-600" />
                             </div>
                             <div className="ml-4">
                                 <div className="text-2xl font-bold text-gray-900">
-                                    {logs.filter(log => log.action.includes('USER')).length}
+                                    {logs.filter(log => log.action.includes('MINISTRY')).length}
                                 </div>
-                                <div className="text-sm text-gray-600">Ações de Usuário</div>
+                                <div className="text-sm text-gray-600">Ações de Ministério</div>
                             </div>
                         </div>
                     </div>

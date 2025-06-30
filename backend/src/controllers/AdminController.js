@@ -62,6 +62,47 @@ class AdminController {
     }
   }
 
+  /**
+   * NOVO MÉTODO: Excluir membro
+   */
+  static async deleteMember(req, res, next) {
+    try {
+      const { id } = req.params;
+      
+      const result = await AdminService.deleteMember(parseInt(id));
+      
+      logger.info(`Membro excluído ID: ${id} por admin ID: ${req.user.id}`);
+      
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * NOVO MÉTODO: Atualizar ministério de um membro
+   */
+  static async updateMemberMinistry(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { ministryId } = req.body;
+      
+      const updatedMember = await AdminService.updateMemberMinistry(
+        parseInt(id), 
+        ministryId ? parseInt(ministryId) : null
+      );
+      
+      logger.info(`Ministério do membro atualizado ID: ${id} por admin ID: ${req.user.id}`);
+      
+      res.json({
+        message: 'Ministério do membro atualizado com sucesso',
+        member: updatedMember
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createSchedule(req, res, next) {
     try {
       const { title, description, date, time, location, memberIds } = req.body;

@@ -1,3 +1,4 @@
+// backend/src/routes/admin.js - VERSÃO CORRIGIDA
 const express = require('express');
 const AdminController = require('../controllers/AdminController');
 const { authenticateToken } = require('../middlewares/auth');
@@ -18,14 +19,22 @@ router.use(requireAdmin);
  *   description: Operações administrativas
  */
 
+// Dashboard e estatísticas
 router.get('/dashboard', AdminController.getDashboard);
+
+// Gerenciamento de membros
 router.get('/members', AdminController.getMembers);
 router.post('/members/:id/approve', AdminController.approveMember);
 router.post('/members/:id/reject', AdminController.rejectMember);
+router.delete('/members/:id', AdminController.deleteMember); // ✅ ROTA CORRETA
+
+// Gerenciamento de escalas
 router.post('/schedules', validate(validators.schedule), AdminController.createSchedule);
 router.put('/schedules/:id', validate(validators.schedule), AdminController.updateSchedule);
 router.delete('/schedules/:id', AdminController.deleteSchedule);
 router.post('/schedules/:id/notify', AdminController.sendNotification);
+
+// Logs de auditoria
 router.get('/logs', AdminController.getLogs);
 
 module.exports = router;

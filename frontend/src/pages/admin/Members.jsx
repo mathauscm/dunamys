@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, UserCheck, UserX, Eye, Mail, Phone, Heart } from 'lucide-react';
+import { Search, Filter, UserCheck, UserX, Eye, Mail, Phone, Heart, Trash2, AlertTriangle } from 'lucide-react';
 import { useApi, useMutation } from '../../hooks/useApi';
 import { adminService } from '../../services/members';
 import { ministryService } from '../../services/ministries';
@@ -76,6 +76,97 @@ const MinistryManagementForm = ({ member, ministries, onSubmit, loading, onCance
     );
 };
 
+// NOVO COMPONENTE: Confirmação de exclusão
+const DeleteConfirmationModal = ({ member, onConfirm, onCancel, loading }) => {
+    const [confirmText, setConfirmText] = useState('');
+    const expectedText = member?.name || '';
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (confirmText === expectedText) {
+            onConfirm();
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Warning Header */}
+            <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                    <AlertTriangle className="h-8 w-8 text-red-500" />
+                </div>
+                <div>
+                    <h3 className="text-lg font-medium text-gray-900">Excluir Membro</h3>
+                    <p className="text-sm text-gray-600">Esta ação não pode ser desfeita</p>
+                </div>
+            </div>
+
+            {/* Member Info */}
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <span className="text-lg font-medium text-red-600">
+                            {member?.name?.charAt(0).toUpperCase()}
+                        </span>
+                    </div>
+                    <div>
+                        <h4 className="font-medium text-gray-900">{member?.name}</h4>
+                        <p className="text-sm text-gray-600">{member?.email}</p>
+                        {member?.campus && (
+                            <p className="text-sm text-blue-600">{member.campus.name}</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Warning Text */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-medium text-yellow-800 mb-2">⚠️ Atenção:</h4>
+                <ul className="text-sm text-yellow-700 space-y-1">
+                    <li>• O membro será completamente removido do sistema</li>
+                    <li>• Todas as escalas passadas serão mantidas para histórico</li>
+                    <li>• Indisponibilidades e notificações serão removidas</li>
+                    <li>• Esta ação é <strong>irreversível</strong></li>
+                </ul>
+            </div>
+
+            {/* Confirmation Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="label">
+                        Para confirmar, digite o nome do membro: <strong>{expectedText}</strong>
+                    </label>
+                    <input
+                        type="text"
+                        className="input"
+                        placeholder={`Digite "${expectedText}" para confirmar`}
+                        value={confirmText}
+                        onChange={(e) => setConfirmText(e.target.value)}
+                        autoComplete="off"
+                    />
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="btn btn-secondary"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading || confirmText !== expectedText}
+                        className="btn btn-danger"
+                    >
+                        {loading ? 'Excluindo...' : 'Excluir Permanentemente'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
 const AdminMembers = () => {
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -83,11 +174,15 @@ const AdminMembers = () => {
     const [showMemberModal, setShowMemberModal] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
     
-    // Novos estados para ministérios
+    // Estados para ministérios
     const [ministries, setMinistries] = useState([]);
     const [loadingMinistries, setLoadingMinistries] = useState(true);
     const [showMinistryModal, setShowMinistryModal] = useState(false);
     const [selectedMemberForMinistry, setSelectedMemberForMinistry] = useState(null);
+
+    // NOVO: Estados para exclusão
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedMemberForDelete, setSelectedMemberForDelete] = useState(null);
 
     const { data: membersData, loading, refresh } = useApi('/admin/members', {
         immediate: true,
@@ -129,7 +224,7 @@ const AdminMembers = () => {
         }
     );
 
-    // Nova mutação para atualizar ministério
+    // Mutação para atualizar ministério
     const { mutate: updateMemberMinistry } = useMutation(
         ({ userId, ministryId }) => ministryService.updateUserMinistry(userId, ministryId),
         {
@@ -142,6 +237,19 @@ const AdminMembers = () => {
         }
     );
 
+    // NOVA MUTAÇÃO: Excluir membro
+    const { mutate: deleteMember, loading: deleting } = useMutation(
+        adminService.deleteMember,
+        {
+            onSuccess: () => {
+                refresh();
+                setShowDeleteModal(false);
+                setSelectedMemberForDelete(null);
+            },
+            successMessage: 'Membro excluído com sucesso'
+        }
+    );
+
     const handleApprove = async (memberId) => {
         if (window.confirm('Tem certeza que deseja aprovar este membro?')) {
             await approveMember(memberId);
@@ -150,17 +258,28 @@ const AdminMembers = () => {
 
     const handleReject = async (member) => {
         setSelectedMember(member);
-        // Modal de rejeição seria implementado aqui
         const reason = window.prompt('Motivo da rejeição (opcional):');
         if (reason !== null) {
             await rejectMember(member.id, reason);
         }
     };
 
-    // Nova função para gerenciar ministério
     const handleManageMinistry = (member) => {
         setSelectedMemberForMinistry(member);
         setShowMinistryModal(true);
+    };
+
+    // NOVA FUNÇÃO: Confirmar exclusão
+    const handleDelete = (member) => {
+        setSelectedMemberForDelete(member);
+        setShowDeleteModal(true);
+    };
+
+    // NOVA FUNÇÃO: Executar exclusão
+    const handleConfirmDelete = async () => {
+        if (selectedMemberForDelete) {
+            await deleteMember(selectedMemberForDelete.id);
+        }
     };
 
     const getStatusBadge = (status) => {
@@ -357,6 +476,15 @@ const AdminMembers = () => {
                                                     >
                                                         <Eye className="h-4 w-4" />
                                                     </button>
+                                                    
+                                                    {/* NOVO BOTÃO: Excluir membro */}
+                                                    <button
+                                                        onClick={() => handleDelete(member)}
+                                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                                        title="Excluir membro"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -451,6 +579,37 @@ const AdminMembers = () => {
                                 </button>
                             </div>
                         )}
+
+                        {/* NOVA SEÇÃO: Ações adicionais */}
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                            <div className="text-sm text-gray-500">
+                                Ações administrativas
+                            </div>
+                            <div className="flex space-x-3">
+                                {selectedMember.status === 'ACTIVE' && (
+                                    <button
+                                        onClick={() => {
+                                            setShowMemberModal(false);
+                                            handleManageMinistry(selectedMember);
+                                        }}
+                                        className="btn btn-secondary btn-sm flex items-center"
+                                    >
+                                        <Heart className="h-4 w-4 mr-1" />
+                                        Ministério
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        setShowMemberModal(false);
+                                        handleDelete(selectedMember);
+                                    }}
+                                    className="btn btn-danger btn-sm flex items-center"
+                                >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Excluir
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </Modal>
@@ -475,6 +634,30 @@ const AdminMembers = () => {
                             setShowMinistryModal(false);
                             setSelectedMemberForMinistry(null);
                         }}
+                    />
+                )}
+            </Modal>
+
+            {/* NOVO MODAL: Confirmação de exclusão */}
+            <Modal
+                isOpen={showDeleteModal}
+                onClose={() => {
+                    setShowDeleteModal(false);
+                    setSelectedMemberForDelete(null);
+                }}
+                title="Confirmar Exclusão"
+                size="md"
+                showCloseButton={false}
+            >
+                {selectedMemberForDelete && (
+                    <DeleteConfirmationModal
+                        member={selectedMemberForDelete}
+                        onConfirm={handleConfirmDelete}
+                        onCancel={() => {
+                            setShowDeleteModal(false);
+                            setSelectedMemberForDelete(null);
+                        }}
+                        loading={deleting}
                     />
                 )}
             </Modal>
