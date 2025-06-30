@@ -1,6 +1,42 @@
+<!-- Badges -->
+![Build Status](https://img.shields.io/github/actions/workflow/status/mathauscm/dunamys/ci.yml)
+![License](https://img.shields.io/github/license/mathauscm/dunamys)
+![Issues](https://img.shields.io/github/issues/mathauscm/dunamys)
+![Forks](https://img.shields.io/github/forks/mathauscm/dunamys)
+
 # 🏛️ Sistema de Membros da Igreja
 
 Sistema completo para gerenciamento de membros e escalas de serviço de igrejas, desenvolvido com Node.js, React e PostgreSQL.
+
+## 📖 Sumário
+
+- [Funcionalidades](#-funcionalidades)
+- [Tecnologias](#-tecnologias)
+- [Pré-requisitos](#-pré-requisitos)
+- [Instalação Rápida](#-instalação-rápida)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Configuração de Segurança](#-configuração-de-segurança)
+- [Configuração de Email](#-configuração-de-email)
+- [Configuração do WhatsApp](#-configuração-do-whatsapp)
+- [Deploy em Produção](#-deploy-em-produção)
+- [Monitoramento](#-monitoramento)
+- [Testes](#-testes)
+- [Backup e Restore](#-backup-e-restore)
+- [Troubleshooting](#-troubleshooting)
+- [API Documentation](#-api-documentation)
+- [Contribuição](#-contribuição)
+- [Suporte](#-suporte)
+- [Licença](#-licença)
+- [Agradecimentos](#-agradecimentos)
+- [Roadmap](#-roadmap)
+
+---
+
+## 🔥 Demonstração
+
+<!-- Adicione aqui prints ou GIFs da interface do sistema -->
+<!-- Exemplo: -->
+<!-- ![Tela de login](docs/login-screen.png) -->
 
 ## 🚀 Funcionalidades
 
@@ -52,17 +88,17 @@ Sistema completo para gerenciamento de membros e escalas de serviço de igrejas,
 
 ## 📋 Pré-requisitos
 
-- **Docker** 20.10+
-- **Docker Compose** 2.0+
-- **Git**
-- **Node.js** 18+ (para desenvolvimento)
+- [Docker](https://www.docker.com/) 20.10+
+- [Docker Compose](https://docs.docker.com/compose/) 2.0+
+- [Git](https://git-scm.com/)
+- [Node.js](https://nodejs.org/) 18+ (para desenvolvimento)
 
 ## 🚀 Instalação Rápida
 
 ### 1. Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/igreja-membros.git
-cd igreja-membros
+git clone https://github.com/mathauscm/dunamys.git
+cd dunamys
 ```
 
 ### 2. Configure as variáveis de ambiente
@@ -129,31 +165,31 @@ npm run dev
 ## 📁 Estrutura do Projeto
 
 ```
-igreja-membros/
-├── backend/                 # API Node.js
-│   ├── src/
-│   │   ├── controllers/     # Controladores
-│   │   ├── services/        # Lógica de negócio
-│   │   ├── routes/          # Rotas da API
-│   │   ├── middlewares/     # Middlewares
-│   │   ├── config/          # Configurações
-│   │   ├── utils/           # Utilitários
-│   │   └── jobs/            # Jobs em background
-│   ├── prisma/              # Schema do banco
-│   ├── tests/               # Testes
-│   └── docs/                # Documentação
-├── frontend/                # Interface React
-│   ├── src/
-│   │   ├── components/      # Componentes
-│   │   ├── pages/           # Páginas
-│   │   ├── services/        # Serviços API
-│   │   ├── context/         # Contextos React
-│   │   ├── hooks/           # Custom hooks
-│   │   └── utils/           # Utilitários
-│   └── public/              # Arquivos públicos
-├── nginx/                   # Configuração Nginx
-├── docker-compose.yml       # Orquestração
-└── README.md               # Este arquivo
+dunamys/
+├── [backend/](backend/)                 # API Node.js
+│   ├── [src/](backend/src/)
+│   │   ├── [controllers/](backend/src/controllers/)
+│   │   ├── [services/](backend/src/services/)
+│   │   ├── [routes/](backend/src/routes/)
+│   │   ├── [middlewares/](backend/src/middlewares/)
+│   │   ├── [config/](backend/src/config/)
+│   │   ├── [utils/](backend/src/utils/)
+│   │   └── [jobs/](backend/src/jobs/)
+│   ├── [prisma/](backend/prisma/)
+│   ├── [tests/](backend/tests/)
+│   └── [docs/](backend/docs/)
+├── [frontend/](frontend/)                # Interface React
+│   ├── [src/](frontend/src/)
+│   │   ├── [components/](frontend/src/components/)
+│   │   ├── [pages/](frontend/src/pages/)
+│   │   ├── [services/](frontend/src/services/)
+│   │   ├── [context/](frontend/src/context/)
+│   │   ├── [hooks/](frontend/src/hooks/)
+│   │   └── [utils/](frontend/src/utils/)
+│   └── [public/](frontend/public/)
+├── [nginx/](nginx/)                   # Configuração Nginx
+├── [docker-compose.yml](docker-compose.yml)       # Orquestração
+└── [README.md](README.md)               # Este arquivo
 ```
 
 ## 🔐 Configuração de Segurança
@@ -217,8 +253,8 @@ sudo systemctl start docker
 
 2. **Clonar e configurar**
 ```bash
-git clone https://github.com/seu-usuario/igreja-membros.git
-cd igreja-membros
+git clone https://github.com/mathauscm/dunamys.git
+cd dunamys
 cp backend/.env.example backend/.env
 # Editar configurações de produção
 ```
@@ -400,11 +436,14 @@ A documentação completa da API está disponível em:
 
 ## 🤝 Contribuição
 
-1. Fork o projeto
-2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
-3. Commit suas mudanças: `git commit -am 'Add nova funcionalidade'`
-4. Push para a branch: `git push origin feature/nova-funcionalidade`
-5. Abra um Pull Request
+> **Importante:** Por padrão, os pull requests devem ser abertos para a branch `main`.  
+> Se preferir que contribuidores usem a branch `features`, [defina-a como branch padrão no GitHub](https://docs.github.com/pt/repositories/configuring-branches-and-merges-in-your-repository/setting-the-default-branch) e explique isso aqui.
+>
+> **Sugestão:**  
+> - Faça fork do repositório  
+> - Crie uma branch: `git checkout -b feature/sua-feature`
+> - Envie PR para a branch `main` (ou `features` se for o padrão)
+> - Dúvidas? Abra uma [issue](https://github.com/mathauscm/dunamys/issues)
 
 ### Guidelines
 
@@ -415,8 +454,8 @@ A documentação completa da API está disponível em:
 
 ## 📞 Suporte
 
-- **Issues**: [GitHub Issues](https://github.com/seu-usuario/igreja-membros/issues)
-- **Discussões**: [GitHub Discussions](https://github.com/seu-usuario/igreja-membros/discussions)
+- **Issues**: [GitHub Issues](https://github.com/mathauscm/dunamys/issues)
+- **Discussões**: [GitHub Discussions](https://github.com/mathauscm/dunamys/discussions)
 - **Email**: suporte@igreja.com
 
 ## 📝 Licença
