@@ -1,4 +1,4 @@
-// backend/src/services/AdminService.js - VERSÃO CORRIGIDA
+// backend/src/services/AdminService.js - VERSÃO CORRIGIDA E ATUALIZADA
 const { prisma } = require('../config/database');
 const NotificationService = require('./NotificationService');
 const logger = require('../utils/logger');
@@ -41,6 +41,7 @@ class AdminService {
     };
   }
 
+  // FUNÇÃO ATUALIZADA: getMembers agora inclui ministério
   static async getMembers(filters = {}) {
     const { status, search, page = 1, limit = 20 } = filters;
 
@@ -68,6 +69,20 @@ class AdminService {
           status: true,
           createdAt: true,
           lastLogin: true,
+          campus: {
+            select: {
+              id: true,
+              name: true,
+              city: true
+            }
+          },
+          ministry: { // NOVO: Incluir ministério
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          },
           _count: {
             select: {
               schedules: true
@@ -174,6 +189,86 @@ class AdminService {
 
     } catch (error) {
       logger.error(`Erro ao rejeitar membro ${memberId}:`, error);
+      throw error;
+    }
+  }
+
+  // NOVA FUNÇÃO: Atualizar ministério de um membro
+  static async updateMemberMinistry(memberId, ministryId) {
+    try {
+      const member = await prisma.user.findUnique({
+        where: { id: memberId, role: 'MEMBER' }
+      });
+
+      if (!member) {
+        throw new Error('Membro não encontrado');
+      }
+
+      // Se ministryId for null, remove o ministério
+      if (ministryId === null) {
+        const updatedMember = await prisma.user.update({
+          where: { id: memberId },
+          data: { ministryId: null },
+          include: {
+            campus: {
+              select: {
+                id: true,
+                name: true,
+                city: true
+              }
+            }
+          }
+        });
+
+        await this.createAuditLog({
+          action: 'MEMBER_MINISTRY_REMOVED',
+          targetId: memberId,
+          description: `Ministério removido do membro ${member.name}`
+        });
+
+        return updatedMember;
+      }
+
+      // Verificar se o ministério existe e está ativo
+      const ministry = await prisma.ministry.findUnique({
+        where: { id: ministryId, active: true }
+      });
+
+      if (!ministry) {
+        throw new Error('Ministério não encontrado ou inativo');
+      }
+
+      const updatedMember = await prisma.user.update({
+        where: { id: memberId },
+        data: { ministryId },
+        include: {
+          campus: {
+            select: {
+              id: true,
+              name: true,
+              city: true
+            }
+          },
+          ministry: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          }
+        }
+      });
+
+      await this.createAuditLog({
+        action: 'MEMBER_MINISTRY_UPDATED',
+        targetId: memberId,
+        description: `Membro ${member.name} adicionado ao ministério ${ministry.name}`
+      });
+
+      return updatedMember;
+
+    } catch (error) {
+      logger.error(`Erro ao atualizar ministério do membro ${memberId}:`, error);
       throw error;
     }
   }

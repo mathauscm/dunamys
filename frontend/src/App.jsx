@@ -21,6 +21,7 @@ import AdminMembers from './pages/admin/Members';
 import AdminSchedules from './pages/admin/Schedules';
 import AdminCampus from './pages/admin/Campus'; // NOVA IMPORTAÇÃO
 import AdminLogs from './pages/admin/Logs';
+import AdminMinistries from './pages/admin/Ministries'
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false, requiresActive = true }) => {
@@ -211,6 +212,7 @@ function App() {
                     <Route path="members" element={<AdminMembers />} />
                     <Route path="schedules" element={<AdminSchedules />} />
                     <Route path="campus" element={<AdminCampus />} />
+                     <Route path="ministries" element={<AdminMinistries />} />
                     <Route path="logs" element={<AdminLogs />} />
                 </Route>
 

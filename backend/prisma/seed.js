@@ -1,4 +1,4 @@
-// backend/prisma/seed.js - ATUALIZADO COM CAMPUS
+// backend/prisma/seed.js - ATUALIZADO COM MINISTÉRIOS
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -30,7 +30,66 @@ async function main() {
 
     console.log('✅ Campus criados:', [campusUbajara.name, campusTiangua.name]);
 
-    // Criar usuário administrador padrão
+    // SEGUNDO: Criar ministérios
+    const ministerioMidia = await prisma.ministry.upsert({
+        where: { name: 'Ministério de Mídia' },
+        update: {},
+        create: {
+            name: 'Ministério de Mídia',
+            description: 'Responsável pela transmissão, gravação e equipamentos audiovisuais',
+            active: true
+        }
+    });
+
+    const ministerioLouvor = await prisma.ministry.upsert({
+        where: { name: 'Ministério de Louvor' },
+        update: {},
+        create: {
+            name: 'Ministério de Louvor',
+            description: 'Responsável pela música e adoração nos cultos',
+            active: true
+        }
+    });
+
+    const voluntariado = await prisma.ministry.upsert({
+        where: { name: 'Voluntariado Geral' },
+        update: {},
+        create: {
+            name: 'Voluntariado Geral',
+            description: 'Atividades gerais de apoio e suporte',
+            active: true
+        }
+    });
+
+    const ministerioInfantil = await prisma.ministry.upsert({
+        where: { name: 'Ministério Infantil' },
+        update: {},
+        create: {
+            name: 'Ministério Infantil',
+            description: 'Trabalho com crianças e adolescentes',
+            active: true
+        }
+    });
+
+    const ministerioRecepcao = await prisma.ministry.upsert({
+        where: { name: 'Ministério de Recepção' },
+        update: {},
+        create: {
+            name: 'Ministério de Recepção',
+            description: 'Acolhimento e orientação dos visitantes',
+            active: true
+        }
+    });
+
+    console.log('✅ Ministérios criados:', [
+        ministerioMidia.name,
+        ministerioLouvor.name,
+        voluntariado.name,
+        ministerioInfantil.name,
+        ministerioRecepcao.name
+    ]);
+
+    // TERCEIRO: Criar usuário administrador padrão
     const adminPassword = await bcrypt.hash('admin123', 12);
 
     const admin = await prisma.user.upsert({
@@ -43,13 +102,14 @@ async function main() {
             phone: '11999999999',
             role: 'ADMIN',
             status: 'ACTIVE',
-            campusId: campusUbajara.id // Admin do campus Ubajara
+            campusId: campusUbajara.id,
+            ministryId: ministerioMidia.id // Admin do ministério de mídia
         }
     });
 
     console.log('✅ Administrador criado:', admin.email);
 
-    // Criar alguns membros de exemplo com campus
+    // QUARTO: Criar alguns membros de exemplo com campus e ministérios
     const memberPassword = await bcrypt.hash('123456', 12);
 
     const members = await Promise.all([
@@ -63,7 +123,8 @@ async function main() {
                 phone: '11888888888',
                 role: 'MEMBER',
                 status: 'ACTIVE',
-                campusId: campusUbajara.id
+                campusId: campusUbajara.id,
+                ministryId: ministerioLouvor.id
             }
         }),
         prisma.user.upsert({
@@ -76,7 +137,8 @@ async function main() {
                 phone: '11777777777',
                 role: 'MEMBER',
                 status: 'ACTIVE',
-                campusId: campusTiangua.id
+                campusId: campusTiangua.id,
+                ministryId: ministerioInfantil.id
             }
         }),
         prisma.user.upsert({
@@ -89,14 +151,29 @@ async function main() {
                 phone: '11666666666',
                 role: 'MEMBER',
                 status: 'PENDING',
-                campusId: campusUbajara.id
+                campusId: campusUbajara.id,
+                ministryId: null // Membro pendente não tem ministério ainda
+            }
+        }),
+        prisma.user.upsert({
+            where: { email: 'ana@email.com' },
+            update: {},
+            create: {
+                name: 'Ana Costa',
+                email: 'ana@email.com',
+                password: memberPassword,
+                phone: '11555555555',
+                role: 'MEMBER',
+                status: 'ACTIVE',
+                campusId: campusTiangua.id,
+                ministryId: ministerioRecepcao.id
             }
         })
     ]);
 
     console.log('✅ Membros criados:', members.length);
 
-    // Criar uma escala de exemplo
+    // QUINTO: Criar uma escala de exemplo
     const nextSunday = new Date();
     nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()));
 
@@ -109,8 +186,8 @@ async function main() {
             location: 'Igreja Central - Ubajara',
             members: {
                 create: [
-                    { userId: members[0].id },
-                    { userId: members[2].id } // Apenas membros do mesmo campus
+                    { userId: members[0].id }, // João (Louvor)
+                    { userId: admin.id }       // Admin (Mídia)
                 ]
             }
         }
@@ -124,15 +201,24 @@ async function main() {
     console.log('   - Ubajara');
     console.log('   - Tianguá');
     console.log('');
+    console.log('⛪ Ministérios disponíveis:');
+    console.log('   - Ministério de Mídia');
+    console.log('   - Ministério de Louvor');
+    console.log('   - Voluntariado Geral');
+    console.log('   - Ministério Infantil');
+    console.log('   - Ministério de Recepção');
+    console.log('');
     console.log('👤 Login do administrador:');
     console.log('   Email: admin@igreja.com');
     console.log('   Senha: admin123');
     console.log('   Campus: Ubajara');
+    console.log('   Ministério: Ministério de Mídia');
     console.log('');
     console.log('👥 Membros de exemplo:');
-    console.log('   joao@email.com / 123456 (ATIVO - Ubajara)');
-    console.log('   maria@email.com / 123456 (ATIVO - Tianguá)');
-    console.log('   pedro@email.com / 123456 (PENDENTE - Ubajara)');
+    console.log('   joao@email.com / 123456 (ATIVO - Ubajara - Louvor)');
+    console.log('   maria@email.com / 123456 (ATIVO - Tianguá - Infantil)');
+    console.log('   pedro@email.com / 123456 (PENDENTE - Ubajara - Sem ministério)');
+    console.log('   ana@email.com / 123456 (ATIVO - Tianguá - Recepção)');
 }
 
 main()

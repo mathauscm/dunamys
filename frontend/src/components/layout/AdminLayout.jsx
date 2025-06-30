@@ -10,7 +10,8 @@ import {
     Menu,
     X,
     LogOut,
-    MapPin // NOVO ÍCONE
+    MapPin,
+    Heart  // NOVO ÍCONE
 } from 'lucide-react';
 import Header from '../common/Header';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,7 +26,8 @@ const AdminLayout = () => {
         { name: 'Dashboard', href: '/admin', icon: Home, exact: true },
         { name: 'Membros', href: '/admin/members', icon: Users },
         { name: 'Escalas', href: '/admin/schedules', icon: Calendar },
-        { name: 'Campus', href: '/admin/campus', icon: MapPin }, // NOVA ROTA
+        { name: 'Campus', href: '/admin/campus', icon: MapPin },
+        { name: 'Ministérios', href: '/admin/ministries', icon: Heart },
         { name: 'Logs', href: '/admin/logs', icon: FileText },
     ];
 

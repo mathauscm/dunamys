@@ -26,6 +26,7 @@ const memberRoutes = require('./routes/members');
 const scheduleRoutes = require('./routes/schedules');
 const adminRoutes = require('./routes/admin');
 const campusRoutes = require('./routes/campus');
+const ministryRoutes = require('./routes/ministries');
 
 // Swagger documentation
 const swaggerUi = require('swagger-ui-express');
@@ -314,6 +315,7 @@ app.use('/api/members', memberRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/campus', campusRoutes); // ROTA DE CAMPUS ADICIONADA
+app.use('/api/ministries', ministryRoutes);
 
 /**
  * ============================================================================

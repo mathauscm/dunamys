@@ -1,11 +1,80 @@
-import React, { useState } from 'react';
-import { Search, Filter, UserCheck, UserX, Eye, Mail, Phone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, UserCheck, UserX, Eye, Mail, Phone, Heart } from 'lucide-react';
 import { useApi, useMutation } from '../../hooks/useApi';
 import { adminService } from '../../services/members';
+import { ministryService } from '../../services/ministries';
 import Loading from '../../components/common/Loading';
 import Modal from '../../components/common/Modal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Ministry Management Form Component
+const MinistryManagementForm = ({ member, ministries, onSubmit, loading, onCancel }) => {
+    const [selectedMinistryId, setSelectedMinistryId] = useState(member.ministry?.id || '');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const ministryId = selectedMinistryId === '' ? null : parseInt(selectedMinistryId);
+        onSubmit({
+            userId: member.id,
+            ministryId
+        });
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="text-center">
+                <div className="w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-xl font-medium text-white">
+                        {member.name.charAt(0).toUpperCase()}
+                    </span>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">{member.name}</h3>
+                <p className="text-sm text-gray-600">{member.email}</p>
+                {member.campus && (
+                    <p className="text-sm text-blue-600">{member.campus.name}</p>
+                )}
+            </div>
+
+            <div>
+                <label className="label">Ministério</label>
+                <select
+                    className="input"
+                    value={selectedMinistryId}
+                    onChange={(e) => setSelectedMinistryId(e.target.value)}
+                    disabled={loading}
+                >
+                    <option value="">Sem ministério</option>
+                    {ministries.map((ministry) => (
+                        <option key={ministry.id} value={ministry.id}>
+                            {ministry.name}
+                        </option>
+                    ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                    Selecione o ministério do membro ou deixe em branco para remover
+                </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="btn btn-secondary"
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn btn-primary"
+                >
+                    {loading ? 'Salvando...' : 'Salvar'}
+                </button>
+            </div>
+        </form>
+    );
+};
 
 const AdminMembers = () => {
     const [search, setSearch] = useState('');
@@ -13,11 +82,32 @@ const AdminMembers = () => {
     const [selectedMember, setSelectedMember] = useState(null);
     const [showMemberModal, setShowMemberModal] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
+    
+    // Novos estados para ministérios
+    const [ministries, setMinistries] = useState([]);
+    const [loadingMinistries, setLoadingMinistries] = useState(true);
+    const [showMinistryModal, setShowMinistryModal] = useState(false);
+    const [selectedMemberForMinistry, setSelectedMemberForMinistry] = useState(null);
 
     const { data: membersData, loading, refresh } = useApi('/admin/members', {
         immediate: true,
         dependencies: [search, statusFilter]
     });
+
+    // useEffect para carregar ministérios
+    useEffect(() => {
+        const fetchMinistries = async () => {
+            try {
+                const response = await ministryService.getPublicMinistries();
+                setMinistries(response);
+            } catch (error) {
+                console.error('Erro ao carregar ministérios:', error);
+            } finally {
+                setLoadingMinistries(false);
+            }
+        };
+        fetchMinistries();
+    }, []);
 
     const { mutate: approveMember } = useMutation(
         adminService.approveMember,
@@ -39,6 +129,19 @@ const AdminMembers = () => {
         }
     );
 
+    // Nova mutação para atualizar ministério
+    const { mutate: updateMemberMinistry } = useMutation(
+        ({ userId, ministryId }) => ministryService.updateUserMinistry(userId, ministryId),
+        {
+            onSuccess: () => {
+                refresh();
+                setShowMinistryModal(false);
+                setSelectedMemberForMinistry(null);
+            },
+            successMessage: 'Ministério do membro atualizado com sucesso'
+        }
+    );
+
     const handleApprove = async (memberId) => {
         if (window.confirm('Tem certeza que deseja aprovar este membro?')) {
             await approveMember(memberId);
@@ -52,6 +155,12 @@ const AdminMembers = () => {
         if (reason !== null) {
             await rejectMember(member.id, reason);
         }
+    };
+
+    // Nova função para gerenciar ministério
+    const handleManageMinistry = (member) => {
+        setSelectedMemberForMinistry(member);
+        setShowMinistryModal(true);
     };
 
     const getStatusBadge = (status) => {
@@ -183,7 +292,7 @@ const AdminMembers = () => {
                                                 </div>
                                             </td>
                                             <td>
-                                                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                <div className="flex flex-col space-y-1 text-sm text-gray-600">
                                                     <span className="flex items-center">
                                                         <Mail className="h-4 w-4 mr-1" />
                                                         {member.email}
@@ -192,6 +301,12 @@ const AdminMembers = () => {
                                                         <Phone className="h-4 w-4 mr-1" />
                                                         {member.phone}
                                                     </span>
+                                                    {member.ministry && (
+                                                        <span className="flex items-center">
+                                                            <Heart className="h-4 w-4 mr-1 text-red-500" />
+                                                            {member.ministry.name}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td>
@@ -222,6 +337,15 @@ const AdminMembers = () => {
                                                                 <UserX className="h-4 w-4" />
                                                             </button>
                                                         </>
+                                                    )}
+                                                    {member.status === 'ACTIVE' && (
+                                                        <button
+                                                            onClick={() => handleManageMinistry(member)}
+                                                            className="p-1 text-purple-600 hover:bg-purple-50 rounded"
+                                                            title="Gerenciar Ministério"
+                                                        >
+                                                            <Heart className="h-4 w-4" />
+                                                        </button>
                                                     )}
                                                     <button
                                                         onClick={() => {
@@ -273,6 +397,15 @@ const AdminMembers = () => {
                                         <dt className="text-sm font-medium text-gray-500">Status</dt>
                                         <dd className="text-sm">{getStatusBadge(selectedMember.status)}</dd>
                                     </div>
+                                    {selectedMember.ministry && (
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Ministério</dt>
+                                            <dd className="text-sm text-gray-900 flex items-center">
+                                                <Heart className="h-4 w-4 mr-1 text-red-500" />
+                                                {selectedMember.ministry.name}
+                                            </dd>
+                                        </div>
+                                    )}
                                 </dl>
                             </div>
 
@@ -319,6 +452,30 @@ const AdminMembers = () => {
                             </div>
                         )}
                     </div>
+                )}
+            </Modal>
+
+            {/* Ministry Management Modal */}
+            <Modal
+                isOpen={showMinistryModal}
+                onClose={() => {
+                    setShowMinistryModal(false);
+                    setSelectedMemberForMinistry(null);
+                }}
+                title="Gerenciar Ministério"
+                size="md"
+            >
+                {selectedMemberForMinistry && (
+                    <MinistryManagementForm
+                        member={selectedMemberForMinistry}
+                        ministries={ministries}
+                        onSubmit={updateMemberMinistry}
+                        loading={loadingMinistries}
+                        onCancel={() => {
+                            setShowMinistryModal(false);
+                            setSelectedMemberForMinistry(null);
+                        }}
+                    />
                 )}
             </Modal>
         </div>
