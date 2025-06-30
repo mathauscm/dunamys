@@ -1,4 +1,3 @@
-// backend/src/services/AdminService.js - VERSÃO CORRIGIDA E ATUALIZADA
 const { prisma } = require('../config/database');
 const NotificationService = require('./NotificationService');
 const logger = require('../utils/logger');
@@ -41,7 +40,6 @@ class AdminService {
     };
   }
 
-  // FUNÇÃO CORRIGIDA: getMembers agora inclui ministério e campusId
   static async getMembers(filters = {}) {
     const { status, search, page = 1, limit = 20 } = filters;
 
@@ -69,7 +67,7 @@ class AdminService {
           status: true,
           createdAt: true,
           lastLogin: true,
-          campusId: true, // ✅ ADICIONADO: Campo campusId que estava faltando
+          campusId: true,
           campus: {
             select: {
               id: true,
@@ -77,7 +75,7 @@ class AdminService {
               city: true
             }
           },
-          ministry: { // NOVO: Incluir ministério
+          ministry: {
             select: {
               id: true,
               name: true,
@@ -97,7 +95,6 @@ class AdminService {
       prisma.user.count({ where: whereClause })
     ]);
 
-    // LOG para debug - pode ser removido em produção
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 AdminService.getMembers - Membros retornados:');
       members.forEach(member => {
@@ -130,25 +127,21 @@ class AdminService {
         throw new Error('Membro já está ativo');
       }
 
-      // PRIMEIRO: Atualizar status do membro no banco
       const updatedMember = await prisma.user.update({
         where: { id: memberId },
         data: { status: 'ACTIVE' }
       });
 
-      // SEGUNDO: Criar log de auditoria
       await this.createAuditLog({
         action: 'MEMBER_APPROVED',
         targetId: memberId,
         description: `Membro ${member.name} foi aprovado`
       });
 
-      // TERCEIRO: Tentar enviar notificação (não bloquear se falhar)
       try {
         await NotificationService.sendMemberApproval(member);
         logger.info(`Notificação de aprovação enviada para ${member.email}`);
       } catch (notificationError) {
-        // Log do erro, mas não falhar a aprovação
         logger.error(`Erro ao enviar notificação de aprovação para ${member.email}:`, notificationError);
         logger.warn('Aprovação do membro continuou apesar do erro na notificação');
       }
@@ -171,25 +164,21 @@ class AdminService {
         throw new Error('Membro não encontrado');
       }
 
-      // PRIMEIRO: Atualizar status do membro no banco
       const updatedMember = await prisma.user.update({
         where: { id: memberId },
         data: { status: 'REJECTED' }
       });
 
-      // SEGUNDO: Criar log de auditoria
       await this.createAuditLog({
         action: 'MEMBER_REJECTED',
         targetId: memberId,
         description: `Membro ${member.name} foi rejeitado. Motivo: ${reason || 'Não informado'}`
       });
 
-      // TERCEIRO: Tentar enviar notificação (não bloquear se falhar)
       try {
         await NotificationService.sendMemberRejection(member, reason);
         logger.info(`Notificação de rejeição enviada para ${member.email}`);
       } catch (notificationError) {
-        // Log do erro, mas não falhar a rejeição
         logger.error(`Erro ao enviar notificação de rejeição para ${member.email}:`, notificationError);
         logger.warn('Rejeição do membro continuou apesar do erro na notificação');
       }
@@ -205,6 +194,7 @@ class AdminService {
   /**
    * NOVO MÉTODO: Excluir membro
    * Remove completamente um membro do sistema
+   * Corrigido para usar scheduleMember ao invés de scheduleUser
    */
   static async deleteMember(memberId) {
     try {
@@ -236,42 +226,22 @@ class AdminService {
         throw new Error('Membro não encontrado');
       }
 
-      // Verificar se o membro tem escalas futuras
-      const futureSchedules = await prisma.scheduleUser.count({
-        where: {
-          userId: memberId,
-          schedule: {
-            date: {
-              gte: new Date()
-            }
-          }
-        }
-      });
-
-      if (futureSchedules > 0) {
-        throw new Error(`Não é possível excluir este membro pois ele possui ${futureSchedules} escala(s) futura(s). Remova-o das escalas futuras primeiro.`);
-      }
-
-      // Executar exclusão em transação
+      // Executar exclusão em transação usando o nome correto do modelo
       const result = await prisma.$transaction(async (tx) => {
-        // 1. Remover de todas as escalas (passadas)
-        await tx.scheduleUser.deleteMany({
+        await tx.scheduleMember.deleteMany({
           where: { userId: memberId }
         });
 
-        // 2. Remover indisponibilidades
         await tx.unavailability.deleteMany({
           where: { userId: memberId }
         });
 
-        // 3. Remover notificações
         await tx.notification.deleteMany({
           where: { userId: memberId }
         });
 
-        // 4. Remover logs de auditoria onde o usuário é o target
         await tx.auditLog.deleteMany({
-          where: { 
+          where: {
             OR: [
               { userId: memberId },
               { targetId: memberId }
@@ -279,7 +249,6 @@ class AdminService {
           }
         });
 
-        // 5. Finalmente, excluir o usuário
         const deletedUser = await tx.user.delete({
           where: { id: memberId }
         });
@@ -287,7 +256,6 @@ class AdminService {
         return deletedUser;
       });
 
-      // Criar log de auditoria para a exclusão
       await this.createAuditLog({
         action: 'MEMBER_DELETED',
         targetId: memberId,
@@ -312,7 +280,6 @@ class AdminService {
     }
   }
 
-  // NOVA FUNÇÃO: Atualizar ministério de um membro
   static async updateMemberMinistry(memberId, ministryId) {
     try {
       const member = await prisma.user.findUnique({
@@ -409,7 +376,6 @@ class AdminService {
     }
 
     // Verificar indisponibilidades
-    // Se date é "YYYY-MM-DD", converte para "YYYY-MM-DDT00:00:00"
     const dateISO = date.length === 10 ? date + 'T00:00:00' : date;
     const dateObj = new Date(dateISO);
 
@@ -451,7 +417,6 @@ class AdminService {
       }
     });
 
-    // Criar log de auditoria
     await this.createAuditLog({
       action: 'SCHEDULE_CREATED',
       targetId: schedule.id,
@@ -459,7 +424,6 @@ class AdminService {
       description: `Escala "${title}" criada para ${date}`
     });
 
-    // Tentar enviar notificações (não bloquear se falhar)
     try {
       await NotificationService.sendScheduleAssignment(schedule);
       logger.info(`Notificações de escala enviadas para ${schedule.members.length} membros`);
@@ -485,7 +449,6 @@ class AdminService {
       throw new Error('Escala não encontrada');
     }
 
-    // Verificar se os novos membros existem e estão ativos
     if (memberIds) {
       const members = await prisma.user.findMany({
         where: {
@@ -500,7 +463,6 @@ class AdminService {
       }
     }
 
-    // Ajuste aqui: Prisma espera DateTime ou ISO completo
     let dateObj;
     if (date && typeof date === 'string' && date.length === 10) {
       dateObj = new Date(date + 'T00:00:00');
@@ -508,7 +470,6 @@ class AdminService {
       dateObj = new Date(date);
     }
 
-    // Atualizar escala
     const schedule = await prisma.schedule.update({
       where: { id: scheduleId },
       data: {
@@ -535,14 +496,12 @@ class AdminService {
       }
     });
 
-    // Criar log de auditoria
     await this.createAuditLog({
       action: 'SCHEDULE_UPDATED',
       targetId: scheduleId,
       description: `Escala "${title}" foi atualizada`
     });
 
-    // Tentar enviar notificações sobre alterações (não bloquear se falhar)
     try {
       await NotificationService.sendScheduleUpdate(schedule);
       logger.info(`Notificações de atualização enviadas para ${schedule.members.length} membros`);
@@ -566,7 +525,6 @@ class AdminService {
       throw new Error('Escala não encontrada');
     }
 
-    // Tentar notificar membros sobre cancelamento (não bloquear se falhar)
     try {
       await NotificationService.sendScheduleCancellation(schedule);
       logger.info(`Notificações de cancelamento enviadas para ${schedule.members.length} membros`);
@@ -575,12 +533,10 @@ class AdminService {
       logger.warn('Remoção da escala continuará apesar do erro nas notificações');
     }
 
-    // Deletar escala
     await prisma.schedule.delete({
       where: { id: scheduleId }
     });
 
-    // Criar log de auditoria
     await this.createAuditLog({
       action: 'SCHEDULE_DELETED',
       targetId: scheduleId,
@@ -667,15 +623,8 @@ class AdminService {
       });
     } catch (error) {
       logger.error('Erro ao criar log de auditoria:', error);
-      // Não falhar a operação principal por causa do log
     }
   }
-
-  /**
-   * ============================================================================
-   * MÉTODOS AUXILIARES PARA TESTES E DEPURAÇÃO
-   * ============================================================================
-   */
 
   static async testNotificationServices() {
     try {

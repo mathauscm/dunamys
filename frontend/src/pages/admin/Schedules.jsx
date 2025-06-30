@@ -35,10 +35,18 @@ const AdminSchedules = () => {
     const month = currentDate.getMonth() + 1;
     const year = currentDate.getFullYear();
 
-    const { data: schedules, loading, refresh } = useApi('/schedules', {
-        immediate: true,
-        dependencies: [month, year, search, statusFilter]
-    });
+    // Filtro por mês corrigido: calcula o início e fim do mês atual
+    const startDate = format(startOfMonth(currentDate), 'yyyy-MM-dd');
+    const endDate = format(endOfMonth(currentDate), 'yyyy-MM-dd');
+
+    // Chama a API já com os filtros de data e busca
+    const { data: schedules, loading, refresh } = useApi(
+        `/schedules?startDate=${startDate}&endDate=${endDate}&search=${encodeURIComponent(search)}&status=${statusFilter}`,
+        {
+            immediate: true,
+            dependencies: [month, year, search, statusFilter]
+        }
+    );
 
     const { mutate: createSchedule, loading: creating } = useMutation(
         adminService.createSchedule,
