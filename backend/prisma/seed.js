@@ -88,6 +88,91 @@ async function main() {
         ministerioRecepcao.name
     ]);
 
+    // NOVO: Criar grupos de funções e funções
+    console.log('🎯 Criando grupos de funções e funções...');
+
+    // Criar grupo Voluntariado Geral
+    const voluntariadoGeral = await prisma.functionGroup.upsert({
+        where: { name: 'Voluntariado Geral' },
+        update: {},
+        create: {
+            name: 'Voluntariado Geral',
+            description: 'Funções gerais de apoio aos cultos e eventos',
+            active: true
+        }
+    });
+
+    // Criar grupo Multimídia
+    const multimidia = await prisma.functionGroup.upsert({
+        where: { name: 'Multimídia' },
+        update: {},
+        create: {
+            name: 'Multimídia',
+            description: 'Funções relacionadas à produção audiovisual',
+            active: true
+        }
+    });
+
+    // Funções do Voluntariado Geral
+    const voluntariadoFunctions = [
+        { name: 'Estacionamento', icon: 'car', description: 'Organização do estacionamento' },
+        { name: 'Acolhimento', icon: 'heart', description: 'Recepção e acolhimento dos visitantes' },
+        { name: 'Auditório', icon: 'users', description: 'Organização do auditório' },
+        { name: 'Dízimos e Oferta', icon: 'dollar-sign', description: 'Coleta de dízimos e ofertas' },
+        { name: 'Comunhão', icon: 'coffee', description: 'Organização da comunhão' },
+        { name: 'Ceia', icon: 'utensils', description: 'Organização da santa ceia' }
+    ];
+
+    for (const func of voluntariadoFunctions) {
+        await prisma.function.upsert({
+            where: { 
+                name_groupId: { 
+                    name: func.name, 
+                    groupId: voluntariadoGeral.id 
+                } 
+            },
+            update: {},
+            create: {
+                name: func.name,
+                description: func.description,
+                icon: func.icon,
+                groupId: voluntariadoGeral.id,
+                active: true
+            }
+        });
+    }
+
+    // Funções de Multimídia
+    const multimidiaFunctions = [
+        { name: 'Stories', icon: 'instagram', description: 'Criação de stories para redes sociais' },
+        { name: 'Projeção', icon: 'projector', description: 'Operação do sistema de projeção' },
+        { name: 'Fotos', icon: 'camera', description: 'Fotografia dos eventos' },
+        { name: 'Reels', icon: 'video', description: 'Criação de reels para redes sociais' },
+        { name: 'Live', icon: 'radio', description: 'Transmissão ao vivo' },
+        { name: 'Vídeo Live', icon: 'video', description: 'Produção de vídeo para transmissão' }
+    ];
+
+    for (const func of multimidiaFunctions) {
+        await prisma.function.upsert({
+            where: { 
+                name_groupId: { 
+                    name: func.name, 
+                    groupId: multimidia.id 
+                } 
+            },
+            update: {},
+            create: {
+                name: func.name,
+                description: func.description,
+                icon: func.icon,
+                groupId: multimidia.id,
+                active: true
+            }
+        });
+    }
+
+    console.log('✅ Grupos de funções e funções criados com sucesso!');
+
     // TERCEIRO: Criar usuário administrador padrão
     const adminPassword = await bcrypt.hash('admin123', 12);
 
@@ -172,7 +257,7 @@ async function main() {
 
     console.log('✅ Membros criados:', members.length);
 
-    // QUINTO: Criar uma escala de exemplo
+    // QUINTO: Criar uma escala de exemplo COM FUNÇÕES
     const nextSunday = new Date();
     nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()));
 
@@ -192,7 +277,63 @@ async function main() {
         }
     });
 
-    console.log('✅ Escala criada:', schedule.title);
+    // NOVO: Associar funções aos membros da escala de exemplo
+    const scheduleMemberJoao = await prisma.scheduleMember.findFirst({
+        where: { 
+            scheduleId: schedule.id, 
+            userId: members[0].id 
+        }
+    });
+
+    const scheduleMemberAdmin = await prisma.scheduleMember.findFirst({
+        where: { 
+            scheduleId: schedule.id, 
+            userId: admin.id 
+        }
+    });
+
+    // Buscar algumas funções para associar
+    const funcaoAcolhimento = await prisma.function.findFirst({
+        where: { name: 'Acolhimento' }
+    });
+
+    const funcaoProjecao = await prisma.function.findFirst({
+        where: { name: 'Projeção' }
+    });
+
+    const funcaoFotos = await prisma.function.findFirst({
+        where: { name: 'Fotos' }
+    });
+
+    // Associar funções aos membros da escala
+    if (scheduleMemberJoao && funcaoAcolhimento) {
+        await prisma.scheduleMemberFunction.create({
+            data: {
+                scheduleMemberId: scheduleMemberJoao.id,
+                functionId: funcaoAcolhimento.id
+            }
+        });
+    }
+
+    if (scheduleMemberAdmin && funcaoProjecao) {
+        await prisma.scheduleMemberFunction.create({
+            data: {
+                scheduleMemberId: scheduleMemberAdmin.id,
+                functionId: funcaoProjecao.id
+            }
+        });
+    }
+
+    if (scheduleMemberAdmin && funcaoFotos) {
+        await prisma.scheduleMemberFunction.create({
+            data: {
+                scheduleMemberId: scheduleMemberAdmin.id,
+                functionId: funcaoFotos.id
+            }
+        });
+    }
+
+    console.log('✅ Escala criada com funções associadas:', schedule.title);
 
     console.log('🎉 Seed concluído com sucesso!');
     console.log('');
@@ -207,6 +348,10 @@ async function main() {
     console.log('   - Ministério Infantil');
     console.log('   - Ministério de Recepção');
     console.log('');
+    console.log('🎯 Grupos de Funções criados:');
+    console.log('   📋 Voluntariado Geral: Estacionamento, Acolhimento, Auditório, Dízimos e Oferta, Comunhão, Ceia');
+    console.log('   🎥 Multimídia: Stories, Projeção, Fotos, Reels, Live, Vídeo Live');
+    console.log('');
     console.log('👤 Login do administrador:');
     console.log('   Email: admin@igreja.com');
     console.log('   Senha: admin123');
@@ -218,6 +363,10 @@ async function main() {
     console.log('   maria@email.com / 123456 (ATIVO - Tianguá - Infantil)');
     console.log('   pedro@email.com / 123456 (PENDENTE - Ubajara - Sem ministério)');
     console.log('   ana@email.com / 123456 (ATIVO - Tianguá - Recepção)');
+    console.log('');
+    console.log('📅 Escala de exemplo criada:');
+    console.log('   - João Silva: Acolhimento');
+    console.log('   - Administrador: Projeção + Fotos');
 }
 
 main()

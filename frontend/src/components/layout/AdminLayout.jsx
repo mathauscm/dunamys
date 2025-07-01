@@ -1,3 +1,5 @@
+// frontend/src/components/layout/AdminLayout.jsx - ATUALIZADO
+
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import {
@@ -10,7 +12,8 @@ import {
     X,
     LogOut,
     MapPin,
-    Heart  // NOVO ÍCONE
+    Heart,
+    Briefcase  // NOVO ÍCONE PARA FUNÇÕES
 } from 'lucide-react';
 import Header from '../common/Header';
 import { useAuth } from '../../hooks/useAuth';
@@ -27,6 +30,7 @@ const AdminLayout = () => {
         { name: 'Escalas', href: '/admin/schedules', icon: Calendar },
         { name: 'Campus', href: '/admin/campus', icon: MapPin },
         { name: 'Ministérios', href: '/admin/ministries', icon: Heart },
+        { name: 'Funções', href: '/admin/functions', icon: Briefcase }, // NOVA OPÇÃO
         { name: 'Logs', href: '/admin/logs', icon: FileText },
     ];
 

@@ -18,9 +18,10 @@ import AdminLayout from './components/layout/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminMembers from './pages/admin/Members';
 import AdminSchedules from './pages/admin/Schedules';
-import AdminCampus from './pages/admin/Campus'; // NOVA IMPORTAÇÃO
+import AdminCampus from './pages/admin/Campus';
 import AdminLogs from './pages/admin/Logs';
-import AdminMinistries from './pages/admin/Ministries'
+import AdminMinistries from './pages/admin/Ministries';
+import AdminFunctions from './pages/admin/Functions'; // NOVA IMPORTAÇÃO
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false, requiresActive = true }) => {
@@ -211,7 +212,8 @@ function App() {
                     <Route path="members" element={<AdminMembers />} />
                     <Route path="schedules" element={<AdminSchedules />} />
                     <Route path="campus" element={<AdminCampus />} />
-                     <Route path="ministries" element={<AdminMinistries />} />
+                    <Route path="ministries" element={<AdminMinistries />} />
+                    <Route path="functions" element={<AdminFunctions />} /> {/* NOVA ROTA */}
                     <Route path="logs" element={<AdminLogs />} />
                 </Route>
 

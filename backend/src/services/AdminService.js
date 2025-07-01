@@ -359,8 +359,12 @@ class AdminService {
     }
   }
 
+  /**
+   * Cria uma escala (SCHEDULE) com lógica de associação de funções aos membros
+   * Atualizado para incluir memberFunctions e atribuição de funções a scheduleMember
+   */
   static async createSchedule(data) {
-    const { title, description, date, time, location, memberIds, createdBy } = data;
+    const { title, description, date, time, location, memberIds, createdBy, memberFunctions = {} } = data;
 
     // Verificar se os membros existem e estão ativos
     const members = await prisma.user.findMany({
@@ -376,7 +380,8 @@ class AdminService {
     }
 
     // Verificar indisponibilidades
-    const dateISO = date.length === 10 ? date + 'T00:00:00' : date;
+    const dateISO = typeof date === 'string' && date.length === 10 ? 
+      date + 'T00:00:00' : date;
     const dateObj = new Date(dateISO);
 
     const unavailabilities = await prisma.unavailability.findMany({
@@ -395,6 +400,7 @@ class AdminService {
       throw new Error(`Os seguintes membros estão indisponíveis na data selecionada: ${unavailableMembers}`);
     }
 
+    // Criar escala e membros
     const schedule = await prisma.schedule.create({
       data: {
         title,
@@ -417,6 +423,23 @@ class AdminService {
       }
     });
 
+    // Associar funções aos membros se fornecido
+    if (memberFunctions && Object.keys(memberFunctions).length > 0) {
+      const FunctionService = require('./FunctionService');
+      for (const [memberId, functionIds] of Object.entries(memberFunctions)) {
+        if (functionIds && functionIds.length > 0) {
+          // Encontrar o scheduleMember
+          const scheduleMember = schedule.members.find(m => m.userId === parseInt(memberId));
+          if (scheduleMember) {
+            await FunctionService.assignFunctionToScheduleMember(
+              scheduleMember.id, 
+              functionIds
+            );
+          }
+        }
+      }
+    }
+
     await this.createAuditLog({
       action: 'SCHEDULE_CREATED',
       targetId: schedule.id,
@@ -435,8 +458,11 @@ class AdminService {
     return schedule;
   }
 
+  /**
+   * Atualizar escala (schedule) com lógica de funções por membro
+   */
   static async updateSchedule(scheduleId, data) {
-    const { title, description, date, time, location, memberIds } = data;
+    const { title, description, date, time, location, memberIds, memberFunctions = {} } = data;
 
     const existingSchedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
@@ -449,6 +475,7 @@ class AdminService {
       throw new Error('Escala não encontrada');
     }
 
+    // Validações existentes...
     if (memberIds) {
       const members = await prisma.user.findMany({
         where: {
@@ -470,23 +497,27 @@ class AdminService {
       dateObj = new Date(date);
     }
 
+    // Lógica para atualização de membros e funções
+    const updateData = {
+      title,
+      description,
+      date: date ? dateObj : undefined,
+      time,
+      location
+    };
+
+    if (memberIds) {
+      updateData.members = {
+        deleteMany: {}, // Remove todos os membros existentes
+        create: memberIds.map(memberId => ({
+          userId: memberId
+        }))
+      };
+    }
+
     const schedule = await prisma.schedule.update({
       where: { id: scheduleId },
-      data: {
-        title,
-        description,
-        date: date ? dateObj : undefined,
-        time,
-        location,
-        ...(memberIds && {
-          members: {
-            deleteMany: {},
-            create: memberIds.map(memberId => ({
-              userId: memberId
-            }))
-          }
-        })
-      },
+      data: updateData,
       include: {
         members: {
           include: {
@@ -496,18 +527,34 @@ class AdminService {
       }
     });
 
+    // NOVA PARTE: Atualizar funções dos membros
+    if (memberFunctions && Object.keys(memberFunctions).length > 0) {
+      const FunctionService = require('./FunctionService');
+      for (const [memberId, functionIds] of Object.entries(memberFunctions)) {
+        // Encontrar o scheduleMember
+        const scheduleMember = schedule.members.find(m => m.userId === parseInt(memberId));
+        if (scheduleMember) {
+          await FunctionService.assignFunctionToScheduleMember(
+            scheduleMember.id,
+            functionIds || []
+          );
+        }
+      }
+    }
+
+    // Log de auditoria existente...
     await this.createAuditLog({
       action: 'SCHEDULE_UPDATED',
       targetId: scheduleId,
       description: `Escala "${title}" foi atualizada`
     });
 
+    // Notificações existentes...
     try {
       await NotificationService.sendScheduleUpdate(schedule);
       logger.info(`Notificações de atualização enviadas para ${schedule.members.length} membros`);
     } catch (notificationError) {
       logger.error('Erro ao enviar notificações de atualização:', notificationError);
-      logger.warn('Atualização da escala continuou apesar do erro nas notificações');
     }
 
     return schedule;

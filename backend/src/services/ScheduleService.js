@@ -5,6 +5,7 @@ class ScheduleService {
    * Busca escalas usando filtros flexíveis.
    * Suporta filtros por startDate/endDate (preferencial), upcoming, ou month/year.
    * Outros filtros (como search/status) podem ser passados e tratados no controller/router.
+   * Inclui funções dos membros na escala.
    */
   static async getSchedules(filters = {}) {
     const { month, year, upcoming, startDate, endDate } = filters;
@@ -43,6 +44,16 @@ class ScheduleService {
           include: {
             user: {
               select: { id: true, name: true, phone: true }
+            },
+            // NOVA INCLUSÃO: Incluir funções do membro na escala
+            functions: {
+              include: {
+                function: {
+                  include: {
+                    group: true
+                  }
+                }
+              }
             }
           }
         }

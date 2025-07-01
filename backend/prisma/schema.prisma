@@ -120,6 +120,9 @@ model ScheduleMember {
   // Relacionamentos
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  
+  // NOVO RELACIONAMENTO: Um membro na escala pode ter várias funções
+  functions ScheduleMemberFunction[]
 
   @@unique([userId, scheduleId])
   @@map("schedule_members")
@@ -169,4 +172,56 @@ model AuditLog {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("audit_logs")
+}
+
+// ============================================================================
+// NOVOS MODELS PARA SISTEMA DE FUNÇÕES
+// ============================================================================
+
+// NOVO MODEL: Grupos de Funções
+model FunctionGroup {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamento: Um grupo pode ter várias funções
+  functions Function[]
+
+  @@map("function_groups")
+}
+
+// NOVO MODEL: Funções/Serviços
+model Function {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String?
+  icon          String?  // Nome do ícone (ex: "car", "mic", "camera")
+  active        Boolean  @default(true)
+  groupId       Int      // Referência ao grupo
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relacionamentos
+  group               FunctionGroup      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  scheduleMemberFunctions ScheduleMemberFunction[]
+
+  @@unique([name, groupId]) // Nome único dentro do grupo
+  @@map("functions")
+}
+
+// NOVO MODEL: Relacionamento entre Schedule Member e Function
+model ScheduleMemberFunction {
+  id               Int @id @default(autoincrement())
+  scheduleMemberId Int
+  functionId       Int
+
+  // Relacionamentos
+  scheduleMember ScheduleMember @relation(fields: [scheduleMemberId], references: [id], onDelete: Cascade)
+  function       Function       @relation(fields: [functionId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleMemberId, functionId])
+  @@map("schedule_member_functions")
 }
