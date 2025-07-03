@@ -16,8 +16,11 @@ class AdminController {
     try {
       const { status, search, page = 1, limit = 20 } = req.query;
       
+      // Se for admin de grupo, só pode ver membros ativos
+      const finalStatus = req.user.userType === 'groupAdmin' ? 'ACTIVE' : status;
+      
       const result = await AdminService.getMembers({
-        status,
+        status: finalStatus,
         search,
         page: parseInt(page),
         limit: parseInt(limit)
@@ -105,7 +108,7 @@ class AdminController {
 
   static async createSchedule(req, res, next) {
     try {
-      const { title, description, date, time, location, memberIds } = req.body;
+      const { title, description, date, time, location, memberIds, memberFunctions } = req.body;
       
       const schedule = await AdminService.createSchedule({
         title,
@@ -114,6 +117,7 @@ class AdminController {
         time,
         location,
         memberIds,
+        memberFunctions,
         createdBy: req.user.id
       });
       
@@ -131,7 +135,7 @@ class AdminController {
   static async updateSchedule(req, res, next) {
     try {
       const { id } = req.params;
-      const { title, description, date, time, location, memberIds } = req.body;
+      const { title, description, date, time, location, memberIds, memberFunctions } = req.body;
       
       const schedule = await AdminService.updateSchedule(parseInt(id), {
         title,
@@ -139,7 +143,8 @@ class AdminController {
         date,
         time,
         location,
-        memberIds
+        memberIds,
+        memberFunctions
       });
       
       logger.info(`Escala atualizada ID: ${id} por admin ID: ${req.user.id}`);

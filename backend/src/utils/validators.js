@@ -24,6 +24,10 @@ const schemas = {
     time: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
     location: Joi.string().max(200).required(),
     memberIds: Joi.array().items(Joi.number().integer().positive()).required(),
+    memberFunctions: Joi.object().pattern(
+      Joi.number().integer().positive(),
+      Joi.array().items(Joi.number().integer().positive())
+    ).optional(),
   }),
 
   // Validação de indisponibilidade

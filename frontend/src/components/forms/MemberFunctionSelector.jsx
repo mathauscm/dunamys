@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, X, Briefcase } from 'lucide-react';
 import { api } from '../../services/api';
+import { useAuth, useAdminGroups } from '../../hooks/useAuth';
+import { functionGroupAdminService } from '../../services/functionGroupAdmin';
 
 // Mapeamento de ícones (mesmo do arquivo Functions.jsx)
 const iconMap = {
@@ -28,6 +30,8 @@ const MemberFunctionSelector = ({
     const [functions, setFunctions] = useState([]);
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
+    const { user } = useAuth();
+    const adminGroups = useAdminGroups();
 
     useEffect(() => {
         loadFunctions();
@@ -36,20 +40,45 @@ const MemberFunctionSelector = ({
     const loadFunctions = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/functions/groups');
-            setGroups(response.data.data || []);
             
-            // Flatten all functions for easier searching
-            const allFunctions = [];
-            (response.data.data || []).forEach(group => {
-                group.functions.forEach(func => {
-                    allFunctions.push({
-                        ...func,
-                        groupName: group.name
+            // Se é admin de grupo, carregar apenas suas funções
+            if (user?.userType === 'groupAdmin') {
+                const myFunctionsResponse = await functionGroupAdminService.getMyFunctions();
+                const availableFunctions = myFunctionsResponse.functions || [];
+                
+                // Organizar por grupos
+                const groupsMap = {};
+                availableFunctions.forEach(func => {
+                    if (!groupsMap[func.group.id]) {
+                        groupsMap[func.group.id] = {
+                            id: func.group.id,
+                            name: func.group.name,
+                            functions: []
+                        };
+                    }
+                    groupsMap[func.group.id].functions.push(func);
+                });
+                
+                const groupsArray = Object.values(groupsMap);
+                setGroups(groupsArray);
+                setFunctions(availableFunctions);
+            } else {
+                // Admin geral vê todas as funções
+                const response = await api.get('/functions/groups');
+                setGroups(response.data.data || []);
+                
+                // Flatten all functions for easier searching
+                const allFunctions = [];
+                (response.data.data || []).forEach(group => {
+                    group.functions.forEach(func => {
+                        allFunctions.push({
+                            ...func,
+                            groupName: group.name
+                        });
                     });
                 });
-            });
-            setFunctions(allFunctions);
+                setFunctions(allFunctions);
+            }
         } catch (error) {
             console.error('Erro ao carregar funções:', error);
         } finally {

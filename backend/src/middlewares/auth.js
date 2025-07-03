@@ -22,7 +22,12 @@ const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ error: 'Usuário inválido ou inativo' });
     }
 
-    req.user = user;
+    // Include JWT claims in req.user
+    req.user = {
+      ...user,
+      userType: decoded.userType,
+      adminGroups: decoded.adminGroups || []
+    };
     next();
   } catch (error) {
     return res.status(403).json({ error: 'Token inválido' });

@@ -90,6 +90,26 @@ export const useIsAdmin = () => {
 };
 
 /**
+ * Hook para verificar se o usuário é administrador de grupo
+ * 
+ * @returns {boolean} true se o usuário é admin de grupo, false caso contrário
+ */
+export const useIsGroupAdmin = () => {
+    const { user } = useAuth();
+    return user?.userType === 'groupAdmin';
+};
+
+/**
+ * Hook para verificar se o usuário é admin geral ou admin de grupo
+ * 
+ * @returns {boolean} true se o usuário é admin ou admin de grupo, false caso contrário
+ */
+export const useIsAdminOrGroupAdmin = () => {
+    const { user } = useAuth();
+    return user?.role === 'ADMIN' || user?.userType === 'groupAdmin';
+};
+
+/**
  * Hook para verificar se o usuário é membro
  * 
  * @returns {boolean} true se o usuário é membro, false caso contrário
@@ -207,17 +227,30 @@ export const usePermission = (permission) => {
         'VIEW_OWN_NOTIFICATIONS': true
     };
 
+    // Permissões para admin de grupo
+    const groupAdminPermissions = {
+        'MANAGE_SCHEDULES': true,
+        'VIEW_DASHBOARD': true,
+        'SEND_NOTIFICATIONS': true,
+        ...memberPermissions // Group admins também têm permissões de membro
+    };
+
     const adminPermissions = {
         'MANAGE_MEMBERS': true,
-        'MANAGE_SCHEDULES': true,
-        'SEND_NOTIFICATIONS': true,
+        'MANAGE_FUNCTIONS': true,
+        'MANAGE_CAMPUS': true,
+        'MANAGE_MINISTRIES': true,
         'VIEW_LOGS': true,
         'MANAGE_SYSTEM': true,
-        ...memberPermissions // Admins também têm permissões de membro
+        ...groupAdminPermissions // Admins também têm permissões de admin de grupo
     };
 
     if (user?.role === 'ADMIN') {
         return adminPermissions[permission] || false;
+    }
+
+    if (user?.userType === 'groupAdmin') {
+        return groupAdminPermissions[permission] || false;
     }
 
     if (user?.role === 'MEMBER') {
@@ -225,6 +258,45 @@ export const usePermission = (permission) => {
     }
 
     return false;
+};
+
+/**
+ * Hook para verificar se o usuário pode gerenciar um grupo específico
+ * 
+ * @param {number} groupId - ID do grupo
+ * @returns {boolean} true se pode gerenciar o grupo, false caso contrário
+ */
+export const useCanManageGroup = (groupId) => {
+    const { user } = useAuth();
+    
+    // Admin geral pode gerenciar qualquer grupo
+    if (user?.role === 'ADMIN') {
+        return true;
+    }
+    
+    // Admin de grupo só pode gerenciar seus grupos
+    if (user?.userType === 'groupAdmin' && user?.adminGroups) {
+        return user.adminGroups.some(group => group.id === groupId);
+    }
+    
+    return false;
+};
+
+/**
+ * Hook para obter os grupos que o usuário pode administrar
+ * 
+ * @returns {Array|null} Array de grupos ou null se é admin geral
+ */
+export const useAdminGroups = () => {
+    const { user } = useAuth();
+    
+    // Admin geral tem acesso a todos os grupos
+    if (user?.role === 'ADMIN') {
+        return null;
+    }
+    
+    // Admin de grupo tem acesso apenas aos seus grupos
+    return user?.adminGroups || [];
 };
 
 /**

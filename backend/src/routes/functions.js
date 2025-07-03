@@ -2,6 +2,7 @@ const express = require('express');
 const FunctionController = require('../controllers/FunctionController');
 const { authenticateToken } = require('../middlewares/auth');
 const { requireAdmin } = require('../middlewares/admin');
+const { requireAdminOrGroupAdmin, requireFullAdmin } = require('../middlewares/groupAdmin');
 const { validate } = require('../middlewares/validation');
 
 const router = express.Router();
@@ -34,6 +35,7 @@ router.use(authenticateToken);
  *       200:
  *         description: Lista de grupos de funções
  */
+// Listar grupos - qualquer usuário autenticado pode ver
 router.get('/groups', FunctionController.getFunctionGroups);
 
 /**
@@ -56,7 +58,8 @@ router.get('/groups', FunctionController.getFunctionGroups);
  *               description:
  *                 type: string
  */
-router.post('/groups', requireAdmin, FunctionController.createFunctionGroup);
+// Criar/Editar/Deletar grupos - apenas admin geral
+router.post('/groups', requireFullAdmin, FunctionController.createFunctionGroup);
 
 /**
  * @swagger
@@ -71,7 +74,7 @@ router.post('/groups', requireAdmin, FunctionController.createFunctionGroup);
  *         schema:
  *           type: integer
  */
-router.put('/groups/:id', requireAdmin, FunctionController.updateFunctionGroup);
+router.put('/groups/:id', requireFullAdmin, FunctionController.updateFunctionGroup);
 
 /**
  * @swagger
@@ -86,7 +89,7 @@ router.put('/groups/:id', requireAdmin, FunctionController.updateFunctionGroup);
  *         schema:
  *           type: integer
  */
-router.delete('/groups/:id', requireAdmin, FunctionController.deleteFunctionGroup);
+router.delete('/groups/:id', requireFullAdmin, FunctionController.deleteFunctionGroup);
 
 // ==================== FUNÇÕES ====================
 
@@ -111,6 +114,7 @@ router.delete('/groups/:id', requireAdmin, FunctionController.deleteFunctionGrou
  *       200:
  *         description: Lista de funções
  */
+// Listar funções - qualquer usuário autenticado pode ver
 router.get('/', FunctionController.getFunctions);
 
 /**
@@ -138,7 +142,8 @@ router.get('/', FunctionController.getFunctions);
  *               groupId:
  *                 type: integer
  */
-router.post('/', requireAdmin, FunctionController.createFunction);
+// Criar/Editar/Deletar funções - apenas admin geral
+router.post('/', requireFullAdmin, FunctionController.createFunction);
 
 /**
  * @swagger
@@ -153,7 +158,7 @@ router.post('/', requireAdmin, FunctionController.createFunction);
  *         schema:
  *           type: integer
  */
-router.put('/:id', requireAdmin, FunctionController.updateFunction);
+router.put('/:id', requireFullAdmin, FunctionController.updateFunction);
 
 /**
  * @swagger
@@ -168,6 +173,6 @@ router.put('/:id', requireAdmin, FunctionController.updateFunction);
  *         schema:
  *           type: integer
  */
-router.delete('/:id', requireAdmin, FunctionController.deleteFunction);
+router.delete('/:id', requireFullAdmin, FunctionController.deleteFunction);
 
 module.exports = router;

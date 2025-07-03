@@ -10,6 +10,7 @@ const adminRoutes = require('./admin');
 const campusRoutes = require('./campus');
 const ministryRoutes = require('./ministries');
 const functionRoutes = require('./functions');
+const functionGroupAdminRoutes = require('./functionGroupAdmins');
 
 /**
  * Aplica todas as rotas da API
@@ -24,6 +25,7 @@ const applyRoutes = (app) => {
   app.use('/api/campus', campusRoutes);
   app.use('/api/ministries', ministryRoutes);
   app.use('/api/functions', functionRoutes);
+  app.use('/api/function-group-admins', functionGroupAdminRoutes);
 
   console.log('✅ Rotas da API aplicadas');
 };

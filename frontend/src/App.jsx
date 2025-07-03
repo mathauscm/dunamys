@@ -42,7 +42,7 @@ const ProtectedRoute = ({ children, adminOnly = false, requiresActive = true }) 
     }
 
     // Verificar permissão de admin
-    if (adminOnly && user.role !== 'ADMIN') {
+    if (adminOnly && user.role !== 'ADMIN' && user.userType !== 'groupAdmin') {
         return <Navigate to="/member" replace />;
     }
 
@@ -132,7 +132,7 @@ function App() {
                             // Se já está logado, redirecionar baseado no status e role
                             user.status !== 'ACTIVE' ? (
                                 <Navigate to="/pending" replace />
-                            ) : user.role === 'ADMIN' ? (
+                            ) : (user.role === 'ADMIN' || user.userType === 'groupAdmin') ? (
                                 <Navigate to="/admin" replace />
                             ) : (
                                 <Navigate to="/member" replace />
@@ -150,7 +150,7 @@ function App() {
                             // Se já está logado, redirecionar baseado no status e role
                             user.status !== 'ACTIVE' ? (
                                 <Navigate to="/pending" replace />
-                            ) : user.role === 'ADMIN' ? (
+                            ) : (user.role === 'ADMIN' || user.userType === 'groupAdmin') ? (
                                 <Navigate to="/admin" replace />
                             ) : (
                                 <Navigate to="/member" replace />
@@ -224,7 +224,7 @@ function App() {
                         user ? (
                             user.status !== 'ACTIVE' ? (
                                 <Navigate to="/pending" replace />
-                            ) : user.role === 'ADMIN' ? (
+                            ) : (user.role === 'ADMIN' || user.userType === 'groupAdmin') ? (
                                 <Navigate to="/admin" replace />
                             ) : (
                                 <Navigate to="/member" replace />

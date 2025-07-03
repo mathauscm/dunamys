@@ -91,6 +91,7 @@ model User {
   unavailabilities Unavailability[]
   notifications    Notification[]
   auditLogs        AuditLog[]
+  functionGroupAdmins FunctionGroupAdmin[]
 
   @@map("users")
 }
@@ -189,6 +190,7 @@ model FunctionGroup {
 
   // Relacionamento: Um grupo pode ter várias funções
   functions Function[]
+  admins    FunctionGroupAdmin[]
 
   @@map("function_groups")
 }
@@ -224,4 +226,20 @@ model ScheduleMemberFunction {
 
   @@unique([scheduleMemberId, functionId])
   @@map("schedule_member_functions")
+}
+
+// NOVO MODEL: Administradores de Grupos de Funções
+model FunctionGroupAdmin {
+  id              Int @id @default(autoincrement())
+  userId          Int
+  functionGroupId Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relacionamentos
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  functionGroup FunctionGroup @relation(fields: [functionGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, functionGroupId])
+  @@map("function_group_admins")
 }

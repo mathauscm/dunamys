@@ -217,11 +217,14 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         console.log('Estado da autenticação:', {
             user: state.user ? `${state.user.name} (${state.user.role})` : null,
+            userType: state.user?.userType,
+            adminGroups: state.user?.adminGroups,
             status: state.user?.status,
             loading: state.loading,
             error: state.error,
             hasToken: !!localStorage.getItem('@igreja:token')
         });
+        console.log('Usuário completo:', state.user);
     }, [state]);
 
     const value = {

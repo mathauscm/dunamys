@@ -27,6 +27,7 @@ const adminRoutes = require('./routes/admin');
 const campusRoutes = require('./routes/campus');
 const ministryRoutes = require('./routes/ministries');
 const functionRoutes = require('./routes/functions');
+const functionGroupAdminRoutes = require('./routes/functionGroupAdmins');
 
 // Swagger documentation
 const swaggerUi = require('swagger-ui-express');
@@ -317,6 +318,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/campus', campusRoutes);
 app.use('/api/ministries', ministryRoutes);
 app.use('/api/functions', functionRoutes);
+app.use('/api/function-group-admins', functionGroupAdminRoutes);
 
 /**
  * ============================================================================

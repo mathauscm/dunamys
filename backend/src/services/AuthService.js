@@ -70,7 +70,7 @@ class AuthService {
   }
 
   static async login(email, password) {
-    // Buscar usuário com campus
+    // Buscar usuário com campus e grupos que administra
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -80,6 +80,17 @@ class AuthService {
             name: true,
             city: true,
             active: true
+          }
+        },
+        functionGroupAdmins: {
+          include: {
+            functionGroup: {
+              select: {
+                id: true,
+                name: true,
+                active: true
+              }
+            }
           }
         }
       }
@@ -106,12 +117,21 @@ class AuthService {
       throw new Error('Campus não está mais ativo. Entre em contato com a administração');
     }
 
+    // Verificar se é admin de grupo e quais grupos administra
+    const adminGroups = user.functionGroupAdmins
+      .filter(admin => admin.functionGroup.active)
+      .map(admin => admin.functionGroup.id);
+    
+    const userType = user.role === 'ADMIN' ? 'admin' : (adminGroups.length > 0 ? 'groupAdmin' : 'member');
+
     // Gerar token JWT
     const token = jwt.sign(
       {
         userId: user.id,
         email: user.email,
         role: user.role,
+        userType: userType,
+        adminGroups: adminGroups,
         campusId: user.campusId
       },
       process.env.JWT_SECRET,
@@ -133,6 +153,8 @@ class AuthService {
         phone: user.phone,
         role: user.role,
         status: user.status,
+        userType: userType,
+        adminGroups: adminGroups,
         campus: user.campus
       }
     };
@@ -148,6 +170,17 @@ class AuthService {
             name: true,
             active: true
           }
+        },
+        functionGroupAdmins: {
+          include: {
+            functionGroup: {
+              select: {
+                id: true,
+                name: true,
+                active: true
+              }
+            }
+          }
         }
       }
     });
@@ -161,11 +194,20 @@ class AuthService {
       throw new Error('Campus não está mais ativo');
     }
 
+    // Verificar se é admin de grupo e quais grupos administra
+    const adminGroups = user.functionGroupAdmins
+      .filter(admin => admin.functionGroup.active)
+      .map(admin => admin.functionGroup.id);
+    
+    const userType = user.role === 'ADMIN' ? 'admin' : (adminGroups.length > 0 ? 'groupAdmin' : 'member');
+
     const token = jwt.sign(
       {
         userId: user.id,
         email: user.email,
         role: user.role,
+        userType: userType,
+        adminGroups: adminGroups,
         campusId: user.campusId
       },
       process.env.JWT_SECRET,

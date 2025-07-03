@@ -12,7 +12,19 @@ class MemberService {
         role: true,
         status: true,
         createdAt: true,
-        lastLogin: true
+        lastLogin: true,
+        functionGroupAdmins: {
+          include: {
+            functionGroup: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                active: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -20,7 +32,19 @@ class MemberService {
       throw new Error('Usuário não encontrado');
     }
 
-    return user;
+    // Determinar o tipo de usuário
+    const adminGroups = user.functionGroupAdmins
+      .filter(admin => admin.functionGroup.active)
+      .map(admin => admin.functionGroup.id);
+    
+    const userType = user.role === 'ADMIN' ? 'admin' : (adminGroups.length > 0 ? 'groupAdmin' : 'member');
+
+    return {
+      ...user,
+      userType,
+      adminGroups,
+      functionGroupAdmins: undefined // Remove o campo interno
+    };
   }
 
   static async updateProfile(userId, data) {

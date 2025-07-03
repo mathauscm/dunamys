@@ -16,7 +16,7 @@ import {
     Briefcase  // NOVO ÍCONE PARA FUNÇÕES
 } from 'lucide-react';
 import Header from '../common/Header';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth, usePermission } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 const AdminLayout = () => {
@@ -24,15 +24,25 @@ const AdminLayout = () => {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
 
-    const navigation = [
-        { name: 'Dashboard', href: '/admin', icon: Home, exact: true },
-        { name: 'Membros', href: '/admin/members', icon: Users },
-        { name: 'Escalas', href: '/admin/schedules', icon: Calendar },
-        { name: 'Campus', href: '/admin/campus', icon: MapPin },
-        { name: 'Ministérios', href: '/admin/ministries', icon: Heart },
-        { name: 'Funções', href: '/admin/functions', icon: Briefcase }, // NOVA OPÇÃO
-        { name: 'Logs', href: '/admin/logs', icon: FileText },
+    // Verificar permissões
+    const canManageMembers = usePermission('MANAGE_MEMBERS');
+    const canManageFunctions = usePermission('MANAGE_FUNCTIONS');
+    const canManageCampus = usePermission('MANAGE_CAMPUS');
+    const canManageMinistries = usePermission('MANAGE_MINISTRIES');
+    const canViewLogs = usePermission('VIEW_LOGS');
+
+    const allNavigation = [
+        { name: 'Dashboard', href: '/admin', icon: Home, exact: true, permission: 'VIEW_DASHBOARD' },
+        { name: 'Membros', href: '/admin/members', icon: Users, permission: 'MANAGE_MEMBERS' },
+        { name: 'Escalas', href: '/admin/schedules', icon: Calendar, permission: 'MANAGE_SCHEDULES' },
+        { name: 'Campus', href: '/admin/campus', icon: MapPin, permission: 'MANAGE_CAMPUS' },
+        { name: 'Ministérios', href: '/admin/ministries', icon: Heart, permission: 'MANAGE_MINISTRIES' },
+        { name: 'Funções', href: '/admin/functions', icon: Briefcase, permission: 'MANAGE_FUNCTIONS' },
+        { name: 'Logs', href: '/admin/logs', icon: FileText, permission: 'VIEW_LOGS' },
     ];
+
+    // Filtrar navegação baseada nas permissões
+    const navigation = allNavigation.filter(item => usePermission(item.permission));
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
@@ -104,7 +114,7 @@ const AdminLayout = () => {
                         <div className="ml-3">
                             <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                             <p className="text-xs text-gray-500">
-                                Administrador
+                                {user?.userType === 'groupAdmin' ? 'Admin de Grupo' : 'Administrador'}
                                 {user?.campus && ` - ${user.campus.name}`}
                             </p>
                         </div>
