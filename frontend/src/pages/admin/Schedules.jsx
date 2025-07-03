@@ -88,12 +88,23 @@ const AdminSchedules = () => {
         }
     );
 
-    const handleCreateSubmit = async (data) => {
-        await createSchedule(data);
+    // Handlers consolidados e aprimorados
+    const handleCreateSubmit = async (formData) => {
+        try {
+            console.log('Criando escala:', formData);
+            await createSchedule(formData);
+        } catch (error) {
+            console.error('Erro ao criar escala:', error);
+        }
     };
 
-    const handleEditSubmit = async (data) => {
-        await updateSchedule(data);
+    const handleEditSubmit = async (formData) => {
+        try {
+            console.log('Editando escala:', formData);
+            await updateSchedule(formData);
+        } catch (error) {
+            console.error('Erro ao editar escala:', error);
+        }
     };
 
     const handleDelete = async (schedule) => {
@@ -151,360 +162,381 @@ const AdminSchedules = () => {
     const currentMonthName = format(currentDate, 'MMMM yyyy', { locale: ptBR });
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Gerenciar Escalas</h1>
-                    <p className="text-gray-600">Organize e gerencie as escalas de serviço</p>
-                </div>
+        <div className="container mx-auto px-4 py-6">
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Gerenciar Escalas</h1>
+                        <p className="text-gray-600">Organize e gerencie as escalas de serviço</p>
+                    </div>
 
-                <div className="mt-4 lg:mt-0 flex items-center space-x-4">
-                    <button
-                        onClick={handleToday}
-                        className="btn btn-secondary btn-sm"
-                    >
-                        Hoje
-                    </button>
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="btn btn-primary flex items-center"
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nova Escala
-                    </button>
-                </div>
-            </div>
-
-            {/* Filters */}
-            <div className="card">
-                <div className="card-body">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-4">
-                        {/* Month Navigation */}
-                        <div className="flex items-center space-x-4">
-                            <button
-                                onClick={handlePreviousMonth}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                <ChevronLeft className="h-5 w-5" />
-                            </button>
-
-                            <h2 className="text-lg font-semibold text-gray-900 capitalize min-w-[200px] text-center">
-                                {currentMonthName}
-                            </h2>
-
-                            <button
-                                onClick={handleNextMonth}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                <ChevronRight className="h-5 w-5" />
-                            </button>
-                        </div>
-
-                        {/* Search and Filter */}
-                        <div className="flex items-center space-x-4">
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    type="text"
-                                    className="input pl-10 w-64"
-                                    placeholder="Buscar escalas..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </div>
-
-                            <button
-                                onClick={refresh}
-                                className="btn btn-secondary flex items-center"
-                            >
-                                <Filter className="h-4 w-4 mr-2" />
-                                Atualizar
-                            </button>
-                        </div>
+                    <div className="mt-4 lg:mt-0 flex items-center space-x-4">
+                        <button
+                            onClick={handleToday}
+                            className="btn btn-secondary btn-sm"
+                        >
+                            Hoje
+                        </button>
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="btn btn-primary flex items-center"
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nova Escala
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            {/* Schedules Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {monthSchedules.length === 0 ? (
-                    <div className="col-span-full">
-                        <div className="card">
-                            <div className="card-body text-center py-12">
-                                <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-                                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                                    Nenhuma escala encontrada
-                                </h3>
-                                <p className="mt-1 text-sm text-gray-500">
-                                    {search
-                                        ? 'Nenhuma escala corresponde aos critérios de busca.'
-                                        : `Nenhuma escala cadastrada para ${currentMonthName.toLowerCase()}.`
-                                    }
-                                </p>
+                {/* Filters */}
+                <div className="card">
+                    <div className="card-body">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-4">
+                            {/* Month Navigation */}
+                            <div className="flex items-center space-x-4">
                                 <button
-                                    onClick={() => setShowCreateModal(true)}
-                                    className="btn btn-primary mt-4"
+                                    onClick={handlePreviousMonth}
+                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                                 >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Criar primeira escala
+                                    <ChevronLeft className="h-5 w-5" />
+                                </button>
+
+                                <h2 className="text-lg font-semibold text-gray-900 capitalize min-w-[200px] text-center">
+                                    {currentMonthName}
+                                </h2>
+
+                                <button
+                                    onClick={handleNextMonth}
+                                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                >
+                                    <ChevronRight className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            {/* Search and Filter */}
+                            <div className="flex items-center space-x-4">
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Search className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        className="input pl-10 w-64"
+                                        placeholder="Buscar escalas..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={refresh}
+                                    className="btn btn-secondary flex items-center"
+                                >
+                                    <Filter className="h-4 w-4 mr-2" />
+                                    Atualizar
                                 </button>
                             </div>
                         </div>
                     </div>
-                ) : (
-                    monthSchedules.map((schedule) => (
-                        <div key={schedule.id} className="card hover:shadow-lg transition-shadow">
-                            <div className="card-header">
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <h3 className="font-medium text-gray-900 line-clamp-2">
-                                            {schedule.title}
-                                        </h3>
-                                        <div className="mt-1">
-                                            {getStatusBadge(schedule)}
+                </div>
+
+                {/* Schedules Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {monthSchedules.length === 0 ? (
+                        <div className="col-span-full">
+                            <div className="card">
+                                <div className="card-body text-center py-12">
+                                    <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+                                    <h3 className="mt-2 text-sm font-medium text-gray-900">
+                                        Nenhuma escala encontrada
+                                    </h3>
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        {search
+                                            ? 'Nenhuma escala corresponde aos critérios de busca.'
+                                            : `Nenhuma escala cadastrada para ${currentMonthName.toLowerCase()}.`
+                                        }
+                                    </p>
+                                    <button
+                                        onClick={() => setShowCreateModal(true)}
+                                        className="btn btn-primary mt-4"
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Criar primeira escala
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        monthSchedules.map((schedule) => (
+                            <div key={schedule.id} className="card hover:shadow-lg transition-shadow">
+                                <div className="card-header">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="font-medium text-gray-900 line-clamp-2">
+                                                {schedule.title}
+                                            </h3>
+                                            <div className="mt-1">
+                                                {getStatusBadge(schedule)}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-1 ml-2">
+                                            <button
+                                                onClick={() => handleViewDetails(schedule)}
+                                                className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                                                title="Ver detalhes"
+                                            >
+                                                <Eye className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleEdit(schedule)}
+                                                className="p-1 text-blue-400 hover:text-blue-600 rounded"
+                                                title="Editar"
+                                            >
+                                                <Edit2 className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(schedule)}
+                                                className="p-1 text-red-400 hover:text-red-600 rounded"
+                                                title="Remover"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-1 ml-2">
+                                </div>
+
+                                <div className="card-body">
+                                    <div className="space-y-3">
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                            {format(new Date(schedule.date), "dd/MM/yyyy", { locale: ptBR })}
+                                        </div>
+
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                                            {schedule.time}
+                                        </div>
+
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                                            <span className="line-clamp-1">{schedule.location}</span>
+                                        </div>
+
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <Users className="h-4 w-4 mr-2 text-gray-400" />
+                                            {schedule.members?.length || 0} membro{(schedule.members?.length || 0) !== 1 ? 's' : ''}
+                                        </div>
+
+                                        {schedule.description && (
+                                            <p className="text-sm text-gray-600 line-clamp-2">
+                                                {schedule.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="card-footer">
+                                    <div className="flex items-center justify-between">
                                         <button
                                             onClick={() => handleViewDetails(schedule)}
-                                            className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                                            title="Ver detalhes"
+                                            className="btn btn-secondary btn-sm"
                                         >
-                                            <Eye className="h-4 w-4" />
+                                            Ver Detalhes
                                         </button>
                                         <button
-                                            onClick={() => handleEdit(schedule)}
-                                            className="p-1 text-blue-400 hover:text-blue-600 rounded"
-                                            title="Editar"
+                                            onClick={() => handleSendNotification(schedule)}
+                                            className="btn btn-primary btn-sm flex items-center"
                                         >
-                                            <Edit2 className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(schedule)}
-                                            className="p-1 text-red-400 hover:text-red-600 rounded"
-                                            title="Remover"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Send className="h-3 w-3 mr-1" />
+                                            Notificar
                                         </button>
                                     </div>
                                 </div>
                             </div>
+                        ))
+                    )}
+                </div>
 
-                            <div className="card-body">
-                                <div className="space-y-3">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                        {format(new Date(schedule.date), "dd/MM/yyyy", { locale: ptBR })}
-                                    </div>
+                {/* Modal de Criação - Nova Escala */}
+                <Modal
+                    isOpen={showCreateModal}
+                    onClose={() => setShowCreateModal(false)}
+                    title="Nova Escala"
+                    size="lg"
+                    scrollable={true}
+                    closeOnEscape={true}
+                    closeOnBackdropClick={true}
+                >
+                    <ScheduleForm
+                        onSubmit={handleCreateSubmit}
+                        loading={creating}
+                        onClose={() => setShowCreateModal(false)}
+                    />
+                </Modal>
 
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                                        {schedule.time}
-                                    </div>
+                {/* Modal de Edição */}
+                <Modal
+                    isOpen={showEditModal}
+                    onClose={() => {
+                        setShowEditModal(false);
+                        setSelectedSchedule(null);
+                    }}
+                    title="Editar Escala"
+                    size="lg"
+                    scrollable={true}
+                    closeOnEscape={true}
+                    closeOnBackdropClick={true}
+                >
+                    {selectedSchedule && (
+                        <ScheduleForm
+                            schedule={selectedSchedule}
+                            onSubmit={handleEditSubmit}
+                            loading={updating}
+                            onClose={() => {
+                                setShowEditModal(false);
+                                setSelectedSchedule(null);
+                            }}
+                        />
+                    )}
+                </Modal>
 
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                                        <span className="line-clamp-1">{schedule.location}</span>
-                                    </div>
+                {/* Modal de Detalhes */}
+                <Modal
+                    isOpen={showDetailsModal}
+                    onClose={() => {
+                        setShowDetailsModal(false);
+                        setSelectedSchedule(null);
+                    }}
+                    title="Detalhes da Escala"
+                    size="lg"
+                    scrollable={true}
+                    closeOnEscape={true}
+                    closeOnBackdropClick={false}
+                >
+                    {selectedSchedule && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 className="font-medium text-gray-900 mb-4">Informações Gerais</h3>
+                                    <dl className="space-y-3">
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Título</dt>
+                                            <dd className="text-sm text-gray-900">{selectedSchedule.title}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Data</dt>
+                                            <dd className="text-sm text-gray-900">
+                                                {format(new Date(selectedSchedule.date), "dd/MM/yyyy", { locale: ptBR })}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Horário</dt>
+                                            <dd className="text-sm text-gray-900">{selectedSchedule.time}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Local</dt>
+                                            <dd className="text-sm text-gray-900">{selectedSchedule.location}</dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Status</dt>
+                                            <dd className="text-sm">{getStatusBadge(selectedSchedule)}</dd>
+                                        </div>
+                                    </dl>
+                                </div>
 
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <Users className="h-4 w-4 mr-2 text-gray-400" />
-                                        {schedule.members?.length || 0} membro{(schedule.members?.length || 0) !== 1 ? 's' : ''}
-                                    </div>
-
-                                    {schedule.description && (
-                                        <p className="text-sm text-gray-600 line-clamp-2">
-                                            {schedule.description}
-                                        </p>
+                                <div>
+                                    <h3 className="font-medium text-gray-900 mb-4">
+                                        Membros Escalados ({selectedSchedule.members?.length || 0})
+                                    </h3>
+                                    {selectedSchedule.members && selectedSchedule.members.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {selectedSchedule.members.map((member) => (
+                                                <div
+                                                    key={member.user?.id || member.id}
+                                                    className="flex items-center p-3 bg-gray-50 rounded-lg"
+                                                >
+                                                    <div className="flex-shrink-0 h-8 w-8">
+                                                        <div className="h-8 w-8 bg-primary-600 rounded-full flex items-center justify-center">
+                                                            <span className="text-xs font-medium text-white">
+                                                                {(member.user?.name || member.name || 'U').charAt(0).toUpperCase()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="ml-3">
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {member.user?.name || member.name}
+                                                        </div>
+                                                        {(member.user?.phone || member.phone) && (
+                                                            <div className="text-xs text-gray-500">
+                                                                {member.user?.phone || member.phone}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-gray-500">Nenhum membro escalado</p>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="card-footer">
-                                <div className="flex items-center justify-between">
-                                    <button
-                                        onClick={() => handleViewDetails(schedule)}
-                                        className="btn btn-secondary btn-sm"
-                                    >
-                                        Ver Detalhes
-                                    </button>
-                                    <button
-                                        onClick={() => handleSendNotification(schedule)}
-                                        className="btn btn-primary btn-sm flex items-center"
-                                    >
-                                        <Send className="h-3 w-3 mr-1" />
-                                        Notificar
-                                    </button>
+                            {selectedSchedule.description && (
+                                <div>
+                                    <h3 className="font-medium text-gray-900 mb-2">Descrição</h3>
+                                    <p className="text-sm text-gray-600">{selectedSchedule.description}</p>
                                 </div>
+                            )}
+
+                            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                                <button
+                                    onClick={() => handleSendNotification(selectedSchedule)}
+                                    className="btn btn-primary flex items-center"
+                                >
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Enviar Notificação
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowDetailsModal(false);
+                                        handleEdit(selectedSchedule);
+                                    }}
+                                    className="btn btn-secondary flex items-center"
+                                >
+                                    <Edit2 className="h-4 w-4 mr-2" />
+                                    Editar
+                                </button>
                             </div>
                         </div>
-                    ))
-                )}
+                    )}
+                </Modal>
+
+                {/* Modal de Notificação */}
+                <Modal
+                    isOpen={showNotificationModal}
+                    onClose={() => {
+                        setShowNotificationModal(false);
+                        setSelectedSchedule(null);
+                    }}
+                    title="Enviar Notificação"
+                    size="md"
+                    scrollable={true}
+                    closeOnEscape={true}
+                    closeOnBackdropClick={true}
+                >
+                    {selectedSchedule && (
+                        <NotificationForm
+                            schedule={selectedSchedule}
+                            onSubmit={sendNotification}
+                            loading={sendingNotification}
+                            onCancel={() => {
+                                setShowNotificationModal(false);
+                                setSelectedSchedule(null);
+                            }}
+                        />
+                    )}
+                </Modal>
             </div>
-
-            {/* Create Schedule Modal */}
-            <Modal
-                isOpen={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
-                title="Nova Escala"
-                size="lg"
-            >
-                <ScheduleForm
-                    onSubmit={handleCreateSubmit}
-                    loading={creating}
-                />
-            </Modal>
-
-            {/* Edit Schedule Modal */}
-            <Modal
-                isOpen={showEditModal}
-                onClose={() => {
-                    setShowEditModal(false);
-                    setSelectedSchedule(null);
-                }}
-                title="Editar Escala"
-                size="lg"
-            >
-                {selectedSchedule && (
-                    <ScheduleForm
-                        schedule={selectedSchedule}
-                        onSubmit={handleEditSubmit}
-                        loading={updating}
-                    />
-                )}
-            </Modal>
-
-            {/* Schedule Details Modal */}
-            <Modal
-                isOpen={showDetailsModal}
-                onClose={() => {
-                    setShowDetailsModal(false);
-                    setSelectedSchedule(null);
-                }}
-                title="Detalhes da Escala"
-                size="lg"
-            >
-                {selectedSchedule && (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 className="font-medium text-gray-900 mb-4">Informações Gerais</h3>
-                                <dl className="space-y-3">
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Título</dt>
-                                        <dd className="text-sm text-gray-900">{selectedSchedule.title}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Data</dt>
-                                        <dd className="text-sm text-gray-900">
-                                            {format(new Date(selectedSchedule.date), "dd/MM/yyyy", { locale: ptBR })}
-                                        </dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Horário</dt>
-                                        <dd className="text-sm text-gray-900">{selectedSchedule.time}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Local</dt>
-                                        <dd className="text-sm text-gray-900">{selectedSchedule.location}</dd>
-                                    </div>
-                                    <div>
-                                        <dt className="text-sm font-medium text-gray-500">Status</dt>
-                                        <dd className="text-sm">{getStatusBadge(selectedSchedule)}</dd>
-                                    </div>
-                                </dl>
-                            </div>
-
-                            <div>
-                                <h3 className="font-medium text-gray-900 mb-4">
-                                    Membros Escalados ({selectedSchedule.members?.length || 0})
-                                </h3>
-                                {selectedSchedule.members && selectedSchedule.members.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {selectedSchedule.members.map((member) => (
-                                            <div
-                                                key={member.user.id}
-                                                className="flex items-center p-3 bg-gray-50 rounded-lg"
-                                            >
-                                                <div className="flex-shrink-0 h-8 w-8">
-                                                    <div className="h-8 w-8 bg-primary-600 rounded-full flex items-center justify-center">
-                                                        <span className="text-xs font-medium text-white">
-                                                            {member.user.name.charAt(0).toUpperCase()}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="ml-3">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {member.user.name}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        {member.user.phone}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-gray-500">Nenhum membro escalado</p>
-                                )}
-                            </div>
-                        </div>
-
-                        {selectedSchedule.description && (
-                            <div>
-                                <h3 className="font-medium text-gray-900 mb-2">Descrição</h3>
-                                <p className="text-sm text-gray-600">{selectedSchedule.description}</p>
-                            </div>
-                        )}
-
-                        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                            <button
-                                onClick={() => handleSendNotification(selectedSchedule)}
-                                className="btn btn-primary flex items-center"
-                            >
-                                <Send className="h-4 w-4 mr-2" />
-                                Enviar Notificação
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setShowDetailsModal(false);
-                                    handleEdit(selectedSchedule);
-                                }}
-                                className="btn btn-secondary flex items-center"
-                            >
-                                <Edit2 className="h-4 w-4 mr-2" />
-                                Editar
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
-
-            {/* Notification Modal */}
-            <Modal
-                isOpen={showNotificationModal}
-                onClose={() => {
-                    setShowNotificationModal(false);
-                    setSelectedSchedule(null);
-                }}
-                title="Enviar Notificação"
-                size="md"
-            >
-                {selectedSchedule && (
-                    <NotificationForm
-                        schedule={selectedSchedule}
-                        onSubmit={sendNotification}
-                        loading={sendingNotification}
-                        onCancel={() => {
-                            setShowNotificationModal(false);
-                            setSelectedSchedule(null);
-                        }}
-                    />
-                )}
-            </Modal>
         </div>
     );
 };
