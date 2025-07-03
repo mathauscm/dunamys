@@ -436,13 +436,17 @@ A documentação completa da API está disponível em:
 
 ## 🤝 Contribuição
 
-> **Importante:** Por padrão, os pull requests devem ser abertos para a branch `main`.  
-> Se preferir que contribuidores usem a branch `features`, [defina-a como branch padrão no GitHub](https://docs.github.com/pt/repositories/configuring-branches-and-merges-in-your-repository/setting-the-default-branch) e explique isso aqui.
->
-> **Sugestão:**  
-> - Faça fork do repositório  
-> - Crie uma branch: `git checkout -b feature/sua-feature`
-> - Envie PR para a branch `main` (ou `features` se for o padrão)
+## 🤝 Contribuindo
+
+> **Importante:** Todos os pull requests devem ser abertos para a branch `main`.
+
+### Como contribuir:
+
+1. Faça um fork deste repositório
+2. Crie uma nova branch a partir da `main`:
+   ```bash
+   git checkout -b feature/nome-da-sua-feature
+
 > - Dúvidas? Abra uma [issue](https://github.com/mathauscm/dunamys/issues)
 
 ### Guidelines
