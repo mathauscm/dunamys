@@ -395,6 +395,141 @@ class AdminMemberService {
   }
 
   /**
+   * Busca indisponibilidades dos membros para uma data específica
+   * @param {string} date - Data no formato YYYY-MM-DD
+   * @returns {Array} - Lista de membros indisponíveis na data
+   */
+  static async getMemberUnavailabilities(date) {
+    try {
+      const targetDate = new Date(date);
+      
+      const unavailabilities = await prisma.unavailability.findMany({
+        where: {
+          AND: [
+            { startDate: { lte: targetDate } },
+            { endDate: { gte: targetDate } },
+            {
+              user: {
+                role: 'MEMBER',
+                status: 'ACTIVE'
+              }
+            }
+          ]
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              campusId: true,
+              campus: {
+                select: {
+                  id: true,
+                  name: true,
+                  city: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Retornar lista de IDs dos membros indisponíveis
+      return {
+        unavailableMembers: unavailabilities.map(unavail => unavail.user),
+        unavailabilities: unavailabilities.map(unavail => ({
+          id: unavail.id,
+          userId: unavail.userId,
+          startDate: unavail.startDate,
+          endDate: unavail.endDate,
+          reason: unavail.reason,
+          member: unavail.user
+        }))
+      };
+    } catch (error) {
+      logger.error(`Erro ao buscar indisponibilidades para a data ${date}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtém membros disponíveis para uma data específica
+   * @param {string} date - Data no formato YYYY-MM-DD
+   * @param {Object} filters - Filtros adicionais (campusId, etc.)
+   * @returns {Object} - Lista de membros disponíveis
+   */
+  static async getAvailableMembers(date, filters = {}) {
+    try {
+      // Buscar indisponibilidades para a data
+      const { unavailableMembers } = await this.getMemberUnavailabilities(date);
+      const unavailableMemberIds = unavailableMembers.map(member => member.id);
+
+      // Filtros base
+      let whereClause = {
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        // Excluir membros indisponíveis
+        id: { notIn: unavailableMemberIds }
+      };
+
+      // Aplicar filtros adicionais
+      if (filters.campusId) {
+        whereClause.campusId = parseInt(filters.campusId);
+      }
+
+      if (filters.ministryId) {
+        whereClause.ministryId = parseInt(filters.ministryId);
+      }
+
+      if (filters.search) {
+        whereClause.OR = [
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { email: { contains: filters.search, mode: 'insensitive' } }
+        ];
+      }
+
+      const availableMembers = await prisma.user.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          campusId: true,
+          campus: {
+            select: {
+              id: true,
+              name: true,
+              city: true
+            }
+          },
+          ministry: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          }
+        },
+        orderBy: { name: 'asc' }
+      });
+
+      return {
+        members: availableMembers.map(member => ({
+          ...member,
+          phoneFormatted: member.phone ? formatPhone(member.phone) : null
+        })),
+        unavailableCount: unavailableMemberIds.length,
+        totalAvailable: availableMembers.length
+      };
+    } catch (error) {
+      logger.error(`Erro ao buscar membros disponíveis para a data ${date}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtém estatísticas de membros
    * @returns {Object} - Estatísticas de membros
    */

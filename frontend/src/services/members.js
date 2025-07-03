@@ -97,5 +97,16 @@ export const adminService = {
     async getLogs(params = {}) {
         const response = await api.get('/admin/logs', { params });
         return response.data;
+    },
+
+    async getAvailableMembers(date, filters = {}) {
+        const params = { date, ...filters };
+        const response = await api.get('/admin/members/available', { params });
+        return response.data;
+    },
+
+    async getMemberUnavailabilities(date) {
+        const response = await api.get('/admin/members/unavailabilities', { params: { date } });
+        return response.data;
     }
 };

@@ -106,6 +106,53 @@ class AdminController {
     }
   }
 
+  /**
+   * NOVO MÉTODO: Buscar membros disponíveis para uma data
+   */
+  static async getAvailableMembers(req, res, next) {
+    try {
+      const { date, campusId, ministryId, search } = req.query;
+      
+      if (!date) {
+        return res.status(400).json({
+          error: 'Data é obrigatória (formato: YYYY-MM-DD)'
+        });
+      }
+
+      const filters = {};
+      if (campusId) filters.campusId = campusId;
+      if (ministryId) filters.ministryId = ministryId;
+      if (search) filters.search = search;
+
+      const result = await AdminService.getAvailableMembers(date, filters);
+      
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * NOVO MÉTODO: Buscar indisponibilidades para uma data
+   */
+  static async getMemberUnavailabilities(req, res, next) {
+    try {
+      const { date } = req.query;
+      
+      if (!date) {
+        return res.status(400).json({
+          error: 'Data é obrigatória (formato: YYYY-MM-DD)'
+        });
+      }
+
+      const result = await AdminService.getMemberUnavailabilities(date);
+      
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createSchedule(req, res, next) {
     try {
       const { title, description, date, time, location, memberIds, memberFunctions } = req.body;

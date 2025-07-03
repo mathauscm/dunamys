@@ -68,29 +68,56 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
         }
     }, [schedule]);
 
-    // Função para atualizar as funções de um membro
+    // Função para atualizar as funções de um membro - otimizada
     const handleMemberFunctionChange = (memberId, functionIds) => {
-        setMemberFunctions(prev => ({
-            ...prev,
-            [memberId]: functionIds
-        }));
+        setMemberFunctions(prev => {
+            if (functionIds.length === 0) {
+                const newState = { ...prev };
+                delete newState[memberId];
+                return newState;
+            }
+            return {
+                ...prev,
+                [memberId]: functionIds
+            };
+        });
     };
 
-    // Carrega membros
+    // Carrega membros baseado na data selecionada
     useEffect(() => {
         const fetchMembers = async () => {
             try {
                 setLoadingMembers(true);
-                const response = await adminService.getMembers({ status: 'ACTIVE', limit: 100 });
-                setMembers(response.members);
+                
+                if (selectedDate) {
+                    // Se há data selecionada, buscar apenas membros disponíveis
+                    const dateStr = selectedDate.toISOString().split('T')[0];
+                    const response = await adminService.getAvailableMembers(dateStr, { limit: 100 });
+                    setMembers(response.members);
+                    console.log(`Carregados ${response.members.length} membros disponíveis para ${dateStr}`);
+                    if (response.unavailableCount > 0) {
+                        console.log(`${response.unavailableCount} membros indisponíveis foram filtrados`);
+                    }
+                } else {
+                    // Se não há data, carregar todos os membros ativos
+                    const response = await adminService.getMembers({ status: 'ACTIVE', limit: 100 });
+                    setMembers(response.members);
+                }
             } catch (error) {
                 console.error('Erro ao carregar membros:', error);
+                // Fallback para busca tradicional em caso de erro
+                try {
+                    const response = await adminService.getMembers({ status: 'ACTIVE', limit: 100 });
+                    setMembers(response.members);
+                } catch (fallbackError) {
+                    console.error('Erro no fallback:', fallbackError);
+                }
             } finally {
                 setLoadingMembers(false);
             }
         };
         fetchMembers();
-    }, []);
+    }, [selectedDate]); // Dependência da data selecionada
 
     // Carrega campuses
     useEffect(() => {
@@ -155,9 +182,11 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
 
         // Se removendo o membro, remover também suas funções
         if (!newIds.includes(memberId)) {
-            const newMemberFunctions = { ...memberFunctions };
-            delete newMemberFunctions[memberId];
-            setMemberFunctions(newMemberFunctions);
+            setMemberFunctions(prev => {
+                const newMemberFunctions = { ...prev };
+                delete newMemberFunctions[memberId];
+                return newMemberFunctions;
+            });
         }
     };
 
@@ -444,34 +473,57 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                 </p>
                                             </div>
 
-                                            {/* Filtro por Campus */}
+                                            {/* Filtro por Campus e Info de Disponibilidade */}
                                             <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                                <label className="label mb-2">
-                                                    Filtrar membros por campus
-                                                    <span className="text-xs text-gray-500 font-normal ml-2">
-                                                        ({filteredMembers.length} membro{filteredMembers.length !== 1 ? 's' : ''} encontrado{filteredMembers.length !== 1 ? 's' : ''})
-                                                    </span>
-                                                </label>
-                                                <select
-                                                    className="input max-w-sm"
-                                                    value={filterCampusId}
-                                                    onChange={(e) => setFilterCampusId(e.target.value)}
-                                                >
-                                                    <option value="all">Todos os membros ({members.length})</option>
-                                                    {campuses.map(campus => {
-                                                        const membersInCampus = getMembersCountForCampus(campus.id);
-                                                        return (
-                                                            <option key={campus.id} value={String(campus.id)}>
-                                                                {campus.name}{campus.city ? ` - ${campus.city}` : ''} ({membersInCampus})
-                                                            </option>
-                                                        );
-                                                    })}
-                                                </select>
+                                                <div className="flex flex-col space-y-3">
+                                                    <div>
+                                                        <label className="label mb-2">
+                                                            Filtrar membros por campus
+                                                            <span className="text-xs text-gray-500 font-normal ml-2">
+                                                                ({filteredMembers.length} membro{filteredMembers.length !== 1 ? 's' : ''} encontrado{filteredMembers.length !== 1 ? 's' : ''})
+                                                            </span>
+                                                        </label>
+                                                        <select
+                                                            className="input max-w-sm"
+                                                            value={filterCampusId}
+                                                            onChange={(e) => setFilterCampusId(e.target.value)}
+                                                        >
+                                                            <option value="all">Todos os membros ({members.length})</option>
+                                                            {campuses.map(campus => {
+                                                                const membersInCampus = getMembersCountForCampus(campus.id);
+                                                                return (
+                                                                    <option key={campus.id} value={String(campus.id)}>
+                                                                        {campus.name}{campus.city ? ` - ${campus.city}` : ''} ({membersInCampus})
+                                                                    </option>
+                                                                );
+                                                            })}
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    {/* Info de disponibilidade */}
+                                                    {selectedDate && (
+                                                        <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-md">
+                                                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                            </svg>
+                                                            Mostrando apenas membros disponíveis para {selectedDate.toLocaleDateString('pt-BR')}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {!selectedDate && (
+                                                        <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">
+                                                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                            </svg>
+                                                            Selecione uma data para filtrar por disponibilidade
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             {/* Lista de Membros */}
-                                            <div className="bg-white rounded-lg border border-gray-200">
-                                                <div className="px-4 py-3 border-b border-gray-200">
+                                            <div className="bg-white rounded-lg border border-gray-200 flex flex-col" style={{maxHeight: '500px'}}>
+                                                <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
                                                     <h4 className="text-sm font-medium text-gray-900 flex items-center">
                                                         <UserCheck className="w-4 h-4 mr-2" />
                                                         Membros Disponíveis
@@ -483,7 +535,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                     </h4>
                                                 </div>
 
-                                                <div className="max-h-96 overflow-y-auto">
+                                                <div className="flex-1 overflow-y-auto" style={{scrollBehavior: 'smooth'}}>
                                                     {filteredMembers.length === 0 ? (
                                                         <div className="text-center py-8">
                                                             <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
@@ -500,55 +552,58 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                                 const isSelected = selectedMemberIds?.includes(member.id) || false;
 
                                                                 return (
-                                                                    <div key={member.id} className="p-4 hover:bg-gray-50 transition-colors">
-                                                                        <div className="flex items-start space-x-3">
-                                                                            <div className="flex items-center h-5">
-                                                                                <input
-                                                                                    type="checkbox"
-                                                                                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                                                                                    checked={isSelected}
-                                                                                    onChange={() => handleMemberToggle(member.id)}
-                                                                                />
-                                                                            </div>
+                                                                    <div key={member.id} className="relative">
+                                                                        <div className="p-4 hover:bg-gray-50 transition-colors">
+                                                                            <div className="flex items-start space-x-3">
+                                                                                <div className="flex items-center h-5">
+                                                                                    <input
+                                                                                        type="checkbox"
+                                                                                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                                                                        checked={isSelected}
+                                                                                        onChange={() => handleMemberToggle(member.id)}
+                                                                                    />
+                                                                                </div>
 
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <div>
-                                                                                        <p className="text-sm font-medium text-gray-900">
-                                                                                            {member.name}
-                                                                                        </p>
-                                                                                        <p className="text-xs text-gray-500">
-                                                                                            {member.email}
-                                                                                            {member.campus?.name && (
-                                                                                                <span className="ml-2 text-blue-600">
-                                                                                                    📍 {member.campus.name}
-                                                                                                </span>
-                                                                                            )}
-                                                                                        </p>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex items-center justify-between">
+                                                                                        <div>
+                                                                                            <p className="text-sm font-medium text-gray-900">
+                                                                                                {member.name}
+                                                                                            </p>
+                                                                                            <p className="text-xs text-gray-500">
+                                                                                                {member.email}
+                                                                                                {member.campus?.name && (
+                                                                                                    <span className="ml-2 text-blue-600">
+                                                                                                        📍 {member.campus.name}
+                                                                                                    </span>
+                                                                                                )}
+                                                                                            </p>
+                                                                                        </div>
+
+                                                                                        {isSelected && (
+                                                                                            <div className="flex items-center text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                                                                                                <Settings className="w-3 h-3 mr-1" />
+                                                                                                Selecionado
+                                                                                            </div>
+                                                                                        )}
                                                                                     </div>
 
+                                                                                    {/* Seletor de Funções - Otimizado */}
                                                                                     {isSelected && (
-                                                                                        <div className="flex items-center text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                                                                                            <Settings className="w-3 h-3 mr-1" />
-                                                                                            Selecionado
+                                                                                        <div className="mt-3 p-3 bg-gray-50 rounded-lg border relative z-10">
+                                                                                            <label className="block text-xs font-medium text-gray-700 mb-2">
+                                                                                                <Settings className="w-3 h-3 inline mr-1" />
+                                                                                                Funções do membro:
+                                                                                            </label>
+                                                                                            <MemberFunctionSelector
+                                                                                                member={member}
+                                                                                                selectedFunctions={memberFunctions[member.id] || []}
+                                                                                                onChange={handleMemberFunctionChange}
+                                                                                                isLastInList={filteredMembers.indexOf(member) === filteredMembers.length - 1}
+                                                                                            />
                                                                                         </div>
                                                                                     )}
                                                                                 </div>
-
-                                                                                {/* Seletor de Funções - Melhorado */}
-                                                                                {isSelected && (
-                                                                                    <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
-                                                                                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                                                                                            <Settings className="w-3 h-3 inline mr-1" />
-                                                                                            Funções do membro:
-                                                                                        </label>
-                                                                                        <MemberFunctionSelector
-                                                                                            member={member}
-                                                                                            selectedFunctions={memberFunctions[member.id] || []}
-                                                                                            onChange={handleMemberFunctionChange}
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     </div>

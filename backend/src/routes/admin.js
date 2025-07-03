@@ -23,6 +23,8 @@ router.get('/dashboard', requireAdminOrGroupAdmin, AdminController.getDashboard)
 
 // Gerenciamento de membros - admin geral e admin de grupo podem ver a lista
 router.get('/members', requireAdminOrGroupAdmin, AdminController.getMembers);
+router.get('/members/available', requireAdminOrGroupAdmin, AdminController.getAvailableMembers);
+router.get('/members/unavailabilities', requireAdminOrGroupAdmin, AdminController.getMemberUnavailabilities);
 router.post('/members/:id/approve', requireFullAdmin, AdminController.approveMember);
 router.post('/members/:id/reject', requireFullAdmin, AdminController.rejectMember);
 router.delete('/members/:id', requireFullAdmin, AdminController.deleteMember);

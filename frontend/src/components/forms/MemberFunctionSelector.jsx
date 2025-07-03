@@ -24,9 +24,11 @@ const MemberFunctionSelector = ({
     member, 
     selectedFunctions = [], 
     onChange,
-    disabled = false 
+    disabled = false,
+    isLastInList = false
 }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [dropdownPosition, setDropdownPosition] = useState('bottom');
     const [functions, setFunctions] = useState([]);
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -92,6 +94,9 @@ const MemberFunctionSelector = ({
             : [...selectedFunctions, functionId];
         
         onChange(member.id, newSelected);
+        
+        // Não fechar o dropdown automaticamente para permitir seleção múltipla
+        // setIsOpen(false);
     };
 
     const getSelectedFunctionNames = () => {
@@ -106,17 +111,37 @@ const MemberFunctionSelector = ({
 
     const selectedNames = getSelectedFunctionNames();
 
+    const handleToggleDropdown = () => {
+        if (!isOpen) {
+            // Determinar posição do dropdown baseado na posição do elemento
+            const newPosition = isLastInList ? 'top' : 'bottom';
+            setDropdownPosition(newPosition);
+        }
+        setIsOpen(!isOpen);
+    };
+
+    // Calcular classes do dropdown baseado na posição
+    const getDropdownClasses = () => {
+        const baseClasses = "absolute z-[60] w-full bg-white border border-gray-300 rounded-md shadow-xl max-h-60 overflow-auto";
+        
+        if (dropdownPosition === 'top') {
+            return `${baseClasses} bottom-full mb-1`;
+        }
+        return `${baseClasses} top-full mt-1`;
+    };
+
     return (
         <div className="relative">
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={handleToggleDropdown}
                 disabled={disabled}
                 className={`
                     w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-300 rounded-md bg-white
                     ${disabled ? 'bg-gray-50 text-gray-400' : 'hover:bg-gray-50'}
                     ${selectedNames.length > 0 ? 'border-primary-300' : ''}
                     focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+                    transition-colors duration-150
                 `}
             >
                 <div className="flex items-center">
@@ -130,11 +155,11 @@ const MemberFunctionSelector = ({
                         }
                     </span>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className={getDropdownClasses()}>
                     {loading ? (
                         <div className="px-3 py-2 text-sm text-gray-500">Carregando...</div>
                     ) : groups.length === 0 ? (
@@ -142,13 +167,14 @@ const MemberFunctionSelector = ({
                     ) : (
                         groups.map((group) => (
                             <div key={group.id}>
-                                <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b">
+                                <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b sticky top-0">
                                     {group.name}
                                 </div>
                                 {group.functions.map((func) => (
                                     <label
                                         key={func.id}
-                                        className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                                        className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
                                     >
                                         <input
                                             type="checkbox"
@@ -174,7 +200,7 @@ const MemberFunctionSelector = ({
             {/* Overlay para fechar o dropdown ao clicar fora */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-[55]"
                     onClick={() => setIsOpen(false)}
                 />
             )}

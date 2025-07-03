@@ -83,6 +83,14 @@ class AdminService {
     return AdminMemberService.updateMemberMinistry(memberId, ministryId, adminId);
   }
 
+  static async getMemberUnavailabilities(date) {
+    return AdminMemberService.getMemberUnavailabilities(date);
+  }
+
+  static async getAvailableMembers(date, filters = {}) {
+    return AdminMemberService.getAvailableMembers(date, filters);
+  }
+
   // Delegação para AdminScheduleService
   static async createSchedule(data) {
     return AdminScheduleService.createSchedule(data);
