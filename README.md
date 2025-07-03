@@ -436,8 +436,6 @@ A documentação completa da API está disponível em:
 
 ## 🤝 Contribuição
 
-## 🤝 Contribuindo
-
 > **Importante:** Todos os pull requests devem ser abertos para a branch `main`.
 
 ### Como contribuir:
