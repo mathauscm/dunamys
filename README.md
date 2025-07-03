@@ -34,9 +34,13 @@ Sistema completo para gerenciamento de membros e escalas de serviço de igrejas,
 
 ## 🔥 Demonstração
 
-<!-- Adicione aqui prints ou GIFs da interface do sistema -->
-<!-- Exemplo: -->
-<!-- ![Tela de login](docs/login-screen.png) -->
+> 🚧 **Em desenvolvimento**: Screenshots e vídeos demonstrativos serão adicionados em breve.
+
+**Preview das funcionalidades:**
+- 📊 Dashboard com gráficos e estatísticas
+- 📅 Calendário interativo de escalas
+- 📱 Interface responsiva para mobile
+- 🔔 Sistema de notificações em tempo real
 
 ## 🚀 Funcionalidades
 
@@ -88,10 +92,18 @@ Sistema completo para gerenciamento de membros e escalas de serviço de igrejas,
 
 ## 📋 Pré-requisitos
 
+### Para Produção (Docker)
 - [Docker](https://www.docker.com/) 20.10+
 - [Docker Compose](https://docs.docker.com/compose/) 2.0+
 - [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/) 18+ (para desenvolvimento)
+- **Mínimo**: 2GB RAM, 2 CPU cores, 20GB storage
+- **Recomendado**: 4GB RAM, 4 CPU cores, 50GB storage
+
+### Para Desenvolvimento
+- [Node.js](https://nodejs.org/) 18+ 
+- [PostgreSQL](https://www.postgresql.org/) 13+
+- [Redis](https://redis.io/) 6+ (opcional)
+- **RAM**: Mínimo 4GB, recomendado 8GB
 
 ## 🚀 Instalação Rápida
 
@@ -108,9 +120,28 @@ cp backend/.env.example backend/.env
 
 # Frontend  
 cp frontend/.env.example frontend/.env
-
-# Edite os arquivos .env com suas configurações
 ```
+
+#### Variáveis Essenciais (Backend)
+
+| Variável | Descrição | Exemplo | Obrigatório |
+|----------|-----------|---------|-------------|
+| `DATABASE_URL` | URL de conexão PostgreSQL | `postgresql://user:pass@localhost:5432/db` | ✅ |
+| `JWT_SECRET` | Chave secreta para JWT | `sua_chave_super_secreta_aqui` | ✅ |
+| `NODE_ENV` | Ambiente de execução | `development` ou `production` | ✅ |
+| `PORT` | Porta do servidor | `5000` | ✅ |
+| `SMTP_HOST` | Servidor SMTP | `smtp.gmail.com` | ❌ |
+| `SMTP_USER` | Usuário SMTP | `seu_email@gmail.com` | ❌ |
+| `SMTP_PASS` | Senha SMTP | `sua_senha_de_app` | ❌ |
+| `REDIS_URL` | URL do Redis | `redis://localhost:6379` | ❌ |
+| `WHATSAPP_ENABLED` | Habilitar WhatsApp | `true` ou `false` | ❌ |
+
+#### Variáveis Essenciais (Frontend)
+
+| Variável | Descrição | Exemplo | Obrigatório |
+|----------|-----------|---------|-------------|
+| `VITE_API_URL` | URL da API backend | `http://localhost:5000` | ✅ |
+| `VITE_APP_NAME` | Nome da aplicação | `Sistema Igreja` | ❌ |
 
 ### 3. Inicie com Docker
 ```bash
@@ -192,49 +223,95 @@ dunamys/
 └── [README.md](README.md)               # Este arquivo
 ```
 
-## 🔐 Configuração de Segurança
+## ⚙️ Configuração Avançada
 
-### 1. JWT Secret
+### 🔐 Segurança
+
+#### Gerar JWT Secret
 ```bash
-# Gere uma chave forte
+# Gere uma chave forte (64 caracteres)
 openssl rand -base64 64
 ```
 
-### 2. Banco de Dados
+#### Segurança do Banco
 ```bash
-# Em produção, use senhas fortes
-POSTGRES_PASSWORD=sua_senha_super_forte
+# Em produção, sempre use senhas fortes
+POSTGRES_PASSWORD=SuaSenhaSegura123!@#
 ```
 
-### 3. Email SMTP
+#### Lista de Verificação de Segurança
+- [ ] JWT_SECRET com pelo menos 64 caracteres
+- [ ] Senhas do banco com caracteres especiais
+- [ ] HTTPS habilitado em produção
+- [ ] Firewall configurado (portas 80, 443, 22)
+- [ ] Backup automatizado configurado
+
+### 📧 Configuração de Email
+
+#### Gmail (Recomendado)
+1. **Ativar 2FA**: Acesse Configurações > Segurança
+2. **Senha de App**: Gere em "Senhas de app"
+3. **Configurar variáveis**:
+   ```env
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=seu_email@gmail.com
+   SMTP_PASS=sua_senha_de_app_16_caracteres
+   ```
+
+#### Outros Provedores
+
+| Provedor | Host | Porta | TLS |
+|----------|------|-------|-----|
+| **Outlook** | smtp-mail.outlook.com | 587 | ✅ |
+| **Yahoo** | smtp.mail.yahoo.com | 587 | ✅ |
+| **SendGrid** | smtp.sendgrid.net | 587 | ✅ |
+| **Mailgun** | smtp.mailgun.org | 587 | ✅ |
+
+#### Teste de Configuração
 ```bash
-# Configure com suas credenciais
-SMTP_HOST=smtp.gmail.com
-SMTP_USER=seu_email@gmail.com
-SMTP_PASS=sua_senha_de_app
+# Testar envio de email
+curl -X POST http://localhost:5000/api/test/email \
+  -H "Content-Type: application/json" \
+  -d '{"to": "seu_email@teste.com"}'
 ```
 
-## 📧 Configuração de Email
+### 📱 Configuração do WhatsApp
 
-### Gmail
-1. Ative a verificação em 2 etapas
-2. Gere uma senha de app
-3. Use a senha de app no `SMTP_PASS`
+#### Configuração Inicial
+1. **Ativar no .env**:
+   ```env
+   WHATSAPP_ENABLED=true
+   ```
 
-### Outros provedores
-- **Outlook**: smtp-mail.outlook.com:587
-- **Yahoo**: smtp.mail.yahoo.com:587
-- **SendGrid**: smtp.sendgrid.net:587
+2. **Iniciar sistema**:
+   ```bash
+   docker-compose up -d
+   ```
 
-## 📱 Configuração do WhatsApp
+3. **Escanear QR Code**:
+   ```bash
+   # Visualizar logs em tempo real
+   docker logs igreja-backend -f
+   
+   # Aguardar aparecer o QR Code e escanear com seu WhatsApp
+   ```
 
-1. Inicie o sistema
-2. Acesse os logs do backend:
+4. **Verificar conexão**:
+   ```bash
+   # Status da conexão
+   curl http://localhost:5000/api/whatsapp/status
+   ```
+
+#### Troubleshooting WhatsApp
 ```bash
-docker logs igreja-backend -f
+# Limpar sessão e reconectar
+rm -rf backend/whatsapp-session
+docker restart igreja-backend
+
+# Logs detalhados
+docker logs igreja-backend --tail=100 | grep -i whatsapp
 ```
-3. Escaneie o QR Code que aparecerá
-4. O WhatsApp ficará conectado
 
 ## 🚀 Deploy em Produção
 
@@ -338,21 +415,56 @@ npm test
 
 ## 🔄 Backup e Restore
 
-### Backup do Banco
-```bash
-# Backup automático
-docker exec igreja-postgres pg_dump -U postgres igreja_membros > backup_$(date +%Y%m%d).sql
+### 💾 Backup Automatizado
 
-# Backup com dados
-docker exec igreja-postgres pg_dump -U postgres --data-only igreja_membros > dados_$(date +%Y%m%d).sql
+#### Script de Backup Diário
+```bash
+#!/bin/bash
+# backup.sh
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/backups"
+
+# Criar diretório se não existir
+mkdir -p $BACKUP_DIR
+
+# Backup completo
+docker exec igreja-postgres pg_dump -U postgres -c igreja_membros > $BACKUP_DIR/full_backup_$DATE.sql
+
+# Backup apenas dados
+docker exec igreja-postgres pg_dump -U postgres --data-only igreja_membros > $BACKUP_DIR/data_backup_$DATE.sql
+
+# Manter apenas últimos 7 dias
+find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
+
+echo "Backup realizado: $DATE"
 ```
 
-### Restore
+#### Configurar Cron (Backup Automático)
 ```bash
-# Restore completo
+# Adicionar ao crontab (backup diário às 2h)
+crontab -e
+
+# Adicionar linha:
+0 2 * * * /path/to/backup.sh >> /var/log/backup.log 2>&1
+```
+
+### 🔄 Restore
+
+#### Restore Completo
+```bash
+# Parar aplicação
+docker stop igreja-backend
+
+# Restore
 docker exec -i igreja-postgres psql -U postgres igreja_membros < backup.sql
 
-# Restore apenas dados
+# Reiniciar
+docker start igreja-backend
+```
+
+#### Restore de Dados Específicos
+```bash
+# Apenas dados (mantém estrutura)
 docker exec -i igreja-postgres psql -U postgres igreja_membros < dados.sql
 ```
 
@@ -397,46 +509,105 @@ transporter.verify().then(console.log).catch(console.error);
 "
 ```
 
-### Performance
+### 🚀 Performance e Otimização
 
-#### Otimizações Backend
-- Use Redis para cache
-- Configure connection pooling
-- Ative compressão gzip
-- Configure rate limiting
+#### Backend
+- **Redis Cache**:
+  ```env
+  REDIS_URL=redis://localhost:6379
+  CACHE_TTL=3600
+  ```
+- **Connection Pooling**:
+  ```env
+  DATABASE_POOL_MIN=2
+  DATABASE_POOL_MAX=10
+  ```
+- **Rate Limiting**:
+  ```env
+  RATE_LIMIT_WINDOW=15
+  RATE_LIMIT_MAX=100
+  ```
 
-#### Otimizações Frontend
-- Use lazy loading
-- Otimize imagens
-- Configure CDN
-- Minifique assets
+#### Frontend
+- **Lazy Loading**: Componentes carregados sob demanda
+- **Bundle Optimization**: Code splitting automático
+- **Image Optimization**: WebP + compressão
+- **CDN**: Configurar para assets estáticos
+
+#### Monitoramento
+```bash
+# Métricas do sistema
+docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+
+# Métricas do banco
+docker exec igreja-postgres psql -U postgres -d igreja_membros -c "
+  SELECT schemaname,tablename,n_tup_ins,n_tup_upd,n_tup_del 
+  FROM pg_stat_user_tables;
+"
+```
 
 ## 📚 API Documentation
 
-A documentação completa da API está disponível em:
+A documentação completa da API está disponível via **Swagger UI**:
 - **Desenvolvimento**: http://localhost:5000/api-docs
 - **Produção**: https://seu-dominio.com/api-docs
 
-### Principais Endpoints
+### 🔑 Autenticação
 
-#### Autenticação
-- `POST /api/auth/login` - Login
-- `POST /api/auth/register` - Cadastro
-- `POST /api/auth/refresh` - Renovar token
+Todos os endpoints (exceto login/register) requerem token JWT no header:
+```bash
+Authorization: Bearer seu_jwt_token_aqui
+```
 
-#### Membros
-- `GET /api/members/profile` - Perfil do membro
-- `GET /api/members/schedules` - Escalas do membro
-- `POST /api/members/unavailability` - Definir indisponibilidade
+### 🚀 Principais Endpoints
 
-#### Admin
-- `GET /api/admin/dashboard` - Dashboard administrativo
-- `GET /api/admin/members` - Listar membros
-- `POST /api/admin/schedules` - Criar escala
+#### 🔐 Autenticação
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| `POST` | `/api/auth/login` | Login de usuário | ❌ |
+| `POST` | `/api/auth/register` | Cadastro de membro | ❌ |
+| `POST` | `/api/auth/refresh` | Renovar token | ✅ |
+| `POST` | `/api/auth/logout` | Logout | ✅ |
+
+#### 👥 Membros
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| `GET` | `/api/members/profile` | Perfil do membro | ✅ |
+| `PUT` | `/api/members/profile` | Atualizar perfil | ✅ |
+| `GET` | `/api/members/schedules` | Escalas do membro | ✅ |
+| `POST` | `/api/members/unavailability` | Definir indisponibilidade | ✅ |
+
+#### 👨‍💼 Admin
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| `GET` | `/api/admin/dashboard` | Dashboard administrativo | Admin |
+| `GET` | `/api/admin/members` | Listar todos os membros | Admin |
+| `POST` | `/api/admin/schedules` | Criar nova escala | Admin |
+| `PUT` | `/api/admin/members/:id/approve` | Aprovar membro | Admin |
+
+### 📨 Exemplos de Uso
+
+#### Login
+```bash
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@igreja.com",
+    "password": "admin123"
+  }'
+```
+
+#### Listar Escalas
+```bash
+curl -X GET http://localhost:5000/api/members/schedules \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
 
 ## 🤝 Contribuição
 
 > **Importante:** Todos os pull requests devem ser abertos para a branch `main`.
+> 
+> **Antes de contribuir**, leia nosso [Código de Conduta](CODE_OF_CONDUCT.md) e [Guia de Contribuição](CONTRIBUTING.md).
 
 ### Como contribuir:
 
@@ -444,8 +615,23 @@ A documentação completa da API está disponível em:
 2. Crie uma nova branch a partir da `main`:
    ```bash
    git checkout -b feature/nome-da-sua-feature
+   ```
+3. Implemente suas mudanças
+4. Execute os testes:
+   ```bash
+   npm test
+   ```
+5. Faça commit das suas mudanças:
+   ```bash
+   git commit -m "feat: adiciona nova funcionalidade"
+   ```
+6. Faça push para sua branch:
+   ```bash
+   git push origin feature/nome-da-sua-feature
+   ```
+7. Abra um Pull Request
 
-> - Dúvidas? Abra uma [issue](https://github.com/mathauscm/dunamys/issues)
+> **Dúvidas?** Abra uma [issue](https://github.com/mathauscm/dunamys/issues)
 
 ### Guidelines
 
@@ -473,7 +659,18 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ---
 
-**Desenvolvido com ❤️ para servir à comunidade cristã Dunamys**
+---
+
+<div align="center">
+
+**Desenvolvido com ❤️ para servir à comunidade cristã**
+
+*"E disse-lhes: Ide por todo o mundo, pregai o evangelho a toda criatura."* - Marcos 16:15
+
+[![Estrelas](https://img.shields.io/github/stars/mathauscm/dunamys?style=social)](https://github.com/mathauscm/dunamys/stargazers)
+[![Forks](https://img.shields.io/github/forks/mathauscm/dunamys?style=social)](https://github.com/mathauscm/dunamys/network/members)
+
+</div>
 
 ## 🎯 Roadmap
 
