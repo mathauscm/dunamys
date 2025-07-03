@@ -100,9 +100,38 @@ class MemberService {
       },
       include: {
         members: {
+          where: {
+            userId: userId // Filtrar apenas o membro atual
+          },
           include: {
             user: {
-              select: { id: true, name: true, phone: true }
+              select: { 
+                id: true, 
+                name: true, 
+                phone: true,
+                ministry: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true
+                  }
+                }
+              }
+            },
+            functions: {
+              include: {
+                function: {
+                  include: {
+                    group: {
+                      select: {
+                        id: true,
+                        name: true,
+                        description: true
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -115,12 +144,59 @@ class MemberService {
 
     console.log(`Encontradas ${schedules.length} escalas para o usuário ${userId} no mês ${month}/${year}`);
     
-    // Log detalhado das datas para debug
-    schedules.forEach(schedule => {
-      console.log(`Escala: ${schedule.title} - Data: ${schedule.date}`);
+    // Processar e formatar dados para incluir informações organizadas
+    const formattedSchedules = schedules.map(schedule => {
+      const userMember = schedule.members[0]; // Apenas o membro atual
+      
+      if (!userMember) {
+        return schedule;
+      }
+
+      // Extrair informações do ministério
+      const ministry = userMember.user.ministry;
+      
+      // Extrair funções e equipes (grupos de função)
+      const functions = userMember.functions.map(func => ({
+        id: func.function.id,
+        name: func.function.name,
+        description: func.function.description,
+        icon: func.function.icon,
+        group: func.function.group
+      }));
+      
+      // Determinar equipe principal (primeiro grupo de função)
+      const primaryTeam = functions.length > 0 ? functions[0].group : null;
+      
+      // Combinar nomes das funções
+      const functionNames = functions.map(f => f.name).join(', ');
+
+      return {
+        ...schedule,
+        // Informações formatadas para o membro
+        memberInfo: {
+          ministry: ministry ? {
+            id: ministry.id,
+            name: ministry.name,
+            description: ministry.description
+          } : null,
+          team: primaryTeam ? {
+            id: primaryTeam.id,
+            name: primaryTeam.name,
+            description: primaryTeam.description
+          } : null,
+          functions: functions,
+          functionNames: functionNames || 'Sem função específica',
+          hasMultipleFunctions: functions.length > 1
+        }
+      };
+    });
+    
+    // Log detalhado para debug
+    formattedSchedules.forEach(schedule => {
+      console.log(`Escala: ${schedule.title} - Data: ${schedule.date} - Equipe: ${schedule.memberInfo?.team?.name || 'N/A'} - Funções: ${schedule.memberInfo?.functionNames || 'N/A'}`);
     });
 
-    return schedules;
+    return formattedSchedules;
   }
 
   static async setUnavailability(userId, data) {

@@ -15,6 +15,7 @@ import { adminService } from '../../services/members';
 import Loading from '../common/Loading';
 import { api } from '../../services/api';
 import MemberFunctionSelector from './MemberFunctionSelector';
+import { DatePicker, TimePicker } from './DateTimePicker';
 import { toast } from 'react-hot-toast';
 
 const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
@@ -371,32 +372,30 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                                 <Calendar className="w-4 h-4 inline mr-1" />
                                                                 Data *
                                                             </label>
-                                                            <input
-                                                                type="date"
-                                                                value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
-                                                                onChange={(e) => setSelectedDate(e.target.value ? new Date(e.target.value) : null)}
-                                                                className="input w-full"
-                                                                required
+                                                            <DatePicker
+                                                                value={selectedDate}
+                                                                onChange={setSelectedDate}
+                                                                placeholder="Selecione a data"
+                                                                required={true}
+                                                                error={!selectedDate ? 'Data é obrigatória' : null}
                                                             />
-                                                            {!selectedDate && (
-                                                                <p className="text-sm text-red-600 mt-1">Data é obrigatória</p>
-                                                            )}
                                                         </div>
+                                                        
                                                         <div>
                                                             <label className="label">
                                                                 <Clock className="w-4 h-4 inline mr-1" />
                                                                 Horário *
                                                             </label>
-                                                            <input
-                                                                type="time"
+                                                            <TimePicker
                                                                 value={selectedTime}
-                                                                onChange={(e) => setSelectedTime(e.target.value)}
-                                                                className="input w-full"
-                                                                required
+                                                                onChange={setSelectedTime}
+                                                                placeholder="Selecione o horário"
+                                                                required={true}
+                                                                error={!selectedTime ? 'Horário é obrigatório' : null}
+                                                                startTime="06:00"
+                                                                endTime="23:30"
+                                                                step={15}
                                                             />
-                                                            {!selectedTime && (
-                                                                <p className="text-sm text-red-600 mt-1">Horário é obrigatório</p>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

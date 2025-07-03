@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, ChevronLeft, ChevronRight, Briefcase, Star, UserCheck } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import Loading from '../../components/common/Loading';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
@@ -140,7 +140,8 @@ const MemberSchedules = () => {
                                                 </span>
                                             </div>
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600">
+                                            {/* Informações básicas */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
                                                 <div className="flex items-center">
                                                     <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                                                     {format(new Date(schedule.date), "dd/MM/yyyy", { locale: ptBR })}
@@ -155,27 +156,62 @@ const MemberSchedules = () => {
                                                 </div>
                                             </div>
 
+                                            {/* Informações de ministério e função */}
+                                            {schedule.memberInfo && (
+                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                                                    {/* Equipe */}
+                                                    <div className="flex items-start">
+                                                        <Users className="h-4 w-4 mr-2 text-primary-500 mt-0.5 flex-shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">Equipe</p>
+                                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                                {schedule.memberInfo.team?.name || 'Não definida'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Ministério */}
+                                                    <div className="flex items-start">
+                                                        <Star className="h-4 w-4 mr-2 text-amber-500 mt-0.5 flex-shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">Ministério</p>
+                                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                                {schedule.memberInfo.ministry?.name || 'Não definido'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Função */}
+                                                    <div className="flex items-start">
+                                                        <Briefcase className="h-4 w-4 mr-2 text-blue-500 mt-0.5 flex-shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">Função</p>
+                                                            <p className="text-sm font-medium text-gray-900">
+                                                                {schedule.memberInfo.functionNames}
+                                                                {schedule.memberInfo.hasMultipleFunctions && (
+                                                                    <span className="ml-1 text-xs text-primary-600">
+                                                                        (+{schedule.memberInfo.functions.length - 1})
+                                                                    </span>
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {schedule.description && (
                                                 <p className="mt-3 text-sm text-gray-600">
                                                     {schedule.description}
                                                 </p>
                                             )}
 
-                                            {schedule.members && schedule.members.length > 0 && (
-                                                <div className="mt-3">
-                                                    <div className="flex items-center text-sm text-gray-600">
-                                                        <Users className="h-4 w-4 mr-2 text-gray-400" />
-                                                        <span>Equipe ({schedule.members.length}):</span>
-                                                    </div>
-                                                    <div className="mt-1 flex flex-wrap gap-2">
-                                                        {schedule.members.map((member) => (
-                                                            <span
-                                                                key={member.user.id}
-                                                                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800"
-                                                            >
-                                                                {member.user.name}
-                                                            </span>
-                                                        ))}
+                                            {/* Versão mobile compacta */}
+                                            {schedule.memberInfo && (
+                                                <div className="sm:hidden mt-3 space-y-2">
+                                                    <div className="text-xs text-gray-600">
+                                                        <span className="font-medium">Equipe:</span> {schedule.memberInfo.team?.name || 'N/A'} • 
+                                                        <span className="font-medium">Ministério:</span> {schedule.memberInfo.ministry?.name || 'N/A'} • 
+                                                        <span className="font-medium">Função:</span> {schedule.memberInfo.functionNames}
                                                     </div>
                                                 </div>
                                             )}

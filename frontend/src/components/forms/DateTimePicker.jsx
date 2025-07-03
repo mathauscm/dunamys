@@ -22,7 +22,7 @@ export const DatePicker = ({
 
     const handleDateSelect = (date) => {
         onChange(date);
-        setIsOpen(false);
+        // Não fechar automaticamente - usuário pode querer navegar mais
     };
 
     const handlePrevMonth = () => {
@@ -65,7 +65,7 @@ export const DatePicker = ({
                     disabled={disabled}
                     className={`input w-full text-left flex items-center justify-between ${
                         error ? 'input-error' : ''
-                    } ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}`}
+                    } ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer hover:border-primary-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-200'}`}
                 >
                     <div className="flex items-center">
                         <Calendar className="h-5 w-5 text-gray-400 mr-2" />
@@ -85,25 +85,25 @@ export const DatePicker = ({
                         />
                         
                         {/* Calendar Dropdown */}
-                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 w-80">
+                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 p-4 w-80">
                             {/* Header do Calendário */}
                             <div className="flex items-center justify-between mb-4">
                                 <button
                                     type="button"
                                     onClick={handlePrevMonth}
-                                    className="p-1 hover:bg-gray-100 rounded"
+                                    className="p-2 hover:bg-primary-50 hover:text-primary-600 rounded-md transition-colors"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </button>
                                 
-                                <h3 className="font-medium text-gray-900 capitalize">
+                                <h3 className="font-semibold text-gray-900 capitalize">
                                     {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
                                 </h3>
                                 
                                 <button
                                     type="button"
                                     onClick={handleNextMonth}
-                                    className="p-1 hover:bg-gray-100 rounded"
+                                    className="p-2 hover:bg-primary-50 hover:text-primary-600 rounded-md transition-colors"
                                 >
                                     <ChevronRight className="h-4 w-4" />
                                 </button>
@@ -112,7 +112,7 @@ export const DatePicker = ({
                             {/* Dias da Semana */}
                             <div className="grid grid-cols-7 gap-1 mb-2">
                                 {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-                                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+                                    <div key={day} className="text-center text-xs font-semibold text-gray-600 py-2 bg-gray-50 rounded-md">
                                         {day}
                                     </div>
                                 ))}
@@ -132,16 +132,16 @@ export const DatePicker = ({
                                             onClick={() => !isDisabled && handleDateSelect(date)}
                                             disabled={isDisabled}
                                             className={`
-                                                w-8 h-8 text-sm rounded-full transition-colors
+                                                w-8 h-8 text-sm rounded-full transition-all duration-200 font-medium
                                                 ${isSelected 
-                                                    ? 'bg-blue-600 text-white' 
+                                                    ? 'bg-primary-600 text-white shadow-md transform scale-105' 
                                                     : isCurrentDay 
-                                                        ? 'bg-blue-100 text-blue-600 font-medium'
-                                                        : 'text-gray-700 hover:bg-gray-100'
+                                                        ? 'bg-primary-100 text-primary-700 border border-primary-300'
+                                                        : 'text-gray-700 hover:bg-primary-50 hover:text-primary-600'
                                                 }
                                                 ${isDisabled 
                                                     ? 'text-gray-300 cursor-not-allowed hover:bg-transparent' 
-                                                    : 'cursor-pointer'
+                                                    : 'cursor-pointer hover:scale-105'
                                                 }
                                             `}
                                         >
@@ -152,23 +152,36 @@ export const DatePicker = ({
                             </div>
 
                             {/* Ações Rápidas */}
-                            <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between">
+                            <div className="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center">
+                                <div className="flex space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const today = new Date();
+                                            onChange(today);
+                                            setIsOpen(false);
+                                        }}
+                                        className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                                    >
+                                        Hoje
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onChange(null);
+                                            setIsOpen(false);
+                                        }}
+                                        className="text-sm text-gray-500 hover:text-gray-700"
+                                    >
+                                        Limpar
+                                    </button>
+                                </div>
                                 <button
                                     type="button"
-                                    onClick={() => handleDateSelect(new Date())}
-                                    className="text-sm text-blue-600 hover:text-blue-700"
+                                    onClick={() => setIsOpen(false)}
+                                    className="px-3 py-1 bg-primary-600 text-white text-sm rounded-md hover:bg-primary-700 transition-colors"
                                 >
-                                    Hoje
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        onChange(null);
-                                        setIsOpen(false);
-                                    }}
-                                    className="text-sm text-gray-500 hover:text-gray-700"
-                                >
-                                    Limpar
+                                    Confirmar
                                 </button>
                             </div>
                         </div>
@@ -244,7 +257,7 @@ export const TimePicker = ({
                     disabled={disabled}
                     className={`input w-full text-left flex items-center justify-between ${
                         error ? 'input-error' : ''
-                    } ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'}`}
+                    } ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'cursor-pointer hover:border-primary-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-200'}`}
                 >
                     <div className="flex items-center">
                         <Clock className="h-5 w-5 text-gray-400 mr-2" />
@@ -264,15 +277,15 @@ export const TimePicker = ({
                         />
                         
                         {/* Time Dropdown */}
-                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-full max-h-60 overflow-y-auto">
+                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 w-full max-h-60 overflow-y-auto">
                             {timeOptions.map((time) => (
                                 <button
                                     key={time}
                                     type="button"
                                     onClick={() => handleTimeSelect(time)}
                                     className={`
-                                        w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors
-                                        ${value === time ? 'bg-blue-50 text-blue-600' : 'text-gray-700'}
+                                        w-full px-4 py-2 text-left hover:bg-primary-50 transition-colors font-medium
+                                        ${value === time ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-600' : 'text-gray-700 hover:text-primary-600'}
                                     `}
                                 >
                                     {time}
