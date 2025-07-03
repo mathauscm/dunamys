@@ -24,7 +24,7 @@ const Loading = ({ size = 'md', fullScreen = false }) => {
   }
 
   return (
-    <div className="flex items-center justify-center p-4">
+    <div className="flex items-center justify-center p-4" data-testid="loading">
       <LoadingSpinner />
     </div>
   );

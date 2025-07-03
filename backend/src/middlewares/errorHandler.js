@@ -32,7 +32,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Erro padrão
-  res.status(err.status || 500).json({
+  res.status(err.statusCode || err.status || 500).json({
     error: process.env.NODE_ENV === 'production' 
       ? 'Erro interno do servidor' 
       : err.message

@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../config/database');
 const EmailService = require('./EmailService');
+const AppError = require('../utils/AppError');
 
 class AuthService {
   static async register(userData) {
@@ -13,7 +14,7 @@ class AuthService {
     });
 
     if (existingUser) {
-      throw new Error('Email já cadastrado no sistema');
+      throw new AppError('Email já cadastrado no sistema', 400);
     }
 
     // Verificar se o campus existe e está ativo (se campusId for informado)
@@ -27,7 +28,7 @@ class AuthService {
       });
 
       if (!campus) {
-        throw new Error('Campus selecionado não está disponível');
+        throw new AppError('Campus selecionado não está disponível', 400);
       }
     }
 
@@ -97,24 +98,24 @@ class AuthService {
     });
 
     if (!user) {
-      throw new Error('Credenciais inválidas');
+      throw new AppError('Credenciais inválidas', 401);
     }
 
     // Verificar senha
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
-      throw new Error('Credenciais inválidas');
+      throw new AppError('Credenciais inválidas', 401);
     }
 
     // Verificar se usuário está ativo
     if (user.status !== 'ACTIVE') {
-      throw new Error('Usuário aguardando aprovação ou inativo');
+      throw new AppError('Usuário aguardando aprovação ou inativo', 401);
     }
 
     // Verificar se campus está ativo (se tiver campus)
     if (user.campus && !user.campus.active) {
-      throw new Error('Campus não está mais ativo. Entre em contato com a administração');
+      throw new AppError('Campus não está mais ativo. Entre em contato com a administração', 401);
     }
 
     // Verificar se é admin de grupo e quais grupos administra
@@ -186,12 +187,12 @@ class AuthService {
     });
 
     if (!user || user.status !== 'ACTIVE') {
-      throw new Error('Usuário inválido');
+      throw new AppError('Usuário inválido', 401);
     }
 
     // Verificar se campus ainda está ativo
     if (user.campus && !user.campus.active) {
-      throw new Error('Campus não está mais ativo');
+      throw new AppError('Campus não está mais ativo', 401);
     }
 
     // Verificar se é admin de grupo e quais grupos administra
@@ -208,7 +209,8 @@ class AuthService {
         role: user.role,
         userType: userType,
         adminGroups: adminGroups,
-        campusId: user.campusId
+        campusId: user.campusId,
+        refreshedAt: new Date().toISOString()
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
@@ -223,14 +225,14 @@ class AuthService {
     });
 
     if (!user) {
-      throw new Error('Usuário não encontrado');
+      throw new AppError('Usuário não encontrado', 404);
     }
 
     // Verificar senha atual
     const isValidPassword = await bcrypt.compare(currentPassword, user.password);
 
     if (!isValidPassword) {
-      throw new Error('Senha atual incorreta');
+      throw new AppError('Senha atual incorreta', 400);
     }
 
     // Hash da nova senha

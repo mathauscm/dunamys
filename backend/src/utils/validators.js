@@ -16,6 +16,11 @@ const schemas = {
     password: Joi.string().required(),
   }),
 
+  // Validação de esqueceu senha
+  forgotPassword: Joi.object({
+    email: Joi.string().email().required(),
+  }),
+
   // Validação de escala
   schedule: Joi.object({
     title: Joi.string().min(3).max(200).required(),

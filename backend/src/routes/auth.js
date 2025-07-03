@@ -75,8 +75,8 @@ router.post('/register', validate(validators.user), AuthController.register);
  */
 router.post('/login', validate(validators.login), AuthController.login);
 
-router.post('/refresh', authenticateToken, AuthController.refreshToken);
+router.post('/refresh-token', authenticateToken, AuthController.refreshToken);
 router.post('/change-password', authenticateToken, AuthController.changePassword);
-router.post('/forgot-password', AuthController.forgotPassword);
+router.post('/forgot-password', validate(validators.forgotPassword), AuthController.forgotPassword);
 
 module.exports = router;

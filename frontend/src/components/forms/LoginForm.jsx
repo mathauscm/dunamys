@@ -26,12 +26,13 @@ const LoginForm = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Email Field */}
             <div>
-                <label className="label">Email</label>
+                <label htmlFor="email" className="label">Email</label>
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Mail className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
+                        id="email"
                         type="email"
                         className={`input pl-10 ${errors.email ? 'input-error' : ''}`}
                         placeholder="seu@email.com"
@@ -51,12 +52,13 @@ const LoginForm = () => {
 
             {/* Password Field */}
             <div>
-                <label className="label">Senha</label>
+                <label htmlFor="password" className="label">Senha</label>
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Lock className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
+                        id="password"
                         type={showPassword ? 'text' : 'password'}
                         className={`input pl-10 pr-10 ${errors.password ? 'input-error' : ''}`}
                         placeholder="Sua senha"
@@ -72,6 +74,7 @@ const LoginForm = () => {
                         type="button"
                         className="absolute inset-y-0 right-0 pr-3 flex items-center"
                         onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     >
                         {showPassword ? (
                             <EyeOff className="h-5 w-5 text-gray-400" />
@@ -89,13 +92,10 @@ const LoginForm = () => {
             <button
                 type="submit"
                 disabled={loading}
-                className="btn btn-primary w-full flex items-center justify-center"
+                className="btn btn-primary w-full flex items-center justify-center gap-2"
             >
-                {loading ? (
-                    <Loading size="sm" />
-                ) : (
-                    'Entrar'
-                )}
+                {loading && <Loading size="sm" />}
+                Entrar
             </button>
         </form>
     );

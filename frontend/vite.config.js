@@ -4,6 +4,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   
+  // Test Configuration
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    globals: true
+  },
+  
   // CSS Configuration - IMPORTANTE para o Tailwind funcionar
   css: {
     postcss: './postcss.config.js',
