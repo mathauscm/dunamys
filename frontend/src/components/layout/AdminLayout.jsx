@@ -13,7 +13,8 @@ import {
     LogOut,
     MapPin,
     Heart,
-    Briefcase  // NOVO ÍCONE PARA FUNÇÕES
+    Briefcase,  // NOVO ÍCONE PARA FUNÇÕES
+    MessageSquare  // NOVO ÍCONE PARA WHATSAPP
 } from 'lucide-react';
 import Header from '../common/Header';
 import { useAuth, usePermission } from '../../hooks/useAuth';
@@ -30,6 +31,9 @@ const AdminLayout = () => {
     const canManageCampus = usePermission('MANAGE_CAMPUS');
     const canManageMinistries = usePermission('MANAGE_MINISTRIES');
     const canViewLogs = usePermission('VIEW_LOGS');
+    
+    // Verificar se é admin master
+    const isMasterAdmin = user?.email === 'admin@igreja.com' || user?.email === import.meta.env.VITE_MASTER_ADMIN_EMAIL;
 
     const allNavigation = [
         { name: 'Dashboard', href: '/admin', icon: Home, exact: true, permission: 'VIEW_DASHBOARD' },
@@ -39,10 +43,16 @@ const AdminLayout = () => {
         { name: 'Ministérios', href: '/admin/ministries', icon: Heart, permission: 'MANAGE_MINISTRIES' },
         { name: 'Funções', href: '/admin/functions', icon: Briefcase, permission: 'MANAGE_FUNCTIONS' },
         { name: 'Logs', href: '/admin/logs', icon: FileText, permission: 'VIEW_LOGS' },
+        { name: 'Conexão WhatsApp', href: '/admin/whatsapp', icon: MessageSquare, permission: 'MASTER_ADMIN' },
     ];
 
     // Filtrar navegação baseada nas permissões
-    const navigation = allNavigation.filter(item => usePermission(item.permission));
+    const navigation = allNavigation.filter(item => {
+        if (item.permission === 'MASTER_ADMIN') {
+            return isMasterAdmin;
+        }
+        return usePermission(item.permission);
+    });
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);

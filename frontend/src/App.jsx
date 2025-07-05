@@ -22,6 +22,7 @@ import AdminCampus from './pages/admin/Campus';
 import AdminLogs from './pages/admin/Logs';
 import AdminMinistries from './pages/admin/Ministries';
 import AdminFunctions from './pages/admin/Functions'; // NOVA IMPORTAÇÃO
+import WhatsApp from './pages/admin/WhatsApp'; // NOVA IMPORTAÇÃO
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false, requiresActive = true }) => {
@@ -215,6 +216,7 @@ function App() {
                     <Route path="ministries" element={<AdminMinistries />} />
                     <Route path="functions" element={<AdminFunctions />} /> {/* NOVA ROTA */}
                     <Route path="logs" element={<AdminLogs />} />
+                    <Route path="whatsapp" element={<WhatsApp />} /> {/* NOVA ROTA */}
                 </Route>
 
                 {/* Root Route - Redirect to appropriate area */}

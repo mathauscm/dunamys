@@ -11,6 +11,7 @@ const campusRoutes = require('./campus');
 const ministryRoutes = require('./ministries');
 const functionRoutes = require('./functions');
 const functionGroupAdminRoutes = require('./functionGroupAdmins');
+const whatsappRoutes = require('./whatsapp');
 
 /**
  * Aplica todas as rotas da API
@@ -26,6 +27,7 @@ const applyRoutes = (app) => {
   app.use('/api/ministries', ministryRoutes);
   app.use('/api/functions', functionRoutes);
   app.use('/api/function-group-admins', functionGroupAdminRoutes);
+  app.use('/api/whatsapp', whatsappRoutes);
 
   console.log('✅ Rotas da API aplicadas');
 };
@@ -123,50 +125,11 @@ const applyDocumentationRoutes = (app) => {
 };
 
 /**
- * Aplica rotas especiais (WhatsApp, etc.)
+ * Aplica rotas especiais (desenvolvimento, testes, etc.)
  * @param {Express} app - Instância do Express
  */
 const applySpecialRoutes = (app) => {
-  const { authenticateToken } = require('../middlewares/auth');
-  const WhatsAppService = require('../services/WhatsAppService');
-
-  // WhatsApp QR Code endpoint
-  app.get('/api/admin/whatsapp/qr', authenticateToken, (req, res) => {
-    if (req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-        error: 'Acesso negado. Apenas administradores podem acessar.'
-      });
-    }
-
-    const qrCode = WhatsAppService.getQRCode();
-
-    if (qrCode) {
-      res.json({
-        qrCode,
-        message: 'Escaneie o QR Code com o WhatsApp para conectar'
-      });
-    } else {
-      res.json({
-        message: 'WhatsApp já está conectado ou QR Code não disponível',
-        connected: WhatsAppService.isConnected()
-      });
-    }
-  });
-
-  // WhatsApp status endpoint
-  app.get('/api/admin/whatsapp/status', authenticateToken, (req, res) => {
-    if (req.user.role !== 'ADMIN') {
-      return res.status(403).json({
-        error: 'Acesso negado. Apenas administradores podem acessar.'
-      });
-    }
-
-    res.json({
-      connected: WhatsAppService.isConnected(),
-      timestamp: new Date().toISOString()
-    });
-  });
-
+  // Rotas especiais para desenvolvimento e testes podem ser adicionadas aqui
   console.log('✅ Rotas especiais aplicadas');
 };
 

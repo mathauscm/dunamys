@@ -28,6 +28,7 @@ const campusRoutes = require('./routes/campus');
 const ministryRoutes = require('./routes/ministries');
 const functionRoutes = require('./routes/functions');
 const functionGroupAdminRoutes = require('./routes/functionGroupAdmins');
+const whatsappRoutes = require('./routes/whatsapp');
 
 // Swagger documentation
 const swaggerUi = require('swagger-ui-express');
@@ -319,6 +320,7 @@ app.use('/api/campus', campusRoutes);
 app.use('/api/ministries', ministryRoutes);
 app.use('/api/functions', functionRoutes);
 app.use('/api/function-group-admins', functionGroupAdminRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 /**
  * ============================================================================

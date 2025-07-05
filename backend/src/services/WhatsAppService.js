@@ -14,7 +14,17 @@ class WhatsAppService {
             this.client = new Client({
                 authStrategy: new LocalAuth({
                     dataPath: './whatsapp-session'
-                })
+                }),
+                puppeteer: {
+                    headless: true,
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-gpu',
+                        '--disable-extensions',
+                        '--disable-dev-shm-usage'
+                    ]
+                }
             });
 
             this.client.on('qr', (qr) => {
@@ -22,18 +32,25 @@ class WhatsAppService {
                 qrcode.toDataURL(qr, (err, url) => {
                     if (!err) {
                         this.qrCode = url;
+                        logger.info('QR Code convertido para base64 com sucesso');
+                    } else {
+                        logger.error('Erro ao converter QR Code:', err);
                     }
                 });
             });
 
-            this.client.on('ready', () => {
-                logger.info('WhatsApp Web conectado com sucesso');
-                this.isReady = true;
-                this.qrCode = null;
+            this.client.on('loading_screen', (percent, message) => {
+                logger.info(`WhatsApp loading: ${percent}% - ${message}`);
             });
 
             this.client.on('authenticated', () => {
-                logger.info('WhatsApp Web autenticado');
+                logger.info('WhatsApp Web autenticado com sucesso');
+            });
+
+            this.client.on('ready', () => {
+                logger.info('WhatsApp Web conectado e pronto para uso');
+                this.isReady = true;
+                this.qrCode = null;
             });
 
             this.client.on('auth_failure', (msg) => {
@@ -83,12 +100,28 @@ class WhatsAppService {
         return this.isReady;
     }
 
+    getConnectionStatus() {
+        if (this.isReady) {
+            return 'connected';
+        } else if (this.qrCode) {
+            return 'awaiting_qr';
+        } else {
+            return 'disconnected';
+        }
+    }
+
     async disconnect() {
         if (this.client) {
             await this.client.destroy();
             this.isReady = false;
+            this.qrCode = null;
             logger.info('WhatsApp Web desconectado');
         }
+    }
+
+    async reconnect() {
+        await this.disconnect();
+        await this.initialize();
     }
 }
 
