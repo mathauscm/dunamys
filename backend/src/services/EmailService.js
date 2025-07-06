@@ -15,11 +15,18 @@ class EmailService {
   static async sendEmail(to, subject, html, text) {
     // Se email não estiver configurado, apenas logar e não falhar
     if (!this.isEmailConfigured()) {
-      logger.warn('Email não configurado - pulando envio de email', {
-        to, subject
+      logger.warn('📧 Email não configurado - pulando envio de email', {
+        to, subject,
+        configStatus: {
+          SMTP_HOST: !!process.env.SMTP_HOST,
+          SMTP_USER: !!process.env.SMTP_USER,
+          SMTP_PASS: !!process.env.SMTP_PASS
+        }
       });
       return { skipped: true, reason: 'Email não configurado' };
     }
+    
+    logger.info(`📧 Tentando enviar email para: ${to} - Assunto: ${subject}`);
 
     try {
       const mailOptions = {

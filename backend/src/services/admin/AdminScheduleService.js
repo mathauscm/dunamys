@@ -299,6 +299,13 @@ class AdminScheduleService {
    * @returns {Object} - Resultado do envio
    */
   static async sendScheduleNotification(scheduleId, type, message, sentBy) {
+    logger.info(`🚀 INICIANDO sendScheduleNotification:`, {
+      scheduleId,
+      type,
+      message: message?.substring(0, 50) + '...',
+      sentBy
+    });
+    
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
       include: {
@@ -311,19 +318,24 @@ class AdminScheduleService {
     });
 
     if (!schedule) {
+      logger.error(`❌ Escala ${scheduleId} não encontrada`);
       throw new Error('Escala não encontrada');
     }
 
+    logger.info(`📋 Escala encontrada: "${schedule.title}" com ${schedule.members.length} membros`);
+    
     try {
-      await NotificationService.sendCustomNotification(schedule, type, message);
-      logger.info(`Notificação customizada enviada para ${schedule.members.length} membros`);
+      logger.info(`📤 Enviando notificação padrão de escala (Email + WhatsApp)...`);
+      await NotificationService.sendScheduleAssignment(schedule);
+      logger.info(`✅ Notificação de escala enviada com sucesso`);
+      logger.info(`🎉 ${schedule.members.length} membros notificados via Email + WhatsApp`);
       
       // Log de auditoria
       await this.createScheduleAuditLog({
         action: 'SCHEDULE_NOTIFICATION_SENT',
         targetId: scheduleId,
         userId: sentBy,
-        description: `Notificação "${type}" enviada para escala "${schedule.title}": ${message}`
+        description: `Notificação (Email + WhatsApp) enviada para escala "${schedule.title}"`
       });
 
       return {

@@ -105,7 +105,14 @@ class AdminService {
   }
 
   static async sendScheduleNotification(scheduleId, type, message, sentBy) {
-    return AdminScheduleService.sendScheduleNotification(scheduleId, type, message, sentBy);
+    logger.info(`📋 AdminService.sendScheduleNotification chamado:`, {
+      scheduleId, type, message: message?.substring(0, 30) + '...', sentBy
+    });
+    
+    const result = await AdminScheduleService.sendScheduleNotification(scheduleId, type, message, sentBy);
+    
+    logger.info(`📋 AdminService.sendScheduleNotification concluído:`, result);
+    return result;
   }
 
   // Delegação para AdminAuditService

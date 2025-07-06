@@ -543,7 +543,6 @@ const AdminSchedules = () => {
 
 // Notification Form Component
 const NotificationForm = ({ schedule, onSubmit, loading, onCancel }) => {
-    const [type, setType] = useState('BOTH');
     const [message, setMessage] = useState('');
 
     const handleSubmit = (e) => {
@@ -555,7 +554,7 @@ const NotificationForm = ({ schedule, onSubmit, loading, onCancel }) => {
 
         onSubmit({
             scheduleId: schedule.id,
-            type,
+            type: 'BOTH', // Sempre email + WhatsApp
             message: message.trim()
         });
     };
@@ -574,18 +573,6 @@ const NotificationForm = ({ schedule, onSubmit, loading, onCancel }) => {
                 </p>
             </div>
 
-            <div>
-                <label className="label">Tipo de Notificação</label>
-                <select
-                    className="input"
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                >
-                    <option value="EMAIL">Apenas Email</option>
-                    <option value="WHATSAPP">Apenas WhatsApp</option>
-                    <option value="BOTH">Email + WhatsApp</option>
-                </select>
-            </div>
 
             <div>
                 <label className="label">Mensagem</label>

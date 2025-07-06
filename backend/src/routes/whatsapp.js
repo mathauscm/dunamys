@@ -18,6 +18,46 @@ router.use(authenticateToken);
 
 /**
  * @swagger
+ * /api/whatsapp/initialize:
+ *   post:
+ *     summary: Inicializar WhatsApp Service
+ *     tags: [WhatsApp]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: WhatsApp inicializado com sucesso
+ *       403:
+ *         description: Acesso negado
+ */
+router.post('/initialize', requireMasterAdmin, async (req, res) => {
+    try {
+        if (whatsappService.isConnected()) {
+            return res.json({
+                message: 'WhatsApp já está conectado',
+                status: 'connected'
+            });
+        }
+
+        // Inicializar WhatsApp Service
+        await whatsappService.initialize();
+        
+        res.json({
+            message: 'WhatsApp inicializado. Aguarde alguns segundos e verifique o QR Code.',
+            status: 'initializing'
+        });
+        
+        logger.info(`WhatsApp inicializado por admin master: ${req.user.email}`);
+    } catch (error) {
+        logger.error('Erro ao inicializar WhatsApp:', error);
+        res.status(500).json({
+            error: 'Erro ao inicializar WhatsApp: ' + error.message
+        });
+    }
+});
+
+/**
+ * @swagger
  * /api/whatsapp/qr:
  *   get:
  *     summary: Obter QR Code para conexão do WhatsApp
@@ -53,6 +93,14 @@ router.get('/qr', requireMasterAdmin, async (req, res) => {
                 qrCode: null,
                 status: 'connected',
                 message: 'WhatsApp já está conectado'
+            });
+        }
+        
+        if (!qrCode && status === 'disconnected') {
+            return res.status(404).json({
+                error: 'WhatsApp não foi inicializado. Use POST /api/whatsapp/initialize primeiro.',
+                status: status,
+                action: 'initialize'
             });
         }
         
@@ -184,10 +232,11 @@ router.post('/disconnect', requireMasterAdmin, async (req, res) => {
  */
 router.post('/reconnect', requireMasterAdmin, async (req, res) => {
     try {
-        // Iniciar reconexão de forma assíncrona
-        whatsappService.reconnect().catch(error => {
-            logger.error('Erro durante reconexão WhatsApp:', error);
-        });
+        console.log('🔄 Endpoint reconnect chamado');
+        logger.info('Endpoint reconnect chamado');
+        
+        // Aguardar reconexão terminar antes de responder
+        await whatsappService.reconnect();
         
         res.json({
             message: 'Processo de reconexão iniciado. Aguarde alguns segundos e verifique o QR Code.'
@@ -195,9 +244,14 @@ router.post('/reconnect', requireMasterAdmin, async (req, res) => {
         
         logger.info(`Reconexão WhatsApp iniciada por admin master: ${req.user.email}`);
     } catch (error) {
-        logger.error('Erro ao iniciar reconexão WhatsApp:', error);
+        console.error('❌ Erro completo no endpoint reconnect:', error);
+        logger.error('Erro completo no endpoint reconnect:', error);
+        
+        // Resposta mais detalhada do erro
         res.status(500).json({
-            error: 'Erro interno do servidor'
+            error: 'Erro interno do servidor',
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });

@@ -12,15 +12,39 @@ class NotificationService {
 
     static async sendScheduleAssignment(schedule) {
         const members = schedule.members.map(m => m.user);
-
+        
+        logger.info(`🔔 Iniciando envio de notificações de escala para ${members.length} membros`);
+        logger.info(`📋 Escala: "${schedule.title}" - Data: ${schedule.date}`);
+        logger.info(`👥 Membros:`, members.map(m => `${m.name} (${m.email}, ${m.phone})`));
+        
+        // Verificar estado dos serviços
+        const whatsappConnected = WhatsAppService.isConnected();
+        logger.info(`📱 WhatsApp conectado: ${whatsappConnected}`);
+        
         for (const member of members) {
             try {
+                logger.info(`🚀 Processando membro: ${member.name} (ID: ${member.id})`);
+                
                 // Email
-                await this.sendScheduleEmail(schedule, member, 'assignment');
+                try {
+                    logger.info(`📧 Tentando enviar email para ${member.email}`);
+                    await this.sendScheduleEmail(schedule, member, 'assignment');
+                    logger.info(`✅ Email enviado com sucesso para ${member.email}`);
+                } catch (emailError) {
+                    logger.error(`❌ Erro ao enviar email para ${member.email}:`, emailError);
+                }
 
                 // WhatsApp
-                if (WhatsAppService.isConnected()) {
-                    await this.sendScheduleWhatsApp(schedule, member, 'assignment');
+                if (whatsappConnected) {
+                    try {
+                        logger.info(`📱 Tentando enviar WhatsApp para ${member.phone}`);
+                        await this.sendScheduleWhatsApp(schedule, member, 'assignment');
+                        logger.info(`✅ WhatsApp enviado com sucesso para ${member.phone}`);
+                    } catch (whatsappError) {
+                        logger.error(`❌ Erro ao enviar WhatsApp para ${member.phone}:`, whatsappError);
+                    }
+                } else {
+                    logger.warn(`⚠️ WhatsApp não conectado - pulando envio para ${member.name}`);
                 }
 
                 // Registrar notificação
@@ -33,7 +57,7 @@ class NotificationService {
                 });
 
             } catch (error) {
-                logger.error(`Erro ao enviar notificação de escala para ${member.name}:`, error);
+                logger.error(`💥 Erro geral ao enviar notificação para ${member.name}:`, error);
 
                 await this.logNotification({
                     userId: member.id,
@@ -45,6 +69,8 @@ class NotificationService {
                 });
             }
         }
+        
+        logger.info(`🏁 Processamento de notificações concluído`);
     }
 
     static async sendScheduleUpdate(schedule) {
@@ -286,9 +312,22 @@ class NotificationService {
 
     static async sendCustomNotification(schedule, type, message) {
         const members = schedule.members.map(m => m.user);
+        
+        logger.info(`Enviando notificação customizada para ${members.length} membros`, {
+            scheduleId: schedule.id,
+            type: type,
+            membersData: members.map(m => ({
+                id: m.id,
+                name: m.name,
+                phone: m.phone,
+                email: m.email
+            }))
+        });
 
         for (const member of members) {
             try {
+                logger.info(`Processando membro: ${member.name} (ID: ${member.id})`);
+                
                 if (type === 'EMAIL' || type === 'BOTH') {
                     await EmailService.sendEmail(
                         member.email,
@@ -299,7 +338,13 @@ class NotificationService {
                 }
 
                 if ((type === 'WHATSAPP' || type === 'BOTH') && WhatsAppService.isConnected()) {
+                    if (!member.phone) {
+                        logger.warn(`Membro ${member.name} não tem telefone cadastrado`);
+                        continue;
+                    }
+                    
                     const whatsappMessage = `*Comunicado - ${schedule.title}*\n\nOlá, ${member.name}!\n\n${message}`;
+                    logger.info(`Enviando WhatsApp para ${member.name} no número: ${member.phone}`);
                     await WhatsAppService.sendMessage(member.phone, whatsappMessage);
                 }
 
@@ -314,6 +359,16 @@ class NotificationService {
 
             } catch (error) {
                 logger.error(`Erro ao enviar comunicado para ${member.name}:`, error);
+                
+                await this.logNotification({
+                    userId: member.id,
+                    scheduleId: schedule.id,
+                    type: 'CUSTOM_NOTIFICATION',
+                    channel: type,
+                    status: 'FAILED',
+                    message,
+                    error: error.message
+                });
             }
         }
     }

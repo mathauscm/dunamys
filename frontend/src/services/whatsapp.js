@@ -2,6 +2,19 @@ import api from './api';
 
 const whatsappService = {
   /**
+   * Inicializa o WhatsApp Service
+   * @returns {Promise<Object>} Resultado da inicialização
+   */
+  initialize: async () => {
+    try {
+      const response = await api.post('/whatsapp/initialize');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  /**
    * Obtém o QR Code para conexão do WhatsApp
    * @returns {Promise<Object>} Dados do QR Code e status
    */

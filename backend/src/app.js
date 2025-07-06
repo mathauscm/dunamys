@@ -444,6 +444,21 @@ if (process.env.NODE_ENV === 'development') {
             res.status(500).json({ error: 'Erro ao enviar mensagem de teste' });
         }
     });
+
+    // WhatsApp restart endpoint
+    app.post('/api/dev/whatsapp/restart', authenticateToken, async (req, res) => {
+        if (req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        try {
+            await WhatsAppService.reconnect();
+            res.json({ message: 'WhatsApp service reiniciado com sucesso' });
+        } catch (error) {
+            logger.error('Erro ao reiniciar WhatsApp:', error);
+            res.status(500).json({ error: 'Erro ao reiniciar WhatsApp service' });
+        }
+    });
 }
 
 /**
@@ -533,52 +548,7 @@ async function gracefulShutdown(signal) {
  * ============================================================================
  */
 
-// Initialize services when app starts - COM MELHOR ERROR HANDLING
-const initializeServices = async () => {
-    try {
-        console.log('🔄 Inicializando serviços...');
-
-        // Connect to database
-        await connectDatabase();
-        logger.info('Database connection established');
-        console.log('✅ Database conectado');
-
-        // Connect to Redis
-        await connectRedis();
-        logger.info('Redis connection established');
-        console.log('✅ Redis conectado');
-
-        // Verify email configuration (não falhar se não configurado)
-        try {
-            await verifyEmailConfig();
-            logger.info('Email configuration verified');
-            console.log('✅ Email configurado');
-        } catch (emailError) {
-            console.log('⚠️ Email não configurado (opcional):', emailError.message);
-        }
-
-        // Initialize WhatsApp service (não falhar se não configurado)
-        try {
-            WhatsAppService.initialize();
-            logger.info('WhatsApp service initialized');
-            console.log('✅ WhatsApp iniciado');
-        } catch (whatsappError) {
-            console.log('⚠️ WhatsApp não configurado (opcional):', whatsappError.message);
-        }
-
-        console.log('🎉 Todos os serviços principais iniciados com sucesso!');
-        logger.info('All services initialized successfully');
-    } catch (error) {
-        console.error('❌ Erro crítico na inicialização:', error);
-        logger.error('Error initializing services:', error);
-        process.exit(1);
-    }
-};
-
-// Only initialize services if this file is run directly
-if (require.main === module) {
-    initializeServices();
-}
+// Services initialization is now handled in server.js
 
 /**
  * ============================================================================

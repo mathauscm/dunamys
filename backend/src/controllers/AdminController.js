@@ -223,16 +223,27 @@ class AdminController {
 
   static async sendNotification(req, res, next) {
     try {
-      const { scheduleId, type, message } = req.body;
+      const { id } = req.params;
+      const { type, message } = req.body;
       
-      await AdminService.sendScheduleNotification(parseInt(scheduleId), type, message);
+      logger.info(`🎯 AdminController.sendNotification chamado:`, {
+        scheduleId: id,
+        type,
+        message: message?.substring(0, 50) + '...',
+        userId: req.user.id
+      });
       
-      logger.info(`Notificação enviada para escala ID: ${scheduleId} por admin ID: ${req.user.id}`);
+      const result = await AdminService.sendScheduleNotification(parseInt(id), type, message, req.user.id);
+      
+      logger.info(`✅ AdminService.sendScheduleNotification retornou:`, result);
+      logger.info(`🎉 Notificação processada para escala ID: ${id} por admin ID: ${req.user.id}`);
       
       res.json({
-        message: 'Notificação enviada com sucesso'
+        message: 'Notificação enviada com sucesso',
+        details: result
       });
     } catch (error) {
+      logger.error(`💥 Erro em AdminController.sendNotification:`, error);
       next(error);
     }
   }

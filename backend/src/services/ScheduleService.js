@@ -75,6 +75,15 @@ class ScheduleService {
           include: {
             user: {
               select: { id: true, name: true, phone: true, email: true }
+            },
+            functions: {
+              include: {
+                function: {
+                  include: {
+                    group: true
+                  }
+                }
+              }
             }
           }
         }
