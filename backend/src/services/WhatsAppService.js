@@ -87,111 +87,47 @@ class WhatsAppService {
     }
 
     async sendMessage(phone, message) {
-        console.log('🚨📱 CHAMOU WhatsAppService.sendMessage!!!', phone);
-        logger.info('🚨📱 DEBUG: WhatsAppService.sendMessage foi chamado', { phone });
-        
         if (!this.isReady) {
-            console.log('❌ WhatsApp não está conectado - this.isReady =', this.isReady);
             throw new Error('WhatsApp não está conectado');
         }
 
         try {
             const formattedPhone = this.formatPhoneNumber(phone);
             
-            // Obter informações do usuário logado para debug
-            let myNumber = 'unknown';
-            try {
-                const info = await this.client.info;
-                myNumber = info.wid._serialized;
-            } catch (infoError) {
-                logger.warn('Não foi possível obter número do usuário logado:', infoError.message);
-            }
-            
-            // Log detalhado para debug
-            logger.info(`WhatsApp Debug - Enviando mensagem:`, {
-                originalPhone: phone,
-                formattedPhone: formattedPhone,
-                myNumber: myNumber,
-                messagePreview: message.substring(0, 100) + '...'
-            });
-            
-            // Verificar se é o mesmo número
-            if (formattedPhone === myNumber) {
-                logger.error(`❌ ERRO: Tentativa de enviar mensagem para si mesmo!`);
-                logger.error(`   Número formatado: ${formattedPhone}`);
-                logger.error(`   Meu número: ${myNumber}`);
-                throw new Error(`Não é possível enviar mensagem para si mesmo. Verifique o número do destinatário.`);
-            }
-            
-            // Verificar se o número está registrado no WhatsApp
-            logger.info(`🔍 Verificando se ${formattedPhone} está registrado no WhatsApp...`);
+            // MÉTODO 1: Verificar se o número está registrado
+            console.log(`🔍 Verificando registro do número: ${formattedPhone}`);
             const isRegistered = await this.client.isRegisteredUser(formattedPhone);
             
             if (!isRegistered) {
-                logger.error(`❌ Número ${formattedPhone} NÃO está registrado no WhatsApp`);
                 throw new Error(`Número ${phone} não está registrado no WhatsApp`);
             }
             
-            logger.info(`✅ Número ${formattedPhone} está registrado no WhatsApp`);
-            
-            // Tentar obter ou criar o chat
-            logger.info(`📱 Obtendo/criando chat para ${formattedPhone}...`);
-            
+            // MÉTODO 2: Tentar obter o chat pelo número
+            let chatId;
             try {
-                // Primeiro, tentar obter o chat existente
                 const chat = await this.client.getChatById(formattedPhone);
-                logger.info(`💬 Chat encontrado: ${chat.name || 'Sem nome'}`);
-            } catch (chatError) {
-                logger.info(`💬 Chat não encontrado, será criado automaticamente`);
+                chatId = chat.id._serialized;
+                console.log(`💬 Chat encontrado: ${chatId}`);
+            } catch (error) {
+                // Se não encontrar o chat, usar o número formatado mesmo
+                chatId = formattedPhone;
+                console.log(`💬 Chat não encontrado, usando número formatado: ${chatId}`);
             }
             
-            // Verificação de segurança: não enviar para si mesmo (já obtido acima)
-            if (formattedPhone === myNumber) {
-                throw new Error(`Tentativa bloqueada: não é possível enviar mensagem para si mesmo (${formattedPhone})`);
-            }
+            // MÉTODO 3: Enviar mensagem
+            console.log(`📤 Enviando mensagem para: ${chatId}`);
+            const result = await this.client.sendMessage(chatId, message);
             
-            // Método alternativo: usar o chat diretamente
-            logger.info(`📤 Tentativa 1: Enviando via sendMessage para ${formattedPhone}...`);
+            console.log(`✅ Mensagem enviada com sucesso!`, {
+                to: phone,
+                chatId: chatId,
+                messageId: result.id._serialized
+            });
             
-            try {
-                const result = await this.client.sendMessage(formattedPhone, message);
-                
-                logger.info(`✅ Mensagem WhatsApp enviada com SUCESSO via sendMessage!`, {
-                    to: phone,
-                    formatted: formattedPhone,
-                    messageId: result.id?._serialized || result.id || 'unknown',
-                    from: result.from || 'unknown',
-                    to_result: result.to || 'unknown'
-                });
-                
-                // Verificar se a mensagem foi realmente enviada na direção correta
-                if (result.from && result.from !== myNumber) {
-                    logger.warn(`⚠️  POSSÍVEL PROBLEMA: Mensagem mostra from=${result.from} mas deveria ser ${myNumber}`);
-                }
-                
-                return true;
-                
-            } catch (sendError) {
-                logger.error(`❌ Falha no sendMessage: ${sendError.message}`);
-                
-                // Método alternativo: via chat
-                logger.info(`📤 Tentativa 2: Enviando via chat...`);
-                
-                const chat = await this.client.getChatById(formattedPhone);
-                const chatResult = await chat.sendMessage(message);
-                
-                logger.info(`✅ Mensagem enviada com SUCESSO via chat!`, {
-                    to: phone,
-                    formatted: formattedPhone,
-                    messageId: chatResult.id?._serialized || chatResult.id || 'unknown'
-                });
-                
-                return true;
-            }
+            return result;
             
-            return true;
         } catch (error) {
-            logger.error(`💥 Erro ao enviar mensagem WhatsApp para ${phone}:`, error);
+            console.error(`❌ Erro ao enviar mensagem para ${phone}:`, error);
             throw error;
         }
     }
@@ -201,52 +137,109 @@ class WhatsAppService {
             throw new Error('Número de telefone é obrigatório');
         }
         
+        // Limpar o número - remover tudo que não é dígito
         let cleanPhone = phone.replace(/\D/g, '');
-        console.log(`📱 DEBUG: Formatando número ${phone} -> ${cleanPhone} (${cleanPhone.length} dígitos)`);
         
-        // Remover código do país se já existir
-        if (cleanPhone.startsWith('55') && cleanPhone.length >= 12) {
+        // Remover código do país 55 se já existir
+        if (cleanPhone.startsWith('55')) {
             cleanPhone = cleanPhone.substring(2);
-            console.log(`🔧 Removendo código 55: ${cleanPhone}`);
         }
         
-        // Validar e corrigir números brasileiros
+        // Validar se é um número brasileiro válido
+        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+            throw new Error(`Número inválido: ${cleanPhone} (deve ter 10 ou 11 dígitos)`);
+        }
+        
+        // Se tem 11 dígitos, já está no formato correto (DDD + 9 + número)
+        // Se tem 10 dígitos, adicionar o 9º dígito
         if (cleanPhone.length === 10) {
-            // Pode ser telefone fixo ou celular sem 9º dígito
-            // Verificar se o terceiro dígito é 9 ou menor (fixo) ou 6-9 (celular antigo)
-            const thirdDigit = cleanPhone.substring(2, 3);
-            
-            if (thirdDigit >= '6' && thirdDigit <= '9') {
-                // Provavelmente celular sem 9º dígito - adicionar
-                const areaCode = cleanPhone.substring(0, 2);
-                cleanPhone = `${areaCode}9${cleanPhone.substring(2)}`;
-                console.log(`🔧 Celular sem 9º dígito - adicionando: ${cleanPhone}`);
-            } else {
-                // Provavelmente telefone fixo
-                console.log(`📞 Telefone fixo detectado: ${cleanPhone}`);
-            }
-        } else if (cleanPhone.length === 11) {
-            // Celular com 11 dígitos - validar se tem o 9º dígito correto
             const areaCode = cleanPhone.substring(0, 2);
-            const ninthDigit = cleanPhone.substring(2, 3);
-            
-            if (ninthDigit !== '9') {
-                // Reorganizar: DDD + 9 + restante
-                const restOfNumber = cleanPhone.substring(2);
-                cleanPhone = `${areaCode}9${restOfNumber}`;
-                console.log(`🔧 Corrigindo 9º dígito: ${cleanPhone}`);
-            } else {
-                console.log(`✅ Celular com 9º dígito correto: ${cleanPhone}`);
-            }
-        } else {
-            console.log(`⚠️ Número com tamanho inválido: ${cleanPhone.length} dígitos`);
+            const number = cleanPhone.substring(2);
+            cleanPhone = `${areaCode}9${number}`;
         }
         
-        // Números brasileiros - SEMPRE adicionar código 55
-        const formatted = `55${cleanPhone}@c.us`;
-        console.log(`✅ Número formatado final: ${formatted}`);
+        // Formato final para whatsapp-web.js: 55 + DDD + 9 + número + @c.us
+        const finalNumber = `55${cleanPhone}@c.us`;
         
-        return formatted;
+        console.log(`📱 Formatação: ${phone} -> ${finalNumber}`);
+        return finalNumber;
+    }
+
+    async sendMessageAlternative(phone, message) {
+        try {
+            // Limpar número
+            let cleanPhone = phone.replace(/\D/g, '');
+            
+            if (cleanPhone.startsWith('55')) {
+                cleanPhone = cleanPhone.substring(2);
+            }
+            
+            // Adicionar 9 se necessário
+            if (cleanPhone.length === 10) {
+                const areaCode = cleanPhone.substring(0, 2);
+                const number = cleanPhone.substring(2);
+                cleanPhone = `${areaCode}9${number}`;
+            }
+            
+            // Usar getNumberId para obter o ID correto
+            const numberId = await this.client.getNumberId(`55${cleanPhone}`);
+            
+            if (!numberId) {
+                throw new Error(`Número ${phone} não foi encontrado no WhatsApp`);
+            }
+            
+            console.log(`📱 NumberId encontrado: ${numberId._serialized}`);
+            
+            // Enviar usando o ID correto
+            const result = await this.client.sendMessage(numberId._serialized, message);
+            
+            console.log(`✅ Mensagem enviada via NumberId!`);
+            return result;
+            
+        } catch (error) {
+            console.error(`❌ Erro no método alternativo:`, error);
+            throw error;
+        }
+    }
+
+    async debugPhoneNumber(phone) {
+        const cleanPhone = phone.replace(/\D/g, '');
+        
+        console.log(`🔍 DEBUG do número: ${phone}`);
+        console.log(`   Limpo: ${cleanPhone}`);
+        
+        // Testar diferentes formatos
+        const formats = [
+            `55${cleanPhone}@c.us`,
+            `${cleanPhone}@c.us`,
+            `55${cleanPhone.substring(2)}@c.us` // Remove 55 se já tiver
+        ];
+        
+        for (const format of formats) {
+            try {
+                const isRegistered = await this.client.isRegisteredUser(format);
+                console.log(`   ${format} -> Registrado: ${isRegistered}`);
+                
+                if (isRegistered) {
+                    try {
+                        const chat = await this.client.getChatById(format);
+                        console.log(`   ${format} -> Chat existe: ${chat.name || 'Sem nome'}`);
+                    } catch (chatError) {
+                        console.log(`   ${format} -> Chat não encontrado`);
+                    }
+                }
+            } catch (error) {
+                console.log(`   ${format} -> Erro: ${error.message}`);
+            }
+        }
+        
+        // Testar getNumberId
+        try {
+            const numberId = await this.client.getNumberId(`55${cleanPhone}`);
+            console.log(`   getNumberId: ${numberId ? numberId._serialized : 'null'}`);
+        } catch (error) {
+            console.log(`   getNumberId erro: ${error.message}`);
+        }
     }
 
     getQRCode() {
