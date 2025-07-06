@@ -14,7 +14,7 @@ const isEmailConfigured = () => {
 let transporter = null;
 
 if (isEmailConfigured()) {
-  transporter = nodemailer.createTransporter({
+  transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT || 587,
     secure: process.env.SMTP_SECURE === 'true',

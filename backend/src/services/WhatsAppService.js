@@ -87,7 +87,11 @@ class WhatsAppService {
     }
 
     async sendMessage(phone, message) {
+        console.log('🚨📱 CHAMOU WhatsAppService.sendMessage!!!', phone);
+        logger.info('🚨📱 DEBUG: WhatsAppService.sendMessage foi chamado', { phone });
+        
         if (!this.isReady) {
+            console.log('❌ WhatsApp não está conectado - this.isReady =', this.isReady);
             throw new Error('WhatsApp não está conectado');
         }
 
@@ -130,19 +134,60 @@ class WhatsAppService {
             
             logger.info(`✅ Número ${formattedPhone} está registrado no WhatsApp`);
             
-            // Tentar obter o chat
-            logger.info(`📱 Obtendo chat para ${formattedPhone}...`);
-            const chatId = formattedPhone;
+            // Tentar obter ou criar o chat
+            logger.info(`📱 Obtendo/criando chat para ${formattedPhone}...`);
             
-            // Enviar mensagem
-            logger.info(`📤 Enviando mensagem para ${chatId}...`);
-            const result = await this.client.sendMessage(chatId, message);
+            try {
+                // Primeiro, tentar obter o chat existente
+                const chat = await this.client.getChatById(formattedPhone);
+                logger.info(`💬 Chat encontrado: ${chat.name || 'Sem nome'}`);
+            } catch (chatError) {
+                logger.info(`💬 Chat não encontrado, será criado automaticamente`);
+            }
             
-            logger.info(`✅ Mensagem WhatsApp enviada com SUCESSO!`, {
-                to: phone,
-                formatted: formattedPhone,
-                messageId: result.id || 'unknown'
-            });
+            // Verificação de segurança: não enviar para si mesmo (já obtido acima)
+            if (formattedPhone === myNumber) {
+                throw new Error(`Tentativa bloqueada: não é possível enviar mensagem para si mesmo (${formattedPhone})`);
+            }
+            
+            // Método alternativo: usar o chat diretamente
+            logger.info(`📤 Tentativa 1: Enviando via sendMessage para ${formattedPhone}...`);
+            
+            try {
+                const result = await this.client.sendMessage(formattedPhone, message);
+                
+                logger.info(`✅ Mensagem WhatsApp enviada com SUCESSO via sendMessage!`, {
+                    to: phone,
+                    formatted: formattedPhone,
+                    messageId: result.id?._serialized || result.id || 'unknown',
+                    from: result.from || 'unknown',
+                    to_result: result.to || 'unknown'
+                });
+                
+                // Verificar se a mensagem foi realmente enviada na direção correta
+                if (result.from && result.from !== myNumber) {
+                    logger.warn(`⚠️  POSSÍVEL PROBLEMA: Mensagem mostra from=${result.from} mas deveria ser ${myNumber}`);
+                }
+                
+                return true;
+                
+            } catch (sendError) {
+                logger.error(`❌ Falha no sendMessage: ${sendError.message}`);
+                
+                // Método alternativo: via chat
+                logger.info(`📤 Tentativa 2: Enviando via chat...`);
+                
+                const chat = await this.client.getChatById(formattedPhone);
+                const chatResult = await chat.sendMessage(message);
+                
+                logger.info(`✅ Mensagem enviada com SUCESSO via chat!`, {
+                    to: phone,
+                    formatted: formattedPhone,
+                    messageId: chatResult.id?._serialized || chatResult.id || 'unknown'
+                });
+                
+                return true;
+            }
             
             return true;
         } catch (error) {
@@ -157,31 +202,51 @@ class WhatsAppService {
         }
         
         let cleanPhone = phone.replace(/\D/g, '');
-        logger.info(`Formatando número: ${phone} -> ${cleanPhone} (tamanho: ${cleanPhone.length})`);
+        console.log(`📱 DEBUG: Formatando número ${phone} -> ${cleanPhone} (${cleanPhone.length} dígitos)`);
         
         // Remover código do país se já existir
         if (cleanPhone.startsWith('55') && cleanPhone.length >= 12) {
             cleanPhone = cleanPhone.substring(2);
-            logger.info(`Removendo código 55 existente: ${cleanPhone}`);
+            console.log(`🔧 Removendo código 55: ${cleanPhone}`);
         }
         
-        // Validar número brasileiro
+        // Validar e corrigir números brasileiros
         if (cleanPhone.length === 10) {
-            // Número fixo: XX + 8 dígitos
-            const formatted = `55${cleanPhone}@c.us`;
-            logger.info(`Número fixo formatado: ${formatted}`);
-            return formatted;
+            // Pode ser telefone fixo ou celular sem 9º dígito
+            // Verificar se o terceiro dígito é 9 ou menor (fixo) ou 6-9 (celular antigo)
+            const thirdDigit = cleanPhone.substring(2, 3);
+            
+            if (thirdDigit >= '6' && thirdDigit <= '9') {
+                // Provavelmente celular sem 9º dígito - adicionar
+                const areaCode = cleanPhone.substring(0, 2);
+                cleanPhone = `${areaCode}9${cleanPhone.substring(2)}`;
+                console.log(`🔧 Celular sem 9º dígito - adicionando: ${cleanPhone}`);
+            } else {
+                // Provavelmente telefone fixo
+                console.log(`📞 Telefone fixo detectado: ${cleanPhone}`);
+            }
         } else if (cleanPhone.length === 11) {
-            // Número celular: XX + 9 + 8 dígitos
-            const formatted = `55${cleanPhone}@c.us`;
-            logger.info(`Número celular formatado: ${formatted}`);
-            return formatted;
+            // Celular com 11 dígitos - validar se tem o 9º dígito correto
+            const areaCode = cleanPhone.substring(0, 2);
+            const ninthDigit = cleanPhone.substring(2, 3);
+            
+            if (ninthDigit !== '9') {
+                // Reorganizar: DDD + 9 + restante
+                const restOfNumber = cleanPhone.substring(2);
+                cleanPhone = `${areaCode}9${restOfNumber}`;
+                console.log(`🔧 Corrigindo 9º dígito: ${cleanPhone}`);
+            } else {
+                console.log(`✅ Celular com 9º dígito correto: ${cleanPhone}`);
+            }
         } else {
-            // Tentar mesmo assim
-            const formatted = `55${cleanPhone}@c.us`;
-            logger.warn(`Número com tamanho inválido (${cleanPhone.length}): ${formatted}`);
-            return formatted;
+            console.log(`⚠️ Número com tamanho inválido: ${cleanPhone.length} dígitos`);
         }
+        
+        // Números brasileiros - SEMPRE adicionar código 55
+        const formatted = `55${cleanPhone}@c.us`;
+        console.log(`✅ Número formatado final: ${formatted}`);
+        
+        return formatted;
     }
 
     getQRCode() {

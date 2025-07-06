@@ -11,6 +11,9 @@ class NotificationService {
      */
 
     static async sendScheduleAssignment(schedule) {
+        console.log('🚨 CHAMOU sendScheduleAssignment!!!');
+        logger.info('🚨 DEBUG: sendScheduleAssignment foi chamado');
+        
         const members = schedule.members.map(m => m.user);
         
         logger.info(`🔔 Iniciando envio de notificações de escala para ${members.length} membros`);
@@ -37,11 +40,22 @@ class NotificationService {
                 // WhatsApp
                 if (whatsappConnected) {
                     try {
-                        logger.info(`📱 Tentando enviar WhatsApp para ${member.phone}`);
-                        await this.sendScheduleWhatsApp(schedule, member, 'assignment');
-                        logger.info(`✅ WhatsApp enviado com sucesso para ${member.phone}`);
+                        logger.info(`📱 DADOS DO MEMBRO PARA WHATSAPP:`, {
+                            nome: member.name,
+                            telefone: member.phone,
+                            email: member.email,
+                            id: member.id
+                        });
+                        
+                        if (!member.phone) {
+                            logger.warn(`❌ Membro ${member.name} não tem telefone cadastrado`);
+                        } else {
+                            logger.info(`📱 Enviando WhatsApp para ${member.name} no número: ${member.phone}`);
+                            await this.sendScheduleWhatsApp(schedule, member, 'assignment');
+                            logger.info(`✅ WhatsApp enviado com sucesso para ${member.name} (${member.phone})`);
+                        }
                     } catch (whatsappError) {
-                        logger.error(`❌ Erro ao enviar WhatsApp para ${member.phone}:`, whatsappError);
+                        logger.error(`❌ Erro ao enviar WhatsApp para ${member.name} (${member.phone}):`, whatsappError);
                     }
                 } else {
                     logger.warn(`⚠️ WhatsApp não conectado - pulando envio para ${member.name}`);
@@ -447,6 +461,13 @@ class NotificationService {
      */
 
     static async sendScheduleWhatsApp(schedule, user, type) {
+        logger.info(`🚀📱 INICIANDO sendScheduleWhatsApp:`, {
+            schedule: schedule.title,
+            user: user.name,
+            phone: user.phone,
+            type: type
+        });
+        
         const scheduleDate = new Date(schedule.date).toLocaleDateString('pt-BR');
 
         let message;
@@ -465,6 +486,12 @@ class NotificationService {
                 break;
         }
 
+        logger.info(`🚀 CHAMANDO WhatsAppService.sendMessage:`, {
+            destinatario: user.name,
+            telefone: user.phone,
+            mensagem: message.substring(0, 50) + '...'
+        });
+        
         await WhatsAppService.sendMessage(user.phone, message);
     }
 
