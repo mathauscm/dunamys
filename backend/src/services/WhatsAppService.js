@@ -92,42 +92,62 @@ class WhatsAppService {
         }
 
         try {
-            const formattedPhone = this.formatPhoneNumber(phone);
+            console.log(`🚀 INICIANDO envio para: ${phone}`);
             
-            // MÉTODO 1: Verificar se o número está registrado
-            console.log(`🔍 Verificando registro do número: ${formattedPhone}`);
-            const isRegistered = await this.client.isRegisteredUser(formattedPhone);
+            // PRIMEIRO: Tentar com o número exato como está no banco
+            const originalFormatted = this.formatPhoneNumber(phone);
+            console.log(`📱 Formato original: ${originalFormatted}`);
+            
+            // SEGUNDO: Verificar se está registrado
+            const isRegistered = await this.client.isRegisteredUser(originalFormatted);
+            console.log(`✅ Registrado: ${isRegistered}`);
             
             if (!isRegistered) {
-                throw new Error(`Número ${phone} não está registrado no WhatsApp`);
+                // TERCEIRO: Tentar versão alternativa (com/sem 9º dígito)
+                const alternativeNumber = this.getAlternativeFormat(phone);
+                console.log(`🔄 Testando formato alternativo: ${alternativeNumber}`);
+                
+                const altRegistered = await this.client.isRegisteredUser(alternativeNumber);
+                console.log(`✅ Alternativo registrado: ${altRegistered}`);
+                
+                if (altRegistered) {
+                    console.log(`✅ Usando formato alternativo: ${alternativeNumber}`);
+                    const result = await this.client.sendMessage(alternativeNumber, message);
+                    return result;
+                } else {
+                    throw new Error(`Número ${phone} não encontrado no WhatsApp (testados: ${originalFormatted}, ${alternativeNumber})`);
+                }
             }
             
-            // MÉTODO 2: Tentar obter o chat pelo número
-            let chatId;
-            try {
-                const chat = await this.client.getChatById(formattedPhone);
-                chatId = chat.id._serialized;
-                console.log(`💬 Chat encontrado: ${chatId}`);
-            } catch (error) {
-                // Se não encontrar o chat, usar o número formatado mesmo
-                chatId = formattedPhone;
-                console.log(`💬 Chat não encontrado, usando número formatado: ${chatId}`);
+            // QUARTO: Usar getNumberId para garantir o ID correto
+            const cleanPhone = phone.replace(/\D/g, '');
+            const numberId = await this.client.getNumberId(`55${cleanPhone.startsWith('55') ? cleanPhone.substring(2) : cleanPhone}`);
+            
+            if (numberId) {
+                console.log(`✅ NumberId encontrado: ${numberId._serialized}`);
+                const result = await this.client.sendMessage(numberId._serialized, message);
+                console.log(`✅ Mensagem enviada via NumberId!`);
+                return result;
             }
             
-            // MÉTODO 3: Enviar mensagem
-            console.log(`📤 Enviando mensagem para: ${chatId}`);
-            const result = await this.client.sendMessage(chatId, message);
+            // QUINTO: Usar formato original mesmo assim
+            console.log(`📤 Enviando com formato original: ${originalFormatted}`);
+            const result = await this.client.sendMessage(originalFormatted, message);
             
-            console.log(`✅ Mensagem enviada com sucesso!`, {
-                to: phone,
-                chatId: chatId,
-                messageId: result.id._serialized
-            });
-            
+            console.log(`✅ Mensagem enviada com sucesso!`);
             return result;
             
         } catch (error) {
             console.error(`❌ Erro ao enviar mensagem para ${phone}:`, error);
+            
+            // ÚLTIMO RECURSO: Tentar método de debug/manual
+            try {
+                console.log(`🔧 Tentando método de recuperação...`);
+                return await this.debugAndSendMessage(phone, message);
+            } catch (debugError) {
+                console.error(`❌ Método de recuperação também falhou:`, debugError);
+            }
+            
             throw error;
         }
     }
