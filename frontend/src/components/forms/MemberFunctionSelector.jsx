@@ -39,6 +39,7 @@ const MemberFunctionSelector = ({
         maxHeight: 400,
         direction: 'down' // 'up' ou 'down'
     });
+    const [isMobile, setIsMobile] = useState(false);
     const { user } = useAuth();
     const adminGroups = useAdminGroups();
     const buttonRef = useRef(null);
@@ -46,6 +47,16 @@ const MemberFunctionSelector = ({
 
     useEffect(() => {
         loadFunctions();
+        
+        // Detectar se é mobile
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        
+        return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
     const loadFunctions = async () => {
@@ -315,12 +326,21 @@ const MemberFunctionSelector = ({
             {isOpen && createPortal(
                 <div 
                     ref={dropdownRef}
-                    className={`fixed bg-white border border-gray-300 rounded-lg shadow-2xl transition-all duration-200 ${
-                        dropdownPosition.direction === 'up' 
+                    className={`
+                        ${isMobile 
+                            ? 'fixed inset-x-4 bottom-4 sm:absolute sm:inset-auto sm:top-full sm:left-0' 
+                            : 'fixed'
+                        }
+                        bg-white border border-gray-300 rounded-lg shadow-2xl transition-all duration-200
+                        ${dropdownPosition.direction === 'up' 
                             ? 'animate-in slide-in-from-bottom-2 fade-in' 
                             : 'animate-in slide-in-from-top-2 fade-in'
-                    }`}
-                    style={{
+                        }
+                    `}
+                    style={isMobile ? {
+                        zIndex: 9999,
+                        maxHeight: '50vh'
+                    } : {
                         top: dropdownPosition.top,
                         left: dropdownPosition.left,
                         width: dropdownPosition.width,
@@ -355,8 +375,10 @@ const MemberFunctionSelector = ({
 
                         {/* Conteúdo com scroll independente */}
                         <div 
-                            className="flex-1 overflow-y-auto" 
-                            style={{ 
+                            className="flex-1 overflow-y-auto scroll-container" 
+                            style={isMobile ? {
+                                maxHeight: 'calc(50vh - 120px)'
+                            } : { 
                                 maxHeight: dropdownPosition.maxHeight - 120 // Subtraindo header(80px) + footer(40px)
                             }}
                         >
@@ -386,7 +408,9 @@ const MemberFunctionSelector = ({
                                             {group.functions.map((func) => (
                                                 <label
                                                     key={func.id}
-                                                    className="flex items-center px-3 py-2 hover:bg-primary-50 cursor-pointer transition-colors group"
+                                                    className={`flex items-center px-3 hover:bg-primary-50 cursor-pointer transition-colors group ${
+                                                        isMobile ? 'py-3 touch-target' : 'py-2'
+                                                    }`}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
                                                     <input

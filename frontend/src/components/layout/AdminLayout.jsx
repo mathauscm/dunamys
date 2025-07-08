@@ -69,28 +69,29 @@ const AdminLayout = () => {
         <div className="flex h-screen bg-gray-100">
             {/* Sidebar */}
             <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
-        lg:translate-x-0 lg:static lg:inset-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-                <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+                fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+                w-full max-w-sm sm:w-64
+                lg:translate-x-0 lg:static lg:inset-0 lg:w-64
+                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}>
+                <div className="flex items-center justify-between h-16 px-4 sm:px-6 border-b border-gray-200">
                     <div className="flex items-center">
                         <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
                             <Settings className="w-5 h-5 text-white" />
                         </div>
-                        <h1 className="ml-3 text-lg font-semibold text-gray-900">
+                        <h1 className="ml-3 text-base sm:text-lg font-semibold text-gray-900">
                             Administração
                         </h1>
                     </div>
                     <button
                         onClick={toggleSidebar}
-                        className="lg:hidden p-1 rounded-md hover:bg-gray-100"
+                        className="lg:hidden p-2 rounded-md hover:bg-gray-100 touch-target"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <nav className="mt-6 px-3 flex-1">
+                <nav className="mt-4 px-3 flex-1 sm:mt-6">
                     <div className="space-y-1">
                         {navigation.map((item) => (
                             <NavLink
@@ -98,7 +99,7 @@ const AdminLayout = () => {
                                 to={item.href}
                                 end={item.exact}
                                 className={({ isActive }) => `
-                  group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                  group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors min-h-[44px]
                   ${isActive
                                         ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-600'
                                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -114,16 +115,16 @@ const AdminLayout = () => {
                 </nav>
 
                 {/* User info and logout at bottom of sidebar */}
-                <div className="border-t border-gray-200 p-4">
+                <div className="border-t border-gray-200 p-3 sm:p-4">
                     <div className="flex items-center mb-3">
                         <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
                             <span className="text-white text-sm font-medium">
                                 {user?.name?.charAt(0).toUpperCase()}
                             </span>
                         </div>
-                        <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                            <p className="text-xs text-gray-500">
+                        <div className="ml-3 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
+                            <p className="text-xs text-gray-500 truncate">
                                 {user?.userType === 'groupAdmin' ? 'Admin de Grupo' : 'Administrador'}
                                 {user?.campus && ` - ${user.campus.name}`}
                             </p>
@@ -131,7 +132,7 @@ const AdminLayout = () => {
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-danger-600 hover:bg-danger-50 rounded-lg transition-colors"
+                        className="w-full flex items-center justify-center px-3 py-3 text-sm font-medium text-danger-600 hover:bg-danger-50 rounded-lg transition-colors min-h-[44px]"
                     >
                         <LogOut className="w-4 h-4 mr-2" />
                         Sair do Sistema
@@ -154,8 +155,8 @@ const AdminLayout = () => {
                     onToggleSidebar={toggleSidebar}
                 />
 
-                <main className="flex-1 overflow-y-auto">
-                    <div className="py-6 px-6">
+                <main className="flex-1 overflow-y-auto scroll-container">
+                    <div className="py-4 px-4 sm:py-6 sm:px-6">
                         <Outlet />
                     </div>
                 </main>

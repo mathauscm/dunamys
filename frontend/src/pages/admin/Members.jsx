@@ -377,7 +377,7 @@ const AdminMembers = () => {
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="table">
+                            <table className="table table-responsive">
                                 <thead className="table-header">
                                     <tr>
                                         <th>Membro</th>
@@ -391,7 +391,7 @@ const AdminMembers = () => {
                                 <tbody className="table-body">
                                     {members.map((member) => (
                                         <tr key={member.id}>
-                                            <td>
+                                            <td data-label="Membro">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10">
                                                         <div className="h-10 w-10 bg-primary-600 rounded-full flex items-center justify-center">
@@ -410,7 +410,7 @@ const AdminMembers = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-label="Contato">
                                                 <div className="flex flex-col space-y-1 text-sm text-gray-600">
                                                     <span className="flex items-center">
                                                         <Mail className="h-4 w-4 mr-1" />
@@ -428,29 +428,29 @@ const AdminMembers = () => {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-label="Status">
                                                 {getStatusBadge(member.status)}
                                             </td>
-                                            <td className="text-sm text-gray-600">
+                                            <td data-label="Cadastro" className="text-sm text-gray-600">
                                                 {format(new Date(member.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                                             </td>
-                                            <td className="text-sm text-gray-600">
+                                            <td data-label="Escalas" className="text-sm text-gray-600">
                                                 {member._count?.schedules || 0}
                                             </td>
-                                            <td>
-                                                <div className="flex items-center space-x-2">
+                                            <td data-label="Ações">
+                                                <div className="flex items-center space-x-1 sm:space-x-2">
                                                     {member.status === 'PENDING' && (
                                                         <>
                                                             <button
                                                                 onClick={() => handleApprove(member.id)}
-                                                                className="p-1 text-success-600 hover:bg-success-50 rounded"
+                                                                className="p-2 text-success-600 hover:bg-success-50 rounded touch-target"
                                                                 title="Aprovar"
                                                             >
                                                                 <UserCheck className="h-4 w-4" />
                                                             </button>
                                                             <button
                                                                 onClick={() => handleReject(member)}
-                                                                className="p-1 text-danger-600 hover:bg-danger-50 rounded"
+                                                                className="p-2 text-danger-600 hover:bg-danger-50 rounded touch-target"
                                                                 title="Rejeitar"
                                                             >
                                                                 <UserX className="h-4 w-4" />

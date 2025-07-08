@@ -342,14 +342,225 @@
         @apply opacity-0 transform scale-95 transition-all duration-150;
     }
 
-    /* Responsividade para dispositivos móveis */
+    /* ============================================
+       OTIMIZAÇÕES MOBILE E TABLET
+       ============================================ */
+
+    /* Touch targets mínimos (44px) */
+    .touch-target {
+        @apply min-h-[44px] min-w-[44px];
+    }
+
+    /* Botões otimizados para touch */
+    .btn-touch {
+        @apply min-h-[44px] px-4 py-3 text-base;
+    }
+
+    /* Inputs otimizados para mobile */
+    .input-mobile {
+        @apply text-base px-4 py-3 min-h-[44px];
+    }
+
+    /* Tabelas responsivas - padrão card no mobile */
+    .table-responsive {
+        @apply block sm:table;
+    }
+
+    .table-responsive thead {
+        @apply hidden sm:table-header-group;
+    }
+
+    .table-responsive tbody {
+        @apply block sm:table-row-group;
+    }
+
+    .table-responsive tr {
+        @apply block border border-gray-200 rounded-lg mb-4 p-4 sm:border-none sm:rounded-none sm:mb-0 sm:p-0 sm:table-row;
+    }
+
+    .table-responsive td {
+        @apply block sm:table-cell sm:px-6 sm:py-4;
+    }
+
+    .table-responsive td::before {
+        content: attr(data-label) ": ";
+        @apply font-medium text-gray-600 sm:hidden;
+    }
+
+    /* Modal responsivo */
+    .modal-responsive {
+        @apply fixed inset-0 sm:relative sm:inset-auto sm:max-w-lg sm:mx-auto sm:my-8;
+    }
+
+    .modal-content-responsive {
+        @apply h-full flex flex-col sm:h-auto sm:rounded-lg sm:shadow-xl;
+    }
+
+    /* Navigation mobile */
+    .nav-mobile {
+        @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 sm:hidden;
+    }
+
+    .nav-item-mobile {
+        @apply flex-1 flex flex-col items-center justify-center py-2 min-h-[60px] touch-target;
+    }
+
+    /* Sidebar responsivo */
+    .sidebar-mobile {
+        @apply fixed inset-y-0 left-0 z-50 w-full max-w-sm transform transition-transform duration-300 ease-in-out;
+    }
+
+    .sidebar-mobile.closed {
+        @apply -translate-x-full;
+    }
+
+    .sidebar-overlay {
+        @apply fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300;
+    }
+
+    /* Cards responsivos */
+    .card-mobile {
+        @apply rounded-none border-x-0 sm:rounded-lg sm:border-x;
+    }
+
+    /* Form layouts responsivos */
+    .form-grid-responsive {
+        @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-6;
+    }
+
+    /* Dropdown responsivo */
+    .dropdown-mobile {
+        @apply fixed inset-x-4 top-auto bottom-4 sm:absolute sm:inset-auto sm:top-full sm:bottom-auto sm:left-0 sm:right-auto;
+    }
+
+    /* Scroll containers com bounce iOS */
+    .scroll-container {
+        @apply overflow-auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Loading states para mobile */
+    .loading-mobile {
+        @apply flex items-center justify-center py-8 text-gray-500;
+    }
+
+    /* Responsividade por breakpoints */
     @media (max-width: 640px) {
+        /* Mobile: < 640px */
         .calendar-container {
-            @apply w-full max-w-sm;
+            @apply w-full max-w-sm mx-4;
         }
 
-        .datetime-input {
+        .datetime-input, .input {
             @apply text-base; /* Evita zoom em iOS */
+        }
+
+        /* Aumentar targets de toque */
+        .btn, .btn-sm {
+            @apply min-h-[44px] px-4 py-3;
+        }
+
+        /* Modais fullscreen */
+        .modal {
+            @apply fixed inset-0 m-0 max-w-none h-full rounded-none;
+        }
+
+        /* Espaçamento reduzido */
+        .card-body {
+            @apply px-4 py-4;
+        }
+
+        .card-header {
+            @apply px-4 py-3;
+        }
+
+        /* Texto legível */
+        .table-body td {
+            @apply text-base px-4 py-3;
+        }
+    }
+
+    @media (min-width: 641px) and (max-width: 768px) {
+        /* Tablet Portrait: 641px - 768px */
+        .sidebar {
+            @apply w-16; /* Sidebar compacta */
+        }
+
+        /* Ajustar grid para tablet */
+        .form-grid-responsive {
+            @apply grid-cols-1;
+        }
+
+        /* Cards em tablet */
+        .card-grid {
+            @apply grid-cols-1 gap-4;
+        }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+        /* Tablet Landscape: 769px - 1024px */
+        .sidebar {
+            @apply w-56; /* Sidebar média */
+        }
+
+        .form-grid-responsive {
+            @apply grid-cols-2;
+        }
+
+        .card-grid {
+            @apply grid-cols-2 gap-6;
+        }
+    }
+
+    @media (min-width: 1025px) {
+        /* Desktop: > 1024px */
+        .sidebar {
+            @apply w-64; /* Sidebar completa */
+        }
+
+        .form-grid-responsive {
+            @apply grid-cols-2 lg:grid-cols-3;
+        }
+
+        .card-grid {
+            @apply grid-cols-3 gap-6;
+        }
+    }
+
+    /* Orientação específica */
+    @media (orientation: landscape) and (max-height: 600px) {
+        /* Landscape mobile/tablet com altura limitada */
+        .modal {
+            @apply max-h-[90vh] overflow-y-auto;
+        }
+
+        .sidebar-mobile {
+            @apply max-w-xs;
+        }
+    }
+
+    /* High DPI displays */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .btn, .input {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+        .dark-support {
+            @apply bg-gray-900 text-white;
+        }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+        * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
         }
     }
 }
