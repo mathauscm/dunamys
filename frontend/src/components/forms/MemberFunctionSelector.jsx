@@ -32,7 +32,13 @@ const MemberFunctionSelector = ({
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+    const [dropdownPosition, setDropdownPosition] = useState({ 
+        top: 0, 
+        left: 0, 
+        width: 0, 
+        maxHeight: 400,
+        direction: 'down' // 'up' ou 'down'
+    });
     const { user } = useAuth();
     const adminGroups = useAdminGroups();
     const buttonRef = useRef(null);
@@ -106,14 +112,70 @@ const MemberFunctionSelector = ({
 
     const calculateDropdownPosition = () => {
         if (buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
+            const buttonRect = buttonRef.current.getBoundingClientRect();
             const scrollY = window.scrollY;
             const scrollX = window.scrollX;
             
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            
+            // Configurações do dropdown
+            const dropdownHeight = 400; // altura máxima do dropdown
+            const dropdownMinWidth = 320;
+            const dropdownWidth = Math.max(buttonRect.width, dropdownMinWidth);
+            const padding = 8; // espaçamento das bordas da tela
+            
+            // Calcular espaço disponível em cada direção
+            const spaceBelow = viewportHeight - buttonRect.bottom;
+            const spaceAbove = buttonRect.top;
+            const spaceRight = viewportWidth - buttonRect.left;
+            const spaceLeft = buttonRect.right;
+            
+            // Determinar posição vertical (prioridade: baixo, depois cima, depois centralizado)
+            let top;
+            let maxHeight = dropdownHeight;
+            let direction = 'down';
+            
+            if (spaceBelow >= dropdownHeight + padding) {
+                // Espaço suficiente embaixo
+                top = buttonRect.bottom + scrollY + 4;
+                direction = 'down';
+            } else if (spaceAbove >= dropdownHeight + padding) {
+                // Espaço suficiente em cima
+                top = buttonRect.top + scrollY - dropdownHeight - 4;
+                direction = 'up';
+            } else {
+                // Nem em cima nem embaixo - usar o lado com mais espaço
+                const availableHeight = Math.max(spaceBelow, spaceAbove) - padding * 2;
+                maxHeight = Math.min(dropdownHeight, availableHeight);
+                
+                if (spaceBelow > spaceAbove) {
+                    // Mais espaço embaixo - alinhar com o botão
+                    top = buttonRect.bottom + scrollY + 4;
+                    direction = 'down';
+                } else {
+                    // Mais espaço em cima - mostrar em cima
+                    top = buttonRect.top + scrollY - maxHeight - 4;
+                    direction = 'up';
+                }
+            }
+            
+            // Determinar posição horizontal (centralizar no botão, mas manter na tela)
+            let left = buttonRect.left + scrollX + (buttonRect.width - dropdownWidth) / 2;
+            
+            // Ajustar se sair da tela
+            if (left < padding) {
+                left = padding + scrollX;
+            } else if (left + dropdownWidth > viewportWidth - padding) {
+                left = viewportWidth - dropdownWidth - padding + scrollX;
+            }
+            
             setDropdownPosition({
-                top: rect.bottom + scrollY + 4,
-                left: rect.left + scrollX,
-                width: rect.width
+                top,
+                left,
+                width: dropdownWidth,
+                maxHeight,
+                direction
             });
         }
     };
@@ -146,7 +208,7 @@ const MemberFunctionSelector = ({
         })).filter(group => group.functions.length > 0);
     };
 
-    // Fechar dropdown ao clicar fora
+    // Fechar dropdown ao clicar fora e gerenciar posicionamento
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
@@ -159,17 +221,32 @@ const MemberFunctionSelector = ({
             }
         };
 
+        // Throttle para melhor performance durante scroll
+        let throttleTimer;
+        const throttledRepositioning = () => {
+            if (throttleTimer) return;
+            throttleTimer = setTimeout(() => {
+                calculateDropdownPosition();
+                throttleTimer = null;
+            }, 16); // ~60fps
+        };
+
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
-            document.addEventListener('scroll', calculateDropdownPosition, true);
-            window.addEventListener('resize', calculateDropdownPosition);
+            document.addEventListener('scroll', throttledRepositioning, true);
+            window.addEventListener('resize', throttledRepositioning);
+            
+            // Recalcular posição imediatamente após abrir
+            const timer = setTimeout(calculateDropdownPosition, 0);
+            
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+                document.removeEventListener('scroll', throttledRepositioning, true);
+                window.removeEventListener('resize', throttledRepositioning);
+                clearTimeout(timer);
+                if (throttleTimer) clearTimeout(throttleTimer);
+            };
         }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('scroll', calculateDropdownPosition, true);
-            window.removeEventListener('resize', calculateDropdownPosition);
-        };
     }, [isOpen]);
 
     return (
@@ -238,13 +315,18 @@ const MemberFunctionSelector = ({
             {isOpen && createPortal(
                 <div 
                     ref={dropdownRef}
-                    className="fixed bg-white border border-gray-300 rounded-lg shadow-2xl"
+                    className={`fixed bg-white border border-gray-300 rounded-lg shadow-2xl transition-all duration-200 ${
+                        dropdownPosition.direction === 'up' 
+                            ? 'animate-in slide-in-from-bottom-2 fade-in' 
+                            : 'animate-in slide-in-from-top-2 fade-in'
+                    }`}
                     style={{
                         top: dropdownPosition.top,
                         left: dropdownPosition.left,
-                        width: Math.max(dropdownPosition.width, 320),
+                        width: dropdownPosition.width,
+                        maxHeight: dropdownPosition.maxHeight,
                         zIndex: 9999,
-                        maxHeight: '400px'
+                        transformOrigin: dropdownPosition.direction === 'up' ? 'bottom center' : 'top center'
                     }}
                 >
                     <div className="flex flex-col h-full">
@@ -272,7 +354,12 @@ const MemberFunctionSelector = ({
                         </div>
 
                         {/* Conteúdo com scroll independente */}
-                        <div className="flex-1 overflow-y-auto" style={{ maxHeight: '300px' }}>
+                        <div 
+                            className="flex-1 overflow-y-auto" 
+                            style={{ 
+                                maxHeight: dropdownPosition.maxHeight - 120 // Subtraindo header(80px) + footer(40px)
+                            }}
+                        >
                             {loading ? (
                                 <div className="flex items-center justify-center py-8">
                                     <div className="text-sm text-gray-500">Carregando funções...</div>
