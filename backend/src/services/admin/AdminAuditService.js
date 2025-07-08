@@ -83,16 +83,14 @@ class AdminAuditService {
    */
   static async createAuditLog(data) {
     try {
-      const { action, targetId, userId, description, metadata = {} } = data;
+      const { action, targetId, userId, description } = data;
 
       const auditLog = await prisma.auditLog.create({
         data: {
           action,
           targetId,
           userId,
-          description,
-          metadata: JSON.stringify(metadata),
-          createdAt: new Date()
+          description
         }
       });
 

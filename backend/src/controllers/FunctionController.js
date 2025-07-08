@@ -55,7 +55,12 @@ class FunctionController {
         message: 'Grupo de funções criado com sucesso'
       });
     } catch (error) {
-      logger.error('Erro ao criar grupo de funções:', error);
+      logger.error('Erro ao criar grupo de funções:', {
+        error: error.message,
+        stack: error.stack,
+        user: req.user?.id,
+        body: req.body
+      });
       
       if (error.message.includes('já existe')) {
         return res.status(400).json({
@@ -131,7 +136,12 @@ class FunctionController {
         message: 'Grupo de funções excluído com sucesso'
       });
     } catch (error) {
-      logger.error('Erro ao excluir grupo de funções:', error);
+      logger.error('Erro ao excluir grupo de funções:', {
+        error: error.message,
+        stack: error.stack,
+        user: req.user?.id,
+        params: req.params
+      });
       
       if (error.message.includes('não encontrado') || error.message.includes('sendo usadas')) {
         return res.status(400).json({
