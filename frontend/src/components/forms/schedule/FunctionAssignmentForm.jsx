@@ -69,7 +69,7 @@ const FunctionAssignmentForm = ({
 
           {/* Lista de membros com funções */}
           <div className="space-y-4">
-            {selectedMembers.map(member => {
+            {selectedMembers.map((member, index) => {
               const memberFuncs = memberFunctions[member.id] || [];
               const hasFunctions = memberFuncs.length > 0;
 
