@@ -164,9 +164,6 @@ class MemberService {
         group: func.function.group
       }));
       
-      // Determinar equipe principal (primeiro grupo de função)
-      const primaryTeam = functions.length > 0 ? functions[0].group : null;
-      
       // Combinar nomes das funções
       const functionNames = functions.map(f => f.name).join(', ');
 
@@ -179,11 +176,6 @@ class MemberService {
             name: ministry.name,
             description: ministry.description
           } : null,
-          team: primaryTeam ? {
-            id: primaryTeam.id,
-            name: primaryTeam.name,
-            description: primaryTeam.description
-          } : null,
           functions: functions,
           functionNames: functionNames || 'Sem função específica',
           hasMultipleFunctions: functions.length > 1
@@ -193,7 +185,7 @@ class MemberService {
     
     // Log detalhado para debug
     formattedSchedules.forEach(schedule => {
-      console.log(`Escala: ${schedule.title} - Data: ${schedule.date} - Equipe: ${schedule.memberInfo?.team?.name || 'N/A'} - Funções: ${schedule.memberInfo?.functionNames || 'N/A'}`);
+      console.log(`Escala: ${schedule.title} - Data: ${schedule.date} - Ministério: ${schedule.memberInfo?.ministry?.name || 'N/A'} - Funções: ${schedule.memberInfo?.functionNames || 'N/A'}`);
     });
 
     return formattedSchedules;

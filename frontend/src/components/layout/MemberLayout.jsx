@@ -37,7 +37,7 @@ const MemberLayout = () => {
                             <User className="w-5 h-5 text-white" />
                         </div>
                         <h1 className="ml-3 text-lg font-semibold text-gray-900">
-                            Área de Membros
+                            Área do Voluntário
                         </h1>
                     </div>
                     <button
@@ -83,7 +83,7 @@ const MemberLayout = () => {
             {/* Main content */}
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header
-                    title="Área de Membros"
+                    title="Área do Voluntário"
                     onToggleSidebar={toggleSidebar}
                 />
 

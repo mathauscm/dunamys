@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, MapPin, Users, ChevronLeft, ChevronRight, Briefcase, Star, UserCheck } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, Briefcase, Star, UserCheck } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
 import Loading from '../../components/common/Loading';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
@@ -158,18 +158,7 @@ const MemberSchedules = () => {
 
                                             {/* Informações de ministério e função */}
                                             {schedule.memberInfo && (
-                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                                                    {/* Equipe */}
-                                                    <div className="flex items-start">
-                                                        <Users className="h-4 w-4 mr-2 text-primary-500 mt-0.5 flex-shrink-0" />
-                                                        <div className="min-w-0">
-                                                            <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">Equipe</p>
-                                                            <p className="text-sm font-medium text-gray-900 truncate">
-                                                                {schedule.memberInfo.team?.name || 'Não definida'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                                                     {/* Ministério */}
                                                     <div className="flex items-start">
                                                         <Star className="h-4 w-4 mr-2 text-amber-500 mt-0.5 flex-shrink-0" />
@@ -209,7 +198,6 @@ const MemberSchedules = () => {
                                             {schedule.memberInfo && (
                                                 <div className="sm:hidden mt-3 space-y-2">
                                                     <div className="text-xs text-gray-600">
-                                                        <span className="font-medium">Equipe:</span> {schedule.memberInfo.team?.name || 'N/A'} • 
                                                         <span className="font-medium">Ministério:</span> {schedule.memberInfo.ministry?.name || 'N/A'} • 
                                                         <span className="font-medium">Função:</span> {schedule.memberInfo.functionNames}
                                                     </div>

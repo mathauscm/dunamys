@@ -14,11 +14,34 @@ class NotificationService {
         console.log('🚨 CHAMOU sendScheduleAssignment!!!');
         logger.info('🚨 DEBUG: sendScheduleAssignment foi chamado');
         
-        const members = schedule.members.map(m => m.user);
+        // Buscar a escala com funções dos membros
+        const scheduleWithFunctions = await prisma.schedule.findUnique({
+            where: { id: schedule.id },
+            include: {
+                members: {
+                    include: {
+                        user: { select: { id: true, name: true, phone: true, email: true } },
+                        functions: {
+                            include: {
+                                function: { select: { name: true } }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        const members = scheduleWithFunctions ? scheduleWithFunctions.members.map(m => ({ 
+            ...m.user, 
+            functions: m.functions.map(f => f.function.name) 
+        })) : schedule.members.map(m => ({ 
+            ...m.user, 
+            functions: [] 
+        }));
         
         logger.info(`🔔 Iniciando envio de notificações de escala para ${members.length} membros`);
         logger.info(`📋 Escala: "${schedule.title}" - Data: ${schedule.date}`);
-        logger.info(`👥 Membros:`, members.map(m => `${m.name} (${m.email}, ${m.phone})`));
+        logger.info(`👥 Membros:`, members.map(m => `${m.name} (${m.email}, ${m.phone}) - Funções: ${m.functions.join(', ')}`));
         
         // Verificar estado dos serviços
         const whatsappConnected = WhatsAppService.isConnected();
@@ -88,7 +111,30 @@ class NotificationService {
     }
 
     static async sendScheduleUpdate(schedule) {
-        const members = schedule.members.map(m => m.user);
+        // Buscar a escala com funções dos membros
+        const scheduleWithFunctions = await prisma.schedule.findUnique({
+            where: { id: schedule.id },
+            include: {
+                members: {
+                    include: {
+                        user: { select: { id: true, name: true, phone: true, email: true } },
+                        functions: {
+                            include: {
+                                function: { select: { name: true } }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        const members = scheduleWithFunctions ? scheduleWithFunctions.members.map(m => ({ 
+            ...m.user, 
+            functions: m.functions.map(f => f.function.name) 
+        })) : schedule.members.map(m => ({ 
+            ...m.user, 
+            functions: [] 
+        }));
 
         for (const member of members) {
             try {
@@ -113,7 +159,30 @@ class NotificationService {
     }
 
     static async sendScheduleCancellation(schedule) {
-        const members = schedule.members.map(m => m.user);
+        // Buscar a escala com funções dos membros
+        const scheduleWithFunctions = await prisma.schedule.findUnique({
+            where: { id: schedule.id },
+            include: {
+                members: {
+                    include: {
+                        user: { select: { id: true, name: true, phone: true, email: true } },
+                        functions: {
+                            include: {
+                                function: { select: { name: true } }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        const members = scheduleWithFunctions ? scheduleWithFunctions.members.map(m => ({ 
+            ...m.user, 
+            functions: m.functions.map(f => f.function.name) 
+        })) : schedule.members.map(m => ({ 
+            ...m.user, 
+            functions: [] 
+        }));
 
         for (const member of members) {
             try {
@@ -407,10 +476,11 @@ class NotificationService {
                     <p>Você foi escalado para o seguinte serviço:</p>
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
                         <h3>${schedule.title}</h3>
+                        ${schedule.description ? `<p><strong>Descrição:</strong> ${schedule.description}</p>` : ''}
                         <p><strong>Data:</strong> ${scheduleDate}</p>
                         <p><strong>Horário:</strong> ${schedule.time}</p>
                         <p><strong>Local:</strong> ${schedule.location}</p>
-                        ${schedule.description ? `<p><strong>Descrição:</strong> ${schedule.description}</p>` : ''}
+                        ${user.functions && user.functions.length > 0 ? `<p><strong>Função:</strong> ${user.functions.join(', ')}</p>` : ''}
                     </div>
                     <p>Contamos com sua presença!</p>
                     <p>Deus abençoe!</p>
@@ -425,10 +495,11 @@ class NotificationService {
                     <p>A escala onde você está alocado foi atualizada:</p>
                     <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0;">
                         <h3>${schedule.title}</h3>
+                        ${schedule.description ? `<p><strong>Descrição:</strong> ${schedule.description}</p>` : ''}
                         <p><strong>Data:</strong> ${scheduleDate}</p>
                         <p><strong>Horário:</strong> ${schedule.time}</p>
                         <p><strong>Local:</strong> ${schedule.location}</p>
-                        ${schedule.description ? `<p><strong>Descrição:</strong> ${schedule.description}</p>` : ''}
+                        ${user.functions && user.functions.length > 0 ? `<p><strong>Função:</strong> ${user.functions.join(', ')}</p>` : ''}
                     </div>
                     <p>Verifique as informações atualizadas.</p>
                 `;
@@ -445,6 +516,7 @@ class NotificationService {
                         <p><strong>Data:</strong> ${scheduleDate}</p>
                         <p><strong>Horário:</strong> ${schedule.time}</p>
                         <p><strong>Local:</strong> ${schedule.location}</p>
+                        ${user.functions && user.functions.length > 0 ? `<p><strong>Função:</strong> ${user.functions.join(', ')}</p>` : ''}
                     </div>
                     <p>Você não precisa mais comparecer a este serviço.</p>
                 `;
@@ -474,15 +546,50 @@ class NotificationService {
 
         switch (type) {
             case 'assignment':
-                message = `*🎯 Nova Escala*\n\nOlá, ${user.name}!\n\nVocê foi escalado para:\n\n*${schedule.title}*\n📅 Data: ${scheduleDate}\n⏰ Horário: ${schedule.time}\n📍 Local: ${schedule.location}\n\nContamos com sua presença! 🙏`;
+                message = `*🎯 Nova Escala*\n\nOlá, ${user.name}!\n\nVocê foi escalado para:\n\n*${schedule.title}*`;
+                
+                // Adicionar descrição se existir
+                if (schedule.description && schedule.description.trim()) {
+                    message += `\n\n${schedule.description}`;
+                }
+                
+                message += `\n\n📅 Data: ${scheduleDate}\n⏰ Horário: ${schedule.time}\n📍 Local: ${schedule.location}`;
+                
+                // Adicionar função se existir
+                if (user.functions && user.functions.length > 0) {
+                    message += `\n⚙️ Função: ${user.functions.join(', ')}`;
+                }
+                
+                message += `\n\nContamos com sua presença! 🙏`;
                 break;
 
             case 'update':
-                message = `*📝 Escala Atualizada*\n\nOlá, ${user.name}!\n\nSua escala foi atualizada:\n\n*${schedule.title}*\n📅 Data: ${scheduleDate}\n⏰ Horário: ${schedule.time}\n📍 Local: ${schedule.location}\n\nVerifique as informações! ✅`;
+                message = `*📝 Escala Atualizada*\n\nOlá, ${user.name}!\n\nSua escala foi atualizada:\n\n*${schedule.title}*`;
+                
+                // Adicionar descrição se existir
+                if (schedule.description && schedule.description.trim()) {
+                    message += `\n\n${schedule.description}`;
+                }
+                
+                message += `\n\n📅 Data: ${scheduleDate}\n⏰ Horário: ${schedule.time}\n📍 Local: ${schedule.location}`;
+                
+                // Adicionar função se existir
+                if (user.functions && user.functions.length > 0) {
+                    message += `\n⚙️ Função: ${user.functions.join(', ')}`;
+                }
+                
+                message += `\n\nVerifique as informações! ✅`;
                 break;
 
             case 'cancellation':
-                message = `*❌ Escala Cancelada*\n\nOlá, ${user.name}!\n\nA seguinte escala foi cancelada:\n\n*${schedule.title}*\n📅 Data: ${scheduleDate}\n⏰ Horário: ${schedule.time}\n\nVocê não precisa mais comparecer.`;
+                message = `*❌ Escala Cancelada*\n\nOlá, ${user.name}!\n\nA seguinte escala foi cancelada:\n\n*${schedule.title}*\n📅 Data: ${scheduleDate}\n⏰ Horário: ${schedule.time}`;
+                
+                // Adicionar função se existir
+                if (user.functions && user.functions.length > 0) {
+                    message += `\n⚙️ Função: ${user.functions.join(', ')}`;
+                }
+                
+                message += `\n\nVocê não precisa mais comparecer.`;
                 break;
         }
 
