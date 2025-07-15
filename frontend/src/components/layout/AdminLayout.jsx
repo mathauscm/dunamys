@@ -10,7 +10,6 @@ import {
     Home,
     Menu,
     X,
-    LogOut,
     MapPin,
     Heart,
     Briefcase,  // NOVO ÍCONE PARA FUNÇÕES
@@ -18,12 +17,10 @@ import {
 } from 'lucide-react';
 import Header from '../common/Header';
 import { useAuth, usePermission } from '../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 
 const AdminLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const { logout, user } = useAuth();
-    const navigate = useNavigate();
+    const { user } = useAuth();
 
     // Verificar permissões
     const canManageMembers = usePermission('MANAGE_MEMBERS');
@@ -56,13 +53,6 @@ const AdminLayout = () => {
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
-    };
-
-    const handleLogout = () => {
-        if (window.confirm('Tem certeza que deseja sair do sistema?')) {
-            logout();
-            navigate('/login');
-        }
     };
 
     return (
@@ -114,30 +104,6 @@ const AdminLayout = () => {
                     </div>
                 </nav>
 
-                {/* User info and logout at bottom of sidebar */}
-                <div className="border-t border-gray-200 p-3 sm:p-4">
-                    <div className="flex items-center mb-3">
-                        <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                            <span className="text-white text-sm font-medium">
-                                {user?.name?.charAt(0).toUpperCase()}
-                            </span>
-                        </div>
-                        <div className="ml-3 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-                            <p className="text-xs text-gray-500 truncate">
-                                {user?.userType === 'groupAdmin' ? 'Admin de Grupo' : 'Administrador'}
-                                {user?.campus && ` - ${user.campus.name}`}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center justify-center px-3 py-3 text-sm font-medium text-danger-600 hover:bg-danger-50 rounded-lg transition-colors min-h-[44px]"
-                    >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sair do Sistema
-                    </button>
-                </div>
             </div>
 
             {/* Overlay */}

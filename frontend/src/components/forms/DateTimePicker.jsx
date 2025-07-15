@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, 
-         isSameMonth, isToday, isBefore, startOfToday, addMonths, subMonths } from 'date-fns';
+         isSameMonth, isToday, isBefore, startOfToday, addMonths, subMonths, 
+         startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Componente de Seleção de Data com Calendário
@@ -36,7 +37,13 @@ export const DatePicker = ({
     const getDaysInMonth = () => {
         const start = startOfMonth(currentMonth);
         const end = endOfMonth(currentMonth);
-        return eachDayOfInterval({ start, end });
+        
+        // Obter o primeiro dia da semana do mês (domingo = 0)
+        const startWeek = startOfWeek(start, { weekStartsOn: 0 });
+        const endWeek = endOfWeek(end, { weekStartsOn: 0 });
+        
+        // Retornar todos os dias do calendário (incluindo dias do mês anterior e posterior)
+        return eachDayOfInterval({ start: startWeek, end: endWeek });
     };
 
     const isDateDisabled = (date) => {
@@ -124,24 +131,29 @@ export const DatePicker = ({
                                     const isSelected = value && format(date, 'yyyy-MM-dd') === format(value, 'yyyy-MM-dd');
                                     const isCurrentDay = isToday(date);
                                     const isDisabled = isDateDisabled(date);
+                                    const isCurrentMonth = isSameMonth(date, currentMonth);
                                     
                                     return (
                                         <button
                                             key={date.toISOString()}
                                             type="button"
-                                            onClick={() => !isDisabled && handleDateSelect(date)}
-                                            disabled={isDisabled}
+                                            onClick={() => !isDisabled && isCurrentMonth && handleDateSelect(date)}
+                                            disabled={isDisabled || !isCurrentMonth}
                                             className={`
                                                 w-8 h-8 text-sm rounded-full transition-all duration-200 font-medium
-                                                ${isSelected 
-                                                    ? 'bg-primary-600 text-white shadow-md transform scale-105' 
-                                                    : isCurrentDay 
-                                                        ? 'bg-primary-100 text-primary-700 border border-primary-300'
-                                                        : 'text-gray-700 hover:bg-primary-50 hover:text-primary-600'
+                                                ${!isCurrentMonth 
+                                                    ? 'text-gray-300 cursor-default' 
+                                                    : isSelected 
+                                                        ? 'bg-primary-600 text-white shadow-md transform scale-105' 
+                                                        : isCurrentDay 
+                                                            ? 'bg-primary-100 text-primary-700 border border-primary-300'
+                                                            : 'text-gray-700 hover:bg-primary-50 hover:text-primary-600'
                                                 }
                                                 ${isDisabled 
                                                     ? 'text-gray-300 cursor-not-allowed hover:bg-transparent' 
-                                                    : 'cursor-pointer hover:scale-105'
+                                                    : isCurrentMonth 
+                                                        ? 'cursor-pointer hover:scale-105'
+                                                        : 'cursor-default'
                                                 }
                                             `}
                                         >
