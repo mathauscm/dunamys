@@ -25,7 +25,10 @@ const schemas = {
   schedule: Joi.object({
     title: Joi.string().min(3).max(200).required(),
     description: Joi.string().max(500).optional(),
-    date: Joi.date().iso().required(),
+    date: Joi.alternatives().try(
+      Joi.date().iso(),
+      Joi.string().isoDate()
+    ).required(),
     time: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
     location: Joi.string().max(200).required(),
     memberIds: Joi.array().items(Joi.number().integer().positive()).required(),

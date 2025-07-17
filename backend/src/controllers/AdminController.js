@@ -192,7 +192,7 @@ class AdminController {
         location,
         memberIds,
         memberFunctions
-      });
+      }, req.user.id);
       
       logger.info(`Escala atualizada ID: ${id} por admin ID: ${req.user.id}`);
       
@@ -209,7 +209,7 @@ class AdminController {
     try {
       const { id } = req.params;
       
-      await AdminService.deleteSchedule(parseInt(id));
+      await AdminService.deleteSchedule(parseInt(id), req.user.id);
       
       logger.info(`Escala removida ID: ${id} por admin ID: ${req.user.id}`);
       

@@ -12,7 +12,6 @@ console.log('🔧 FRONTEND_URL:', process.env.FRONTEND_URL || 'undefined');
 // Database connection
 const { connectDatabase } = require('./config/database');
 const { connectRedis } = require('./config/redis');
-const { verifyEmailConfig } = require('./config/email');
 
 // Middlewares
 const errorHandler = require('./middlewares/errorHandler');

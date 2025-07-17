@@ -4,7 +4,6 @@ const logger = require('./src/utils/logger');
 // Initialize services
 const { connectDatabase } = require('./src/config/database');
 const { connectRedis } = require('./src/config/redis');
-const { verifyEmailConfig } = require('./src/config/email');
 const WhatsAppService = require('./src/services/WhatsAppService');
 
 const PORT = process.env.PORT || 5000;
@@ -23,14 +22,8 @@ const initializeServices = async () => {
         logger.info('Redis connection established');
         console.log('✅ Redis conectado');
 
-        // Verify email configuration (não falhar se não configurado)
-        try {
-            await verifyEmailConfig();
-            logger.info('Email configuration verified');
-            console.log('✅ Email configurado');
-        } catch (emailError) {
-            console.log('⚠️ Email não configurado (opcional):', emailError.message);
-        }
+        // Email desabilitado - apenas WhatsApp
+        console.log('📧 Email desabilitado (apenas WhatsApp)');
 
         // Initialize WhatsApp service (não falhar se não configurado)
         if (process.env.WHATSAPP_ENABLED === 'true') {

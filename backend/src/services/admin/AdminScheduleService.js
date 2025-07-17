@@ -97,14 +97,16 @@ class AdminScheduleService {
       description: `Escala "${title}" criada para ${date}`
     });
 
-    // Enviar notificações
-    try {
-      await NotificationService.sendScheduleAssignment(schedule);
-      logger.info(`Notificações de escala enviadas para ${schedule.members.length} membros`);
-    } catch (notificationError) {
-      logger.error('Erro ao enviar notificações de escala:', notificationError);
-      logger.warn('Criação da escala continuou apesar do erro nas notificações');
-    }
+    // Enviar notificações de forma assíncrona (não bloqueante)
+    setImmediate(async () => {
+      try {
+        logger.info(`🚀 Iniciando envio de notificações em background para ${schedule.members.length} membros`);
+        await NotificationService.sendScheduleAssignment(schedule);
+        logger.info(`✅ Notificações de escala enviadas para ${schedule.members.length} membros`);
+      } catch (notificationError) {
+        logger.error('❌ Erro ao enviar notificações de escala:', notificationError);
+      }
+    });
 
     return schedule;
   }
@@ -228,13 +230,16 @@ class AdminScheduleService {
       description: `Escala "${title || existingSchedule.title}" foi atualizada`
     });
 
-    // Enviar notificações de atualização
-    try {
-      await NotificationService.sendScheduleUpdate(schedule);
-      logger.info(`Notificações de atualização enviadas para ${schedule.members.length} membros`);
-    } catch (notificationError) {
-      logger.error('Erro ao enviar notificações de atualização:', notificationError);
-    }
+    // Enviar notificações de atualização de forma assíncrona (não bloqueante)
+    setImmediate(async () => {
+      try {
+        logger.info(`🚀 Iniciando envio de notificações de atualização em background para ${schedule.members.length} membros`);
+        await NotificationService.sendScheduleUpdate(schedule);
+        logger.info(`✅ Notificações de atualização enviadas para ${schedule.members.length} membros`);
+      } catch (notificationError) {
+        logger.error('❌ Erro ao enviar notificações de atualização:', notificationError);
+      }
+    });
 
     return schedule;
   }
@@ -257,14 +262,16 @@ class AdminScheduleService {
       throw new Error('Escala não encontrada');
     }
 
-    // Enviar notificações de cancelamento antes de deletar
-    try {
-      await NotificationService.sendScheduleCancellation(schedule);
-      logger.info(`Notificações de cancelamento enviadas para ${schedule.members.length} membros`);
-    } catch (notificationError) {
-      logger.error('Erro ao enviar notificações de cancelamento:', notificationError);
-      logger.warn('Remoção da escala continuará apesar do erro nas notificações');
-    }
+    // Enviar notificações de cancelamento de forma assíncrona (não bloqueante)
+    setImmediate(async () => {
+      try {
+        logger.info(`🚀 Iniciando envio de notificações de cancelamento em background para ${schedule.members.length} membros`);
+        await NotificationService.sendScheduleCancellation(schedule);
+        logger.info(`✅ Notificações de cancelamento enviadas para ${schedule.members.length} membros`);
+      } catch (notificationError) {
+        logger.error('❌ Erro ao enviar notificações de cancelamento:', notificationError);
+      }
+    });
 
     // Deletar escala (cascade vai remover os scheduleMember automaticamente)
     await prisma.schedule.delete({
@@ -324,29 +331,31 @@ class AdminScheduleService {
 
     logger.info(`📋 Escala encontrada: "${schedule.title}" com ${schedule.members.length} membros`);
     
-    try {
-      logger.info(`📤 Enviando notificação padrão de escala (Email + WhatsApp)...`);
-      await NotificationService.sendScheduleAssignment(schedule);
-      logger.info(`✅ Notificação de escala enviada com sucesso`);
-      logger.info(`🎉 ${schedule.members.length} membros notificados via Email + WhatsApp`);
-      
-      // Log de auditoria
-      await this.createScheduleAuditLog({
-        action: 'SCHEDULE_NOTIFICATION_SENT',
-        targetId: scheduleId,
-        userId: sentBy,
-        description: `Notificação (Email + WhatsApp) enviada para escala "${schedule.title}"`
-      });
+    // Enviar notificação customizada de forma assíncrona (não bloqueante)
+    setImmediate(async () => {
+      try {
+        logger.info(`📤 Enviando notificação customizada em background via WhatsApp...`);
+        await NotificationService.sendCustomNotification(schedule, 'WHATSAPP', message);
+        logger.info(`✅ Notificação customizada enviada com sucesso`);
+        logger.info(`🎉 ${schedule.members.length} membros notificados via WhatsApp`);
+      } catch (notificationError) {
+        logger.error('❌ Erro ao enviar notificação customizada:', notificationError);
+      }
+    });
+    
+    // Log de auditoria
+    await this.createScheduleAuditLog({
+      action: 'SCHEDULE_NOTIFICATION_SENT',
+      targetId: scheduleId,
+      userId: sentBy,
+      description: `Notificação customizada (WhatsApp) enviada para escala "${schedule.title}"`
+    });
 
-      return {
-        success: true,
-        message: 'Notificação enviada com sucesso',
-        recipientCount: schedule.members.length
-      };
-    } catch (notificationError) {
-      logger.error('Erro ao enviar notificação customizada:', notificationError);
-      throw new Error('Erro ao enviar notificação: ' + notificationError.message);
-    }
+    return {
+      success: true,
+      message: 'Notificação está sendo enviada em background',
+      recipientCount: schedule.members.length
+    };
   }
 
   /**

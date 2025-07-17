@@ -346,13 +346,14 @@ class MemberService {
       }
     });
 
-    // Enviar notificação de confirmação para administradores
-    try {
-      await NotificationService.sendScheduleConfirmation(userId, scheduleId, 'CONFIRMED');
-    } catch (error) {
-      console.error('Erro ao enviar notificação de confirmação:', error);
-      // Não falhar a confirmação por causa da notificação
-    }
+    // Enviar notificação de confirmação para administradores de forma assíncrona (não bloqueante)
+    setImmediate(async () => {
+      try {
+        await NotificationService.sendScheduleConfirmation(userId, scheduleId, 'CONFIRMED');
+      } catch (error) {
+        console.error('Erro ao enviar notificação de confirmação:', error);
+      }
+    });
 
     return updated;
   }
@@ -418,13 +419,14 @@ class MemberService {
       }
     });
 
-    // Enviar notificação de indisponibilidade para administradores
-    try {
-      await NotificationService.sendScheduleConfirmation(userId, scheduleId, 'UNAVAILABLE');
-    } catch (error) {
-      console.error('Erro ao enviar notificação de indisponibilidade:', error);
-      // Não falhar a operação por causa da notificação
-    }
+    // Enviar notificação de indisponibilidade para administradores de forma assíncrona (não bloqueante)
+    setImmediate(async () => {
+      try {
+        await NotificationService.sendScheduleConfirmation(userId, scheduleId, 'UNAVAILABLE');
+      } catch (error) {
+        console.error('Erro ao enviar notificação de indisponibilidade:', error);
+      }
+    });
 
     return updated;
   }

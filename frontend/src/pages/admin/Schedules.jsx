@@ -55,6 +55,8 @@ const AdminSchedules = () => {
             onSuccess: () => {
                 setShowCreateModal(false);
                 refresh();
+                // Mostrar feedback sobre notificações em background
+                console.log('✅ Escala criada com sucesso! Notificações sendo enviadas em background.');
             }
         }
     );
@@ -66,6 +68,8 @@ const AdminSchedules = () => {
                 setShowEditModal(false);
                 setSelectedSchedule(null);
                 refresh();
+                // Mostrar feedback sobre notificações em background
+                console.log('✅ Escala atualizada com sucesso! Notificações sendo enviadas em background.');
             }
         }
     );
@@ -73,7 +77,10 @@ const AdminSchedules = () => {
     const { mutate: deleteSchedule } = useMutation(
         adminService.deleteSchedule,
         {
-            onSuccess: refresh,
+            onSuccess: () => {
+                refresh();
+                console.log('✅ Escala removida com sucesso! Notificações de cancelamento sendo enviadas em background.');
+            },
             successMessage: 'Escala removida com sucesso'
         }
     );
@@ -84,8 +91,9 @@ const AdminSchedules = () => {
             onSuccess: () => {
                 setShowNotificationModal(false);
                 setSelectedSchedule(null);
+                console.log('✅ Notificação customizada sendo enviada em background!');
             },
-            successMessage: 'Notificação enviada com sucesso'
+            successMessage: 'Notificação está sendo enviada em background'
         }
     );
 
