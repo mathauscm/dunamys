@@ -19,6 +19,7 @@ import { adminService, scheduleService } from '../../services/members';
 import Loading from '../../components/common/Loading';
 import Modal from '../../components/common/Modal';
 import ScheduleForm from '../../components/forms/ScheduleForm';
+import MembersSection from '../../components/schedules/MembersSection';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -408,87 +409,91 @@ const AdminSchedules = () => {
                         setSelectedSchedule(null);
                     }}
                     title="Detalhes da Escala"
-                    size="lg"
-                    scrollable={true}
+                    size="4xl"
+                    scrollable={false}
                     closeOnEscape={true}
                     closeOnBackdropClick={false}
                 >
                     {selectedSchedule && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <h3 className="font-medium text-gray-900 mb-4">Informações Gerais</h3>
-                                    <dl className="space-y-3">
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Título</dt>
-                                            <dd className="text-sm text-gray-900">{selectedSchedule.title}</dd>
+                        <div className="flex flex-col h-full min-h-[70vh] max-h-[85vh]">
+                            {/* Conteúdo com scroll interno */}
+                            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                                <div className="space-y-6">
+                                    {/* Header com informações principais */}
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            <div>
+                                                <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">Título</dt>
+                                                <dd className="mt-1 text-base font-semibold text-gray-900">{selectedSchedule.title}</dd>
+                                            </div>
+                                            <div>
+                                                <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">Data</dt>
+                                                <dd className="mt-1 text-base font-semibold text-gray-900">
+                                                    {format(new Date(selectedSchedule.date), "dd/MM/yyyy", { locale: ptBR })}
+                                                </dd>
+                                            </div>
+                                            <div>
+                                                <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</dt>
+                                                <dd className="mt-1">{getStatusBadge(selectedSchedule)}</dd>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Data</dt>
-                                            <dd className="text-sm text-gray-900">
-                                                {format(new Date(selectedSchedule.date), "dd/MM/yyyy", { locale: ptBR })}
-                                            </dd>
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+                                            <div>
+                                                <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">Horário</dt>
+                                                <dd className="mt-1 text-base font-medium text-gray-900 flex items-center">
+                                                    <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                                                    {selectedSchedule.time}
+                                                </dd>
+                                            </div>
+                                            <div>
+                                                <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">Local</dt>
+                                                <dd className="mt-1 text-base font-medium text-gray-900 flex items-center">
+                                                    <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                                                    {selectedSchedule.location}
+                                                </dd>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Horário</dt>
-                                            <dd className="text-sm text-gray-900">{selectedSchedule.time}</dd>
-                                        </div>
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Local</dt>
-                                            <dd className="text-sm text-gray-900">{selectedSchedule.location}</dd>
-                                        </div>
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Status</dt>
-                                            <dd className="text-sm">{getStatusBadge(selectedSchedule)}</dd>
-                                        </div>
-                                    </dl>
-                                </div>
+                                    </div>
 
-                                <div>
-                                    <h3 className="font-medium text-gray-900 mb-4">
-                                        Membros Escalados ({selectedSchedule.members?.length || 0})
-                                    </h3>
-                                    {selectedSchedule.members && selectedSchedule.members.length > 0 ? (
-                                        <div className="space-y-2">
-                                            {selectedSchedule.members.map((member) => (
-                                                <div
-                                                    key={member.user?.id || member.id}
-                                                    className="flex items-center p-3 bg-gray-50 rounded-lg"
-                                                >
-                                                    <div className="flex-shrink-0 h-8 w-8">
-                                                        <div className="h-8 w-8 bg-primary-600 rounded-full flex items-center justify-center">
-                                                            <span className="text-xs font-medium text-white">
-                                                                {(member.user?.name || member.name || 'U').charAt(0).toUpperCase()}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="ml-3">
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            {member.user?.name || member.name}
-                                                        </div>
-                                                        {(member.user?.phone || member.phone) && (
-                                                            <div className="text-xs text-gray-500">
-                                                                {member.user?.phone || member.phone}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                    {/* Descrição */}
+                                    {selectedSchedule.description && (
+                                        <div className="bg-white border rounded-lg p-4 shadow-sm">
+                                            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                                                <div className="h-2 w-2 bg-blue-500 rounded-full mr-2"></div>
+                                                Descrição
+                                            </h3>
+                                            <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded">
+                                                {selectedSchedule.description}
+                                            </p>
                                         </div>
-                                    ) : (
-                                        <p className="text-sm text-gray-500">Nenhum membro escalado</p>
                                     )}
+
+                                    {/* Seção de Membros */}
+                                    <div className="bg-white">
+                                        <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+                                            <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
+                                            Membros Escalados
+                                        </h3>
+                                        <MembersSection 
+                                            members={selectedSchedule.members || []}
+                                            scheduleId={selectedSchedule.id}
+                                            onRefresh={refresh}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
-                            {selectedSchedule.description && (
-                                <div>
-                                    <h3 className="font-medium text-gray-900 mb-2">Descrição</h3>
-                                    <p className="text-sm text-gray-600">{selectedSchedule.description}</p>
-                                </div>
-                            )}
-
-                            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                            {/* Footer fixo */}
+                            <div className="flex-shrink-0 flex justify-end space-x-3 pt-6 mt-6 border-t border-gray-200 bg-gray-50 -mx-6 px-6 pb-6">
+                                <button
+                                    onClick={() => {
+                                        setShowDetailsModal(false);
+                                        setSelectedSchedule(null);
+                                    }}
+                                    className="btn btn-secondary"
+                                >
+                                    Fechar
+                                </button>
                                 <button
                                     onClick={() => handleSendNotification(selectedSchedule)}
                                     className="btn btn-primary flex items-center"

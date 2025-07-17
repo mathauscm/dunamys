@@ -1,4 +1,5 @@
 const { prisma } = require('../config/database');
+const NotificationService = require('./NotificationService');
 
 class MemberService {
   static async getProfile(userId) {
@@ -178,7 +179,10 @@ class MemberService {
           } : null,
           functions: functions,
           functionNames: functionNames || 'Sem função específica',
-          hasMultipleFunctions: functions.length > 1
+          hasMultipleFunctions: functions.length > 1,
+          confirmationStatus: userMember.confirmationStatus,
+          confirmedAt: userMember.confirmedAt,
+          scheduleMemberId: userMember.id
         }
       };
     });
@@ -279,6 +283,150 @@ class MemberService {
     await prisma.unavailability.delete({
       where: { id: unavailabilityId }
     });
+  }
+
+  static async confirmSchedule(userId, scheduleId) {
+    // Verificar se o usuário está realmente escalado
+    const scheduleMember = await prisma.scheduleMember.findFirst({
+      where: {
+        userId,
+        scheduleId
+      }
+    });
+
+    if (!scheduleMember) {
+      throw new Error('Usuário não está escalado para esta escala');
+    }
+
+    // Verificar se a escala não passou ainda
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      select: { date: true, time: true }
+    });
+
+    if (!schedule) {
+      throw new Error('Escala não encontrada');
+    }
+
+    const now = new Date();
+    const scheduleDate = new Date(schedule.date);
+    
+    if (scheduleDate < now) {
+      throw new Error('Não é possível confirmar uma escala que já passou');
+    }
+
+    // Atualizar o status de confirmação
+    const updated = await prisma.scheduleMember.update({
+      where: {
+        id: scheduleMember.id
+      },
+      data: {
+        confirmationStatus: 'CONFIRMED',
+        confirmedAt: new Date(),
+        updatedAt: new Date()
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        },
+        schedule: {
+          select: {
+            id: true,
+            title: true,
+            date: true,
+            time: true,
+            location: true
+          }
+        }
+      }
+    });
+
+    // Enviar notificação de confirmação para administradores
+    try {
+      await NotificationService.sendScheduleConfirmation(userId, scheduleId, 'CONFIRMED');
+    } catch (error) {
+      console.error('Erro ao enviar notificação de confirmação:', error);
+      // Não falhar a confirmação por causa da notificação
+    }
+
+    return updated;
+  }
+
+  static async markUnavailableForSchedule(userId, scheduleId) {
+    // Verificar se o usuário está realmente escalado
+    const scheduleMember = await prisma.scheduleMember.findFirst({
+      where: {
+        userId,
+        scheduleId
+      }
+    });
+
+    if (!scheduleMember) {
+      throw new Error('Usuário não está escalado para esta escala');
+    }
+
+    // Verificar se a escala não passou ainda
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      select: { date: true, time: true }
+    });
+
+    if (!schedule) {
+      throw new Error('Escala não encontrada');
+    }
+
+    const now = new Date();
+    const scheduleDate = new Date(schedule.date);
+    
+    if (scheduleDate < now) {
+      throw new Error('Não é possível marcar indisponibilidade para uma escala que já passou');
+    }
+
+    // Atualizar o status de confirmação
+    const updated = await prisma.scheduleMember.update({
+      where: {
+        id: scheduleMember.id
+      },
+      data: {
+        confirmationStatus: 'UNAVAILABLE',
+        confirmedAt: new Date(),
+        updatedAt: new Date()
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        },
+        schedule: {
+          select: {
+            id: true,
+            title: true,
+            date: true,
+            time: true,
+            location: true
+          }
+        }
+      }
+    });
+
+    // Enviar notificação de indisponibilidade para administradores
+    try {
+      await NotificationService.sendScheduleConfirmation(userId, scheduleId, 'UNAVAILABLE');
+    } catch (error) {
+      console.error('Erro ao enviar notificação de indisponibilidade:', error);
+      // Não falhar a operação por causa da notificação
+    }
+
+    return updated;
   }
 }
 

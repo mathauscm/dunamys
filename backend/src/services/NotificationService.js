@@ -51,14 +51,8 @@ class NotificationService {
             try {
                 logger.info(`🚀 Processando membro: ${member.name} (ID: ${member.id})`);
                 
-                // Email
-                try {
-                    logger.info(`📧 Tentando enviar email para ${member.email}`);
-                    await this.sendScheduleEmail(schedule, member, 'assignment');
-                    logger.info(`✅ Email enviado com sucesso para ${member.email}`);
-                } catch (emailError) {
-                    logger.error(`❌ Erro ao enviar email para ${member.email}:`, emailError);
-                }
+                // Email desabilitado - apenas WhatsApp
+                logger.info(`📧 Notificação por email desabilitada para ${member.email}`);
 
                 // WhatsApp
                 if (whatsappConnected) {
@@ -89,7 +83,7 @@ class NotificationService {
                     userId: member.id,
                     scheduleId: schedule.id,
                     type: 'SCHEDULE_ASSIGNMENT',
-                    channel: 'EMAIL_WHATSAPP',
+                    channel: 'WHATSAPP',
                     status: 'SENT'
                 });
 
@@ -100,7 +94,7 @@ class NotificationService {
                     userId: member.id,
                     scheduleId: schedule.id,
                     type: 'SCHEDULE_ASSIGNMENT',
-                    channel: 'EMAIL_WHATSAPP',
+                    channel: 'WHATSAPP',
                     status: 'FAILED',
                     error: error.message
                 });
@@ -138,19 +132,20 @@ class NotificationService {
 
         for (const member of members) {
             try {
-                await this.sendScheduleEmail(schedule, member, 'update');
-
+                // Apenas WhatsApp
                 if (WhatsAppService.isConnected()) {
                     await this.sendScheduleWhatsApp(schedule, member, 'update');
+                    
+                    await this.logNotification({
+                        userId: member.id,
+                        scheduleId: schedule.id,
+                        type: 'SCHEDULE_UPDATE',
+                        channel: 'WHATSAPP',
+                        status: 'SENT'
+                    });
+                } else {
+                    logger.warn(`⚠️ WhatsApp não conectado - pulando envio para ${member.name}`);
                 }
-
-                await this.logNotification({
-                    userId: member.id,
-                    scheduleId: schedule.id,
-                    type: 'SCHEDULE_UPDATE',
-                    channel: 'EMAIL_WHATSAPP',
-                    status: 'SENT'
-                });
 
             } catch (error) {
                 logger.error(`Erro ao enviar atualização de escala para ${member.name}:`, error);
@@ -186,19 +181,20 @@ class NotificationService {
 
         for (const member of members) {
             try {
-                await this.sendScheduleEmail(schedule, member, 'cancellation');
-
+                // Apenas WhatsApp
                 if (WhatsAppService.isConnected()) {
                     await this.sendScheduleWhatsApp(schedule, member, 'cancellation');
+                    
+                    await this.logNotification({
+                        userId: member.id,
+                        scheduleId: schedule.id,
+                        type: 'SCHEDULE_CANCELLATION',
+                        channel: 'WHATSAPP',
+                        status: 'SENT'
+                    });
+                } else {
+                    logger.warn(`⚠️ WhatsApp não conectado - pulando envio para ${member.name}`);
                 }
-
-                await this.logNotification({
-                    userId: member.id,
-                    scheduleId: schedule.id,
-                    type: 'SCHEDULE_CANCELLATION',
-                    channel: 'EMAIL_WHATSAPP',
-                    status: 'SENT'
-                });
 
             } catch (error) {
                 logger.error(`Erro ao enviar cancelamento de escala para ${member.name}:`, error);
@@ -214,38 +210,31 @@ class NotificationService {
 
     static async sendMemberApproval(user) {
         try {
-            logger.info(`Enviando notificação de aprovação para ${user.name} (${user.email})`);
+            logger.info(`Enviando notificação de aprovação para ${user.name} (${user.phone})`);
 
-            // Enviar email de aprovação
-            const emailResult = await EmailService.sendMemberApproval(user);
-            
-            // Se email foi configurado e enviado
-            if (emailResult && !emailResult.skipped) {
-                logger.info(`Email de aprovação enviado para ${user.email}`);
-            } else {
-                logger.info(`Email de aprovação pulado para ${user.email} (não configurado)`);
-            }
-
-            // Tentar enviar WhatsApp se estiver conectado
+            // Apenas WhatsApp
             if (WhatsAppService.isConnected() && user.phone) {
                 try {
                     const whatsappMessage = this.createMemberApprovalWhatsAppMessage(user);
                     await WhatsAppService.sendMessage(user.phone, whatsappMessage);
                     logger.info(`WhatsApp de aprovação enviado para ${user.phone}`);
+                    
+                    // Registrar notificação no banco
+                    await this.logNotification({
+                        userId: user.id,
+                        scheduleId: null,
+                        type: 'MEMBER_APPROVED',
+                        channel: 'WHATSAPP',
+                        status: 'SENT',
+                        message: `Membro ${user.name} foi aprovado`
+                    });
                 } catch (whatsappError) {
                     logger.error(`Erro ao enviar WhatsApp de aprovação para ${user.phone}:`, whatsappError);
+                    throw whatsappError;
                 }
+            } else {
+                logger.warn(`⚠️ WhatsApp não conectado ou telefone não cadastrado para ${user.name}`);
             }
-
-            // Registrar notificação no banco
-            await this.logNotification({
-                userId: user.id,
-                scheduleId: null,
-                type: 'MEMBER_APPROVED',
-                channel: 'EMAIL_WHATSAPP',
-                status: 'SENT',
-                message: `Membro ${user.name} foi aprovado`
-            });
 
             return { success: true };
 
@@ -257,7 +246,7 @@ class NotificationService {
                 userId: user.id,
                 scheduleId: null,
                 type: 'MEMBER_APPROVED',
-                channel: 'EMAIL_WHATSAPP',
+                channel: 'WHATSAPP',
                 status: 'FAILED',
                 error: error.message
             });
@@ -269,38 +258,31 @@ class NotificationService {
 
     static async sendMemberRejection(user, reason) {
         try {
-            logger.info(`Enviando notificação de rejeição para ${user.name} (${user.email})`);
+            logger.info(`Enviando notificação de rejeição para ${user.name} (${user.phone})`);
 
-            // Enviar email de rejeição
-            const emailResult = await EmailService.sendMemberRejection(user, reason);
-            
-            // Se email foi configurado e enviado
-            if (emailResult && !emailResult.skipped) {
-                logger.info(`Email de rejeição enviado para ${user.email}`);
-            } else {
-                logger.info(`Email de rejeição pulado para ${user.email} (não configurado)`);
-            }
-
-            // Tentar enviar WhatsApp se estiver conectado
+            // Apenas WhatsApp
             if (WhatsAppService.isConnected() && user.phone) {
                 try {
                     const whatsappMessage = this.createMemberRejectionWhatsAppMessage(user, reason);
                     await WhatsAppService.sendMessage(user.phone, whatsappMessage);
                     logger.info(`WhatsApp de rejeição enviado para ${user.phone}`);
+                    
+                    // Registrar notificação no banco
+                    await this.logNotification({
+                        userId: user.id,
+                        scheduleId: null,
+                        type: 'MEMBER_REJECTED',
+                        channel: 'WHATSAPP',
+                        status: 'SENT',
+                        message: `Membro ${user.name} foi rejeitado. Motivo: ${reason || 'Não informado'}`
+                    });
                 } catch (whatsappError) {
                     logger.error(`Erro ao enviar WhatsApp de rejeição para ${user.phone}:`, whatsappError);
+                    throw whatsappError;
                 }
+            } else {
+                logger.warn(`⚠️ WhatsApp não conectado ou telefone não cadastrado para ${user.name}`);
             }
-
-            // Registrar notificação no banco
-            await this.logNotification({
-                userId: user.id,
-                scheduleId: null,
-                type: 'MEMBER_REJECTED',
-                channel: 'EMAIL_WHATSAPP',
-                status: 'SENT',
-                message: `Membro ${user.name} foi rejeitado. Motivo: ${reason || 'Não informado'}`
-            });
 
             return { success: true };
 
@@ -312,13 +294,120 @@ class NotificationService {
                 userId: user.id,
                 scheduleId: null,
                 type: 'MEMBER_REJECTED',
-                channel: 'EMAIL_WHATSAPP',
+                channel: 'WHATSAPP',
                 status: 'FAILED',
                 error: error.message
             });
 
             // NÃO falhar a rejeição por causa de notificação
             return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * ============================================================================
+     * MÉTODOS DE CONFIRMAÇÃO DE ESCALA
+     * ============================================================================
+     */
+
+    static async sendScheduleConfirmation(userId, scheduleId, status) {
+        try {
+            // Buscar informações do usuário, escala e administradores
+            const scheduleMember = await prisma.scheduleMember.findFirst({
+                where: { userId, scheduleId },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            phone: true,
+                            ministry: {
+                                select: {
+                                    name: true
+                                }
+                            }
+                        }
+                    },
+                    schedule: {
+                        select: {
+                            id: true,
+                            title: true,
+                            date: true,
+                            time: true,
+                            location: true
+                        }
+                    }
+                }
+            });
+
+            if (!scheduleMember) {
+                logger.warn(`ScheduleMember não encontrado para userId: ${userId}, scheduleId: ${scheduleId}`);
+                return;
+            }
+
+            // Buscar administradores para notificar
+            const admins = await prisma.user.findMany({
+                where: { role: 'ADMIN' },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    phone: true
+                }
+            });
+
+            const user = scheduleMember.user;
+            const schedule = scheduleMember.schedule;
+
+            // Criar mensagem baseada no status
+            let statusText, statusEmoji;
+            switch (status) {
+                case 'CONFIRMED':
+                    statusText = 'confirmou presença';
+                    statusEmoji = '✅';
+                    break;
+                case 'UNAVAILABLE':
+                    statusText = 'marcou indisponibilidade';
+                    statusEmoji = '❌';
+                    break;
+                default:
+                    statusText = 'atualizou status';
+                    statusEmoji = '🔄';
+            }
+
+            const scheduleDate = new Date(schedule.date).toLocaleDateString('pt-BR');
+
+            // Notificar administradores apenas via WhatsApp
+            for (const admin of admins) {
+                try {
+                    // WhatsApp para administrador
+                    if (WhatsAppService.isConnected() && admin.phone) {
+                        const whatsappMessage = `*${statusEmoji} Confirmação de Escala*\n\nOlá, ${admin.name}!\n\n*${user.name}* ${statusText} para:\n\n*${schedule.title}*\n📅 ${scheduleDate}\n⏰ ${schedule.time}\n📍 ${schedule.location}\n\n${statusEmoji} Status: ${status === 'CONFIRMED' ? 'Confirmado' : 'Indisponível'}`;
+                        await WhatsAppService.sendMessage(admin.phone, whatsappMessage);
+                        
+                        // Registrar notificação
+                        await this.logNotification({
+                            userId: admin.id,
+                            scheduleId: schedule.id,
+                            type: 'SCHEDULE_CONFIRMATION',
+                            channel: 'WHATSAPP',
+                            status: 'SENT',
+                            message: `${user.name} ${statusText} para ${schedule.title}`
+                        });
+                    } else {
+                        logger.warn(`⚠️ WhatsApp não conectado ou telefone não cadastrado para admin ${admin.name}`);
+                    }
+
+                } catch (error) {
+                    logger.error(`Erro ao notificar administrador ${admin.name} sobre confirmação:`, error);
+                }
+            }
+
+            logger.info(`Notificações de confirmação enviadas para ${admins.length} administradores`);
+
+        } catch (error) {
+            logger.error('Erro ao enviar notificações de confirmação:', error);
         }
     }
 
@@ -359,22 +448,21 @@ class NotificationService {
             for (const schedule of schedules) {
                 for (const member of schedule.members) {
                     try {
-                        // Email
-                        await EmailService.sendScheduleReminder(schedule, member.user);
-
-                        // WhatsApp
+                        // Apenas WhatsApp
                         if (WhatsAppService.isConnected() && member.user.phone) {
                             const message = this.createReminderWhatsAppMessage(schedule, member.user);
                             await WhatsAppService.sendMessage(member.user.phone, message);
+                            
+                            await this.logNotification({
+                                userId: member.user.id,
+                                scheduleId: schedule.id,
+                                type: 'SCHEDULE_REMINDER',
+                                channel: 'WHATSAPP',
+                                status: 'SENT'
+                            });
+                        } else {
+                            logger.warn(`⚠️ WhatsApp não conectado ou telefone não cadastrado para ${member.user.name}`);
                         }
-
-                        await this.logNotification({
-                            userId: member.user.id,
-                            scheduleId: schedule.id,
-                            type: 'SCHEDULE_REMINDER',
-                            channel: 'EMAIL_WHATSAPP',
-                            status: 'SENT'
-                        });
 
                     } catch (error) {
                         logger.error(`Erro ao enviar lembrete para ${member.user.name}:`, error);
@@ -411,31 +499,20 @@ class NotificationService {
             try {
                 logger.info(`Processando membro: ${member.name} (ID: ${member.id})`);
                 
-                if (type === 'EMAIL' || type === 'BOTH') {
-                    await EmailService.sendEmail(
-                        member.email,
-                        `Comunicado: ${schedule.title}`,
-                        `<h2>Comunicado</h2><p>Olá, ${member.name}!</p><p>${message}</p>`,
-                        message
-                    );
-                }
-
-                if ((type === 'WHATSAPP' || type === 'BOTH') && WhatsAppService.isConnected()) {
-                    if (!member.phone) {
-                        logger.warn(`Membro ${member.name} não tem telefone cadastrado`);
-                        continue;
-                    }
-                    
+                // Apenas WhatsApp
+                if (WhatsAppService.isConnected() && member.phone) {
                     const whatsappMessage = `*Comunicado - ${schedule.title}*\n\nOlá, ${member.name}!\n\n${message}`;
                     logger.info(`Enviando WhatsApp para ${member.name} no número: ${member.phone}`);
                     await WhatsAppService.sendMessage(member.phone, whatsappMessage);
+                } else {
+                    logger.warn(`⚠️ WhatsApp não conectado ou telefone não cadastrado para ${member.name}`);
                 }
 
                 await this.logNotification({
                     userId: member.id,
                     scheduleId: schedule.id,
                     type: 'CUSTOM_NOTIFICATION',
-                    channel: type,
+                    channel: 'WHATSAPP',
                     status: 'SENT',
                     message
                 });
@@ -447,7 +524,7 @@ class NotificationService {
                     userId: member.id,
                     scheduleId: schedule.id,
                     type: 'CUSTOM_NOTIFICATION',
-                    channel: type,
+                    channel: 'WHATSAPP',
                     status: 'FAILED',
                     message,
                     error: error.message
@@ -711,13 +788,9 @@ class NotificationService {
         };
 
         try {
-            // Testar conexão com email
-            if (EmailService.isEmailConfigured()) {
-                testResults.email = true;
-                logger.info('✅ Email Service: Configurado');
-            } else {
-                logger.warn('⚠️ Email Service: Não configurado');
-            }
+            // Email desabilitado
+            testResults.email = false;
+            logger.info('⚠️ Email Service: Desabilitado (apenas WhatsApp)');
 
             // Testar conexão com WhatsApp
             if (WhatsAppService.isConnected()) {

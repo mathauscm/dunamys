@@ -29,6 +29,16 @@ export const memberService = {
     async removeUnavailability(id) {
         const response = await api.delete(`/members/unavailability/${id}`);
         return response.data;
+    },
+
+    async confirmSchedule(scheduleId) {
+        const response = await api.post(`/members/schedules/${scheduleId}/confirm`);
+        return response.data;
+    },
+
+    async markUnavailableForSchedule(scheduleId) {
+        const response = await api.post(`/members/schedules/${scheduleId}/unavailable`);
+        return response.data;
     }
 };
 

@@ -24,6 +24,8 @@ enum NotificationType {
   SCHEDULE_UPDATE
   SCHEDULE_CANCELLATION
   SCHEDULE_REMINDER
+  SCHEDULE_CONFIRMATION
+  SCHEDULE_CONFIRMATION_REMINDER
   CUSTOM_NOTIFICATION
 }
 
@@ -38,6 +40,12 @@ enum NotificationStatus {
   SENT
   FAILED
   PENDING
+}
+
+enum ConfirmationStatus {
+  PENDING
+  CONFIRMED
+  UNAVAILABLE
 }
 
 // NOVO MODEL: Ministério
@@ -114,9 +122,13 @@ model Schedule {
 }
 
 model ScheduleMember {
-  id         Int @id @default(autoincrement())
-  userId     Int
-  scheduleId Int
+  id                 Int               @id @default(autoincrement())
+  userId             Int
+  scheduleId         Int
+  confirmationStatus ConfirmationStatus @default(PENDING)
+  confirmedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   // Relacionamentos
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

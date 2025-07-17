@@ -129,6 +129,40 @@ class MemberController {
       next(error);
     }
   }
+
+  static async confirmSchedule(req, res, next) {
+    try {
+      const { scheduleId } = req.params;
+      
+      const result = await MemberService.confirmSchedule(req.user.id, parseInt(scheduleId));
+      
+      logger.info(`Escala confirmada - usuário ID: ${req.user.id}, escala ID: ${scheduleId}`);
+      
+      res.json({
+        message: 'Presença confirmada com sucesso',
+        scheduleMember: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async markUnavailableForSchedule(req, res, next) {
+    try {
+      const { scheduleId } = req.params;
+      
+      const result = await MemberService.markUnavailableForSchedule(req.user.id, parseInt(scheduleId));
+      
+      logger.info(`Indisponibilidade marcada para escala - usuário ID: ${req.user.id}, escala ID: ${scheduleId}`);
+      
+      res.json({
+        message: 'Indisponibilidade marcada com sucesso',
+        scheduleMember: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = MemberController;

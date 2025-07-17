@@ -4,6 +4,9 @@ import { useApi } from '../../hooks/useApi';
 import Loading from '../../components/common/Loading';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import ConfirmationBadge from '../../components/common/ConfirmationBadge';
+import ConfirmationButtons from '../../components/common/ConfirmationButtons';
+import { memberService } from '../../services/members';
 
 const MemberSchedules = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -48,6 +51,28 @@ const MemberSchedules = () => {
     // DEBUG: Log para verificar os dados
     console.log('Escalas recebidas:', monthSchedules);
     console.log('Mês atual:', month, 'Ano atual:', year);
+
+    const handleConfirmSchedule = async (scheduleId) => {
+        try {
+            await memberService.confirmSchedule(scheduleId);
+            // Atualizar a lista após confirmação
+            refresh();
+        } catch (error) {
+            console.error('Erro ao confirmar escala:', error);
+            alert('Erro ao confirmar presença. Tente novamente.');
+        }
+    };
+
+    const handleMarkUnavailable = async (scheduleId) => {
+        try {
+            await memberService.markUnavailableForSchedule(scheduleId);
+            // Atualizar a lista após marcar indisponibilidade
+            refresh();
+        } catch (error) {
+            console.error('Erro ao marcar indisponibilidade:', error);
+            alert('Erro ao marcar indisponibilidade. Tente novamente.');
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -138,6 +163,12 @@ const MemberSchedules = () => {
                                                     }`}>
                                                     {new Date(schedule.date) < new Date() ? 'Concluído' : 'Agendado'}
                                                 </span>
+                                                {schedule.memberInfo && (
+                                                    <ConfirmationBadge 
+                                                        status={schedule.memberInfo.confirmationStatus}
+                                                        size="sm"
+                                                    />
+                                                )}
                                             </div>
 
                                             {/* Informações básicas */}
@@ -192,6 +223,19 @@ const MemberSchedules = () => {
                                                 <p className="mt-3 text-sm text-gray-600">
                                                     {schedule.description}
                                                 </p>
+                                            )}
+
+                                            {/* Botões de confirmação */}
+                                            {schedule.memberInfo && new Date(schedule.date) >= new Date() && (
+                                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                                    <ConfirmationButtons
+                                                        scheduleId={schedule.id}
+                                                        currentStatus={schedule.memberInfo.confirmationStatus}
+                                                        onConfirm={handleConfirmSchedule}
+                                                        onMarkUnavailable={handleMarkUnavailable}
+                                                        size="sm"
+                                                    />
+                                                </div>
                                             )}
 
                                             {/* Versão mobile compacta */}

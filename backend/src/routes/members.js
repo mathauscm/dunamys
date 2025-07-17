@@ -23,4 +23,8 @@ router.post('/unavailability', validate(validators.unavailability), MemberContro
 router.get('/unavailability', MemberController.getUnavailabilities);
 router.delete('/unavailability/:id', MemberController.removeUnavailability);
 
+// Rotas para confirmação de escalas
+router.post('/schedules/:scheduleId/confirm', MemberController.confirmSchedule);
+router.post('/schedules/:scheduleId/unavailable', MemberController.markUnavailableForSchedule);
+
 module.exports = router;
