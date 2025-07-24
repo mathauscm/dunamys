@@ -712,13 +712,6 @@ curl -X GET http://localhost:5000/api/members/schedules \
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-## 🙏 Agradecimentos
-
-- Comunidade open source
-- Contribuidores do projeto
-- Igrejas que forneceram feedback
-- Desenvolvedores que testaram o sistema
-
 ---
 
 ---
