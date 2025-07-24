@@ -8,6 +8,27 @@
 
 Sistema completo para gerenciamento de membros e escalas de serviço de igrejas, desenvolvido com Node.js, React e PostgreSQL.
 
+## 👀 Preview Rápido
+
+<div align="center">
+<table>
+<tr>
+<td align="center" width="33%">
+<img src="frontend/public/telas/login.png" alt="Login" width="200px"><br>
+<b>🔐 Autenticação Segura</b>
+</td>
+<td align="center" width="33%">
+<img src="frontend/public/telas/paineladmin.png" alt="Admin" width="200px"><br>
+<b>📊 Painel Administrativo</b>
+</td>
+<td align="center" width="33%">
+<img src="frontend/public/telas/escalas.png" alt="Escalas" width="200px"><br>
+<b>📅 Gestão de Escalas</b>
+</td>
+</tr>
+</table>
+</div>
+
 ## 📖 Sumário
 
 - [Funcionalidades](#-funcionalidades)
@@ -34,29 +55,70 @@ Sistema completo para gerenciamento de membros e escalas de serviço de igrejas,
 
 ## 🔥 Demonstração
 
-> 🚧 **Em desenvolvimento**: Screenshots e vídeos demonstrativos serão adicionados em breve.
+### 🖥️ Interface do Sistema
 
-**Preview das funcionalidades:**
-- 📊 Dashboard com gráficos e estatísticas
-- 📅 Calendário interativo de escalas
-- 📱 Interface responsiva para mobile
-- 🔔 Sistema de notificações em tempo real
+<div align="center">
+
+#### 🔐 Tela de Login
+<img src="frontend/public/telas/login.png" alt="Tela de Login" width="600px">
+
+#### 📝 Cadastro de Membros
+<img src="frontend/public/telas/cadastro.png" alt="Cadastro de Membros" width="600px">
+
+#### 📊 Painel Administrativo
+<img src="frontend/public/telas/paineladmin.png" alt="Painel Admin" width="600px">
+
+#### 👥 Gerenciamento de Membros
+<img src="frontend/public/telas/gerenciamento.png" alt="Gerenciamento" width="600px">
+
+#### 📅 Sistema de Escalas
+<div style="display: flex; gap: 10px; justify-content: center;">
+<img src="frontend/public/telas/escalas.png" alt="Escalas 1" width="400px">
+<img src="frontend/public/telas/escalas2.png" alt="Escalas 2" width="400px">
+</div>
+
+#### 🧑‍🤝‍🧑 Área do Voluntário
+<div style="display: flex; gap: 10px; justify-content: center;">
+<img src="frontend/public/telas/areavoluntario1.png" alt="Área Voluntário 1" width="400px">
+<img src="frontend/public/telas/areavoluntario2.png" alt="Área Voluntário 2" width="400px">
+</div>
+
+</div>
 
 ## 🚀 Funcionalidades
 
 ### 👥 Para Membros
+<img src="frontend/public/telas/areavoluntario1.png" alt="Área do Voluntário" width="250px" align="right">
+
 - **Dashboard**: Visão geral das próximas escalas
 - **Escalas**: Visualizar todas as escalas (passadas e futuras)
 - **Disponibilidade**: Definir períodos de indisponibilidade
 - **Notificações**: Receber alertas por email e WhatsApp
 - **Perfil**: Gerenciar dados pessoais
 
+<br clear="right">
+
 ### 👨‍💼 Para Administradores
+<img src="frontend/public/telas/paineladmin.png" alt="Painel Administrativo" width="250px" align="right">
+
 - **Dashboard**: Estatísticas e resumo do sistema
 - **Gestão de Membros**: Aprovar, rejeitar e gerenciar membros
 - **Gestão de Escalas**: Criar, editar e organizar escalas
 - **Notificações**: Enviar comunicados personalizados
 - **Logs**: Auditoria completa das ações
+
+<br clear="right">
+
+### 📅 Sistema de Escalas
+<img src="frontend/public/telas/escalas.png" alt="Sistema de Escalas" width="250px" align="right">
+
+- **Criação Automática**: Geração inteligente de escalas
+- **Disponibilidade**: Respeita indisponibilidade dos membros
+- **Histórico**: Visualização de escalas passadas e futuras
+- **Conflitos**: Detecção automática de sobreposições
+- **Aprovação**: Sistema de confirmação pelos membros
+
+<br clear="right">
 
 ### 🔔 Sistema de Notificações
 - **Email**: Notificações automáticas via SMTP
@@ -663,9 +725,8 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 <div align="center">
 
-**Desenvolvido com ❤️ para servir à comunidade cristã**
+**Desenvolvido para servir à comunidade cristã**
 
-*"E disse-lhes: Ide por todo o mundo, pregai o evangelho a toda criatura."* - Marcos 16:15
 
 [![Estrelas](https://img.shields.io/github/stars/mathauscm/dunamys?style=social)](https://github.com/mathauscm/dunamys/stargazers)
 [![Forks](https://img.shields.io/github/forks/mathauscm/dunamys?style=social)](https://github.com/mathauscm/dunamys/network/members)
