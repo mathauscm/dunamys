@@ -4,35 +4,35 @@ services:
   # Banco de dados PostgreSQL
   postgres:
     image: postgres:15-alpine
-    container_name: igreja-postgres
+    container_name: dunamys-postgres
     environment:
       POSTGRES_DB: igreja_membros
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - igreja-network
+      - dunamys-network
 
   # Redis para filas
   redis:
     image: redis:7-alpine
-    container_name: igreja-redis
+    container_name: dunamys-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:
-      - igreja-network
+      - dunamys-network
 
   # Backend API
   backend:
     build: .
-    container_name: igreja-backend
+    container_name: dunamys-backend
     ports:
-      - "5000:5000"
+      - "4002:5000"
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/igreja_membros?schema=public
@@ -50,7 +50,7 @@ services:
       - ./logs:/app/logs
       - ./whatsapp-session:/app/whatsapp-session
     networks:
-      - igreja-network
+      - dunamys-network
     restart: unless-stopped
 
 volumes:
@@ -58,7 +58,7 @@ volumes:
   redis_data:
 
 networks:
-  igreja-network:
+  dunamys-network:
     driver: bridge
 
 // ===== BACKEND/DOCS/SWAGGER.JS =====
