@@ -173,7 +173,27 @@ async function main() {
 
     console.log('✅ Grupos de funções e funções criados com sucesso!');
 
-    // TERCEIRO: Criar usuário administrador padrão
+    // TERCEIRO: Criar usuário administrador master (Mathaus)
+    const masterAdminPassword = await bcrypt.hash('kenbuk-gerjih-dyKve9', 12);
+
+    const masterAdmin = await prisma.user.upsert({
+        where: { email: 'mathauscarvalho@gmail.com' },
+        update: {},
+        create: {
+            name: 'Mathaus Carvalho',
+            email: 'mathauscarvalho@gmail.com',
+            password: masterAdminPassword,
+            phone: '11999999999',
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            campusId: campusUbajara.id,
+            ministryId: ministerioMidia.id // Admin master do ministério de mídia
+        }
+    });
+
+    console.log('✅ Administrador Master criado:', masterAdmin.email);
+
+    // QUARTO: Criar administrador padrão (backup)
     const adminPassword = await bcrypt.hash('admin123', 12);
 
     const admin = await prisma.user.upsert({
@@ -183,7 +203,7 @@ async function main() {
             name: 'Administrador',
             email: 'admin@igreja.com',
             password: adminPassword,
-            phone: '11999999999',
+            phone: '11888888888',
             role: 'ADMIN',
             status: 'ACTIVE',
             campusId: campusUbajara.id,
@@ -191,7 +211,7 @@ async function main() {
         }
     });
 
-    console.log('✅ Administrador criado:', admin.email);
+    console.log('✅ Administrador padrão criado:', admin.email);
 
     // QUARTO: Criar alguns membros de exemplo com campus e ministérios
     const memberPassword = await bcrypt.hash('123456', 12);
@@ -352,7 +372,15 @@ async function main() {
     console.log('   📋 Voluntariado Geral: Estacionamento, Acolhimento, Auditório, Dízimos e Oferta, Comunhão, Ceia');
     console.log('   🎥 Multimídia: Stories, Projeção, Fotos, Reels, Live, Vídeo Live');
     console.log('');
-    console.log('👤 Login do administrador:');
+    console.log('👤 Login dos administradores:');
+    console.log('');
+    console.log('🔑 ADMIN MASTER (Mathaus):');
+    console.log('   Email: mathauscarvalho@gmail.com');
+    console.log('   Senha: kenbuk-gerjih-dyKve9');
+    console.log('   Campus: Ubajara');
+    console.log('   Ministério: Ministério de Mídia');
+    console.log('');
+    console.log('🔑 Admin padrão (backup):');
     console.log('   Email: admin@igreja.com');
     console.log('   Senha: admin123');
     console.log('   Campus: Ubajara');
