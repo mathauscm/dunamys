@@ -81,6 +81,27 @@ const WhatsApp = () => {
     }
   };
 
+  // Conectar WhatsApp (primeira conexão)
+  const handleConnect = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+      await whatsappService.initialize();
+      setStatus('awaiting_qr');
+      setQrCode(null);
+      setLastUpdated(new Date());
+
+      // Aguardar um pouco e tentar obter o QR Code
+      setTimeout(() => {
+        fetchQRCode();
+      }, 2000);
+    } catch (err) {
+      setError(err.error || 'Erro ao conectar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Reconectar WhatsApp
   const handleReconnect = async () => {
     try {
@@ -90,7 +111,7 @@ const WhatsApp = () => {
       setStatus('awaiting_qr');
       setQrCode(null);
       setLastUpdated(new Date());
-      
+
       // Aguardar um pouco e tentar obter o QR Code
       setTimeout(() => {
         fetchQRCode();
@@ -217,7 +238,7 @@ const WhatsApp = () => {
           <div className="flex flex-wrap gap-3">
             {status === 'disconnected' && (
               <button
-                onClick={handleReconnect}
+                onClick={handleConnect}
                 disabled={loading}
                 className="btn btn-primary flex items-center space-x-2"
               >

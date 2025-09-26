@@ -210,6 +210,44 @@ router.post('/disconnect', requireMasterAdmin, async (req, res) => {
 
 /**
  * @swagger
+ * /api/whatsapp/cleanup:
+ *   post:
+ *     summary: Limpeza forçada de processos Chrome e sessões WhatsApp
+ *     tags: [WhatsApp]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Limpeza realizada com sucesso
+ *       403:
+ *         description: Acesso negado
+ */
+router.post('/cleanup', requireMasterAdmin, async (req, res) => {
+    try {
+        console.log('🧹 Endpoint cleanup chamado');
+        logger.info('Endpoint cleanup chamado');
+
+        // Forçar limpeza completa
+        await whatsappService.cleanOldSession();
+
+        res.json({
+            message: 'Limpeza de sessões e processos realizada com sucesso'
+        });
+
+        logger.info(`Limpeza WhatsApp realizada por admin master: ${req.user.email}`);
+    } catch (error) {
+        console.error('❌ Erro na limpeza:', error);
+        logger.error('Erro na limpeza:', error);
+
+        res.status(500).json({
+            error: 'Erro interno do servidor',
+            message: error.message
+        });
+    }
+});
+
+/**
+ * @swagger
  * /api/whatsapp/reconnect:
  *   post:
  *     summary: Reconectar WhatsApp Web

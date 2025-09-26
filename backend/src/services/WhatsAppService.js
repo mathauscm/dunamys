@@ -10,15 +10,30 @@ class WhatsAppService {
         this.client = null;
         this.isReady = false;
         this.qrCode = null;
+
+        // Não fazer limpeza inicial no constructor
+        // Deixar para o método initialize
     }
 
     async initialize() {
         try {
             console.log('🔄 Inicializando WhatsApp Service...');
-            
+
+            // Limpar sessão anterior se existir
+            await this.cleanOldSession();
+
+            // Gerar um ID único para esta sessão
+            const sessionId = Date.now();
+            const chromeDataDir = `/tmp/chrome-profile-${sessionId}`;
+            const whatsappDataPath = `./whatsapp-session-${sessionId}`;
+
+            console.log(`📁 Usando diretórios únicos:`);
+            console.log(`   Chrome: ${chromeDataDir}`);
+            console.log(`   WhatsApp: ${whatsappDataPath}`);
+
             this.client = new Client({
                 authStrategy: new LocalAuth({
-                    dataPath: './whatsapp-session'
+                    dataPath: whatsappDataPath
                 }),
                 puppeteer: {
                     headless: true,
@@ -29,7 +44,21 @@ class WhatsAppService {
                         '--disable-extensions',
                         '--disable-dev-shm-usage',
                         '--disable-web-security',
-                        '--disable-features=VizDisplayCompositor'
+                        '--disable-features=VizDisplayCompositor',
+                        '--disable-background-timer-throttling',
+                        '--disable-backgrounding-occluded-windows',
+                        '--disable-renderer-backgrounding',
+                        '--disable-software-rasterizer',
+                        '--disable-ipc-flooding-protection',
+                        '--no-first-run',
+                        '--no-default-browser-check',
+                        '--no-zygote',
+                        '--single-process',
+                        '--disable-background-networking',
+                        '--disable-default-apps',
+                        '--disable-sync',
+                        `--user-data-dir=${chromeDataDir}`,
+                        '--remote-debugging-port=0'
                     ]
                 }
             });
@@ -282,11 +311,32 @@ class WhatsAppService {
 
     async disconnect() {
         try {
+            console.log('🔄 Iniciando processo de desconexão...');
+
             if (this.client) {
-                await this.client.destroy();
+                try {
+                    // Primeiro tenta o logout
+                    await this.client.logout();
+                    console.log('✅ Logout do cliente realizado');
+                } catch (logoutError) {
+                    console.warn('⚠️ Erro no logout:', logoutError.message);
+                }
+
+                try {
+                    // Depois destroi o cliente
+                    await this.client.destroy();
+                    console.log('✅ Cliente destruído');
+                } catch (destroyError) {
+                    console.warn('⚠️ Erro ao destruir cliente:', destroyError.message);
+                }
+
                 this.client = null;
                 logger.info('WhatsApp Web desconectado');
             }
+
+            // Limpar processos Chrome orfãos
+            await this.killOrphanedChrome();
+
         } catch (error) {
             console.error('❌ Erro ao desconectar WhatsApp:', error);
             logger.error('Erro ao desconectar WhatsApp:', error);
@@ -296,6 +346,57 @@ class WhatsAppService {
             // Sempre resetar o estado
             this.isReady = false;
             this.qrCode = null;
+            console.log('✅ Estado do WhatsApp resetado');
+        }
+    }
+
+    async killOrphanedChrome() {
+        try {
+            const { exec } = require('child_process');
+            const { promisify } = require('util');
+            const execAsync = promisify(exec);
+
+            console.log('🔄 Limpando processos Chrome orfãos...');
+
+            // Matar processos Chrome defunct
+            await execAsync('pkill -f "chrome|chromium" || true');
+
+            // Aguardar um pouco
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            console.log('✅ Processos Chrome limpos');
+        } catch (error) {
+            console.warn('⚠️ Erro ao limpar processos Chrome:', error.message);
+        }
+    }
+
+    async cleanOldSession() {
+        try {
+            const { exec } = require('child_process');
+            const { promisify } = require('util');
+            const execAsync = promisify(exec);
+
+            console.log('🧹 Limpando sessões antigas...');
+
+            // Limpeza mais agressiva de processos Chrome
+            await execAsync('pkill -9 -f "chrome|chromium|puppeteer" || true');
+
+            // Aguardar um pouco para os processos morrerem
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Limpar diretórios temporários do Chrome (mais agressivo)
+            await execAsync('rm -rf /tmp/chrome-* || true');
+            await execAsync('rm -rf /tmp/.org.chromium.* || true');
+
+            // Limpar sessões antigas do WhatsApp
+            await execAsync('rm -rf ./whatsapp-session* || true');
+
+            // Limpar arquivos de lock do Chrome
+            await execAsync('rm -rf /tmp/*/SingletonLock || true');
+
+            console.log('✅ Sessões antigas limpas de forma agressiva');
+        } catch (error) {
+            console.warn('⚠️ Erro ao limpar sessões antigas:', error.message);
         }
     }
 
@@ -303,16 +404,34 @@ class WhatsAppService {
         try {
             console.log('🔄 Iniciando processo de reconexão...');
             logger.info('Iniciando processo de reconexão WhatsApp');
-            
+
+            // Primeiro: desconectar completamente
             await this.disconnect();
             console.log('✅ Desconexão concluída');
-            
+
+            // Aguardar para garantir limpeza completa
+            console.log('⏳ Aguardando limpeza completa...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Reinicializar
             await this.initialize();
             console.log('✅ Reconexão concluída');
             logger.info('Reconexão WhatsApp concluída com sucesso');
+
         } catch (error) {
             console.error('❌ Erro durante reconexão:', error);
             logger.error('Erro durante reconexão WhatsApp:', error);
+
+            // Em caso de erro, forçar limpeza completa
+            try {
+                await this.killOrphanedChrome();
+                this.client = null;
+                this.isReady = false;
+                this.qrCode = null;
+            } catch (cleanupError) {
+                console.error('❌ Erro na limpeza de emergência:', cleanupError);
+            }
+
             throw error;
         }
     }

@@ -6,11 +6,17 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (incluindo devDependencies para o build)
+RUN npm ci
 
 # Copy source code
 COPY . .
+
+# Accept build args
+ARG VITE_API_URL
+ARG VITE_MASTER_ADMIN_EMAIL
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_MASTER_ADMIN_EMAIL=$VITE_MASTER_ADMIN_EMAIL
 
 # Build the app
 RUN npm run build

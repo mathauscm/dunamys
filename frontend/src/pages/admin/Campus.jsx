@@ -82,7 +82,7 @@ const AdminCampus = () => {
    // NOVO: Mutação para debug das estatísticas
    const { mutate: debugStats, loading: debugLoading } = useMutation(
        async () => {
-           const response = await fetch('http://localhost:5000/api/campus/debug/stats', {
+           const response = await fetch(`${import.meta.env.VITE_API_URL}/api/campus/debug/stats`, {
                method: 'GET',
                headers: {
                    'Authorization': `Bearer ${localStorage.getItem('@igreja:token')}`,
