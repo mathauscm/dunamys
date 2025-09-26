@@ -1,19 +1,20 @@
-FROM node:18-slim
+FROM node:18-alpine
 
-# Instalar dependências do sistema
-RUN apt-get update && apt-get install -y \
+# Instalar dependências do sistema necessárias para Puppeteer e Prisma
+RUN apk add --no-cache \
     chromium \
-    fonts-ipafont-gothic \
-    fonts-wqy-zenhei \
-    fonts-thai-tlwg \
-    fonts-kacst \
-    fonts-freefont-ttf \
-    --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    openssl \
+    openssl-dev
 
 # Configurar Puppeteer para usar o Chromium instalado
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 WORKDIR /app
 
@@ -30,8 +31,8 @@ RUN npx prisma generate
 # Copiar código fonte
 COPY . .
 
-# Criar diretório de logs
-RUN mkdir -p logs
+# Criar diretórios necessários
+RUN mkdir -p logs whatsapp-session
 
 # Expor porta
 EXPOSE 5000

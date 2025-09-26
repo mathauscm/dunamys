@@ -18,25 +18,20 @@ class WhatsAppService {
     async initialize() {
         try {
             console.log('🔄 Inicializando WhatsApp Service...');
+            logger.info('Inicializando WhatsApp Service...');
 
-            // Limpar sessão anterior se existir
-            await this.cleanOldSession();
+            // Verificar e preparar diretório de sessão
+            await this.ensureSessionDirectory();
 
-            // Gerar um ID único para esta sessão
-            const sessionId = Date.now();
-            const chromeDataDir = `/tmp/chrome-profile-${sessionId}`;
-            const whatsappDataPath = `./whatsapp-session-${sessionId}`;
-
-            console.log(`📁 Usando diretórios únicos:`);
-            console.log(`   Chrome: ${chromeDataDir}`);
-            console.log(`   WhatsApp: ${whatsappDataPath}`);
+            const sessionPath = './whatsapp-session';
 
             this.client = new Client({
                 authStrategy: new LocalAuth({
-                    dataPath: whatsappDataPath
+                    dataPath: sessionPath
                 }),
                 puppeteer: {
                     headless: true,
+                    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
                     args: [
                         '--no-sandbox',
                         '--disable-setuid-sandbox',
@@ -48,18 +43,9 @@ class WhatsAppService {
                         '--disable-background-timer-throttling',
                         '--disable-backgrounding-occluded-windows',
                         '--disable-renderer-backgrounding',
-                        '--disable-software-rasterizer',
-                        '--disable-ipc-flooding-protection',
-                        '--no-first-run',
-                        '--no-default-browser-check',
-                        '--no-zygote',
-                        '--single-process',
-                        '--disable-background-networking',
-                        '--disable-default-apps',
-                        '--disable-sync',
-                        `--user-data-dir=${chromeDataDir}`,
-                        '--remote-debugging-port=0'
-                    ]
+                        `--user-data-dir=${sessionPath}`
+                    ],
+                    timeout: 60000
                 }
             });
 
@@ -111,6 +97,13 @@ class WhatsAppService {
         } catch (error) {
             console.error('❌ Erro ao inicializar WhatsApp:', error);
             logger.error('Erro ao inicializar WhatsApp:', error);
+
+            // Se falhou, tentar limpar sessão corrompida
+            if (error.message.includes('Session') || error.message.includes('Chrome') || error.message.includes('profile')) {
+                console.log('🔄 Tentando limpar sessão corrompida...');
+                await this.clearCorruptedSession();
+            }
+
             throw error;
         }
     }
@@ -367,6 +360,61 @@ class WhatsAppService {
             console.log('✅ Processos Chrome limpos');
         } catch (error) {
             console.warn('⚠️ Erro ao limpar processos Chrome:', error.message);
+        }
+    }
+
+    async ensureSessionDirectory() {
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        try {
+            const sessionPath = path.resolve('./whatsapp-session');
+
+            // Verificar se o diretório existe
+            try {
+                await fs.access(sessionPath);
+            } catch {
+                // Criar se não existir
+                await fs.mkdir(sessionPath, { recursive: true, mode: 0o755 });
+                console.log('📁 Diretório de sessão criado:', sessionPath);
+            }
+
+            console.log('✅ Diretório de sessão verificado');
+        } catch (error) {
+            console.warn('⚠️ Erro ao verificar diretório de sessão:', error.message);
+        }
+    }
+
+    async clearCorruptedSession() {
+        const fs = require('fs').promises;
+        const path = require('path');
+
+        try {
+            const sessionPath = path.resolve('./whatsapp-session');
+            const backupPath = path.resolve(`./whatsapp-session-backup-${Date.now()}`);
+
+            console.log('🧹 Limpando sessão corrompida...');
+
+            // Fazer backup antes de limpar
+            try {
+                await fs.rename(sessionPath, backupPath);
+                console.log('💾 Backup da sessão criado:', backupPath);
+            } catch (renameError) {
+                // Se não conseguir renomear, tentar remover diretamente
+                try {
+                    await fs.rmdir(sessionPath, { recursive: true });
+                    console.log('🗑️ Diretório de sessão removido');
+                } catch (removeError) {
+                    console.warn('⚠️ Não foi possível remover diretório:', removeError.message);
+                }
+            }
+
+            // Recriar diretório
+            await this.ensureSessionDirectory();
+            console.log('✅ Sessão corrompida limpa');
+
+        } catch (error) {
+            console.warn('⚠️ Erro ao limpar sessão corrompida:', error.message);
         }
     }
 
