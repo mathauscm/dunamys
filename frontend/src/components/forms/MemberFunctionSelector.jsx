@@ -269,7 +269,7 @@ const MemberFunctionSelector = ({
                     onClick={handleToggleDropdown}
                     disabled={disabled}
                     className={`
-                        w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-300 rounded-md bg-white
+                        w-full flex items-center justify-between px-2 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-md bg-white
                         ${disabled ? 'bg-gray-50 text-gray-400' : 'hover:bg-gray-50'}
                         ${selectedNames.length > 0 ? 'border-primary-300 bg-primary-50' : ''}
                         ${isOpen ? 'ring-2 ring-primary-500 border-primary-500' : ''}
@@ -278,17 +278,17 @@ const MemberFunctionSelector = ({
                     `}
                 >
                     <div className="flex items-center min-w-0">
-                        <Briefcase className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-                        <span className="truncate">
-                            {selectedNames.length === 0 
+                        <Briefcase className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-gray-400 flex-shrink-0" />
+                        <span className="truncate text-xs sm:text-sm">
+                            {selectedNames.length === 0
                                 ? 'Selecionar função...'
                                 : selectedNames.length === 1
                                     ? selectedNames[0]
-                                    : `${selectedNames.length} funções selecionadas`
+                                    : `${selectedNames.length} funções`
                             }
                         </span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Mostrar funções selecionadas como badges */}
