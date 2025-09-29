@@ -350,30 +350,41 @@ const MemberFunctionSelector = ({
                     }}
                 >
                     <div className="flex flex-col h-full">
-                        {/* Header com busca */}
-                        <div className={`border-b border-gray-200 bg-gray-50 rounded-t-lg ${isMobile ? 'p-2' : 'p-3'}`}>
-                            <div className="flex items-center justify-between mb-1.5">
-                                <span className={`font-medium text-gray-700 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                                    Selecionar Funções
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                    {selectedNames.length} selecionada{selectedNames.length !== 1 ? 's' : ''}
-                                </span>
+                        {/* Header - Mobile sem busca, Desktop com busca */}
+                        {isMobile ? (
+                            <div className="border-b border-gray-200 bg-gray-50 rounded-t-lg p-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-medium text-gray-700 text-sm">
+                                        Selecionar Funções
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                        {selectedNames.length} selecionada{selectedNames.length !== 1 ? 's' : ''}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="relative">
-                                <Search className={`absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 ${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'}`} />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className={`w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                                        isMobile ? 'pl-8 pr-2 py-2 text-xs' : 'pl-9 pr-3 py-2 text-sm'
-                                    }`}
-                                    autoFocus
-                                />
+                        ) : (
+                            <div className="border-b border-gray-200 bg-gray-50 rounded-t-lg p-3">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="font-medium text-gray-700 text-sm">
+                                        Selecionar Funções
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                        {selectedNames.length} selecionada{selectedNames.length !== 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 pl-9 pr-3 py-2 text-sm"
+                                        autoFocus
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Conteúdo com scroll independente */}
                         <div

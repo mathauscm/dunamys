@@ -222,15 +222,15 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
     );
 
     return (
-        <div className="fixed inset-0 z-50 overflow-hidden">
+        <div className="fixed inset-0 z-50 overflow-hidden pt-16 sm:pt-0">
             <div className="flex items-center justify-center min-h-screen sm:p-4">
                 <div className="fixed inset-0 bg-black opacity-50" onClick={onClose}></div>
                 <div className="relative bg-white sm:rounded-lg shadow-xl w-full max-w-6xl h-full sm:h-[85vh] flex flex-col overflow-hidden">
                     {/* Header fixo */}
-                    <div className="flex-shrink-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+                    <div className="flex-shrink-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4">
                         <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                            <div className="flex-1 min-w-0">
+                                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
                                     {schedule ? 'Editar Escala' : 'Nova Escala'}
                                 </h2>
                                 <p className="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
@@ -239,9 +239,9 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                             </div>
                             <button
                                 onClick={onClose}
-                                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full"
+                                className="text-gray-400 hover:text-gray-600 p-1.5 sm:p-2 hover:bg-gray-100 rounded-full flex-shrink-0 ml-2"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                         </div>
                     </div>
@@ -321,33 +321,33 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                         </div>
 
                         {/* Navegação Mobile - Tabs horizontais */}
-                        <div className="sm:hidden flex-shrink-0 bg-gray-50 border-b border-gray-200 px-4 py-2">
+                        <div className="sm:hidden flex-shrink-0 bg-gray-50 border-b border-gray-200 px-3 py-2">
                             <div className="flex space-x-2">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('details')}
-                                    className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                    className={`flex-1 flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors ${
                                         activeTab === 'details'
                                             ? 'bg-primary-600 text-white shadow-sm'
                                             : 'text-gray-600 bg-white border border-gray-300'
                                     }`}
                                 >
-                                    <FileText className="w-4 h-4 mr-2" />
+                                    <FileText className="w-3.5 h-3.5 mr-1.5" />
                                     Detalhes
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('members')}
-                                    className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                    className={`flex-1 flex items-center justify-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors ${
                                         activeTab === 'members'
                                             ? 'bg-primary-600 text-white shadow-sm'
                                             : 'text-gray-600 bg-white border border-gray-300'
                                     }`}
                                 >
-                                    <Users className="w-4 h-4 mr-2" />
+                                    <Users className="w-3.5 h-3.5 mr-1.5" />
                                     Membros
                                     {selectedMemberIds?.length > 0 && (
-                                        <span className="ml-1 bg-white text-primary-600 text-xs rounded-full px-2 py-0.5 font-semibold">
+                                        <span className="ml-1 bg-white text-primary-600 text-[10px] rounded-full px-1.5 py-0.5 font-semibold">
                                             {selectedMemberIds.length}
                                         </span>
                                     )}
@@ -359,7 +359,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                             <form onSubmit={handleSubmit(handleFormSubmit)} className="flex-1 flex flex-col h-full">
                                 {/* Área de Conteúdo - altura fixa com scroll */}
-                                <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{maxHeight: 'calc(100vh - 200px)'}}>
+                                <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{maxHeight: 'calc(100vh - 280px)'}}>
                                     {activeTab === 'details' && (
                                         <div className="max-w-4xl space-y-4 sm:space-y-6 pb-6">
                                             <div className="mb-4 sm:mb-6">
