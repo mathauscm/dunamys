@@ -590,7 +590,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                             </p>
                                                         </div>
                                                     ) : (
-                                                        <div className="divide-y divide-gray-100 pb-6">
+                                                        <div className="divide-y divide-gray-100 pb-32 sm:pb-6">
                                                             {filteredMembers.map(member => {
                                                                 const isSelected = selectedMemberIds?.includes(member.id) || false;
 
@@ -678,14 +678,14 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                 </div>
 
                                 {/* Footer com botões */}
-                                <div className="border-t border-gray-200 bg-gray-50 px-4 sm:px-6 py-3 sm:py-4">
+                                <div className="border-t border-gray-200 bg-gray-50 px-4 sm:px-6 py-4 sm:py-4 mt-4">
                                     <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center space-y-2 sm:space-y-0">
                                         <div className="flex space-x-3 order-2 sm:order-1">
                                             {activeTab === 'members' && (
                                                 <button
                                                     type="button"
                                                     onClick={() => setActiveTab('details')}
-                                                    className="btn btn-outline flex-1 sm:flex-initial"
+                                                    className="btn btn-outline flex-1 sm:flex-initial text-sm py-2"
                                                 >
                                                     Voltar aos Detalhes
                                                 </button>
@@ -696,7 +696,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                             <button
                                                 type="submit"
                                                 disabled={loading || !selectedMemberIds || selectedMemberIds.length === 0 || !selectedDate || !selectedTime}
-                                                className="btn btn-primary flex-1 sm:flex-initial"
+                                                className="btn btn-primary flex-1 sm:flex-initial text-sm py-2"
                                             >
                                                 {loading ? (
                                                     <div className="flex items-center justify-center">
