@@ -223,17 +223,17 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 overflow-hidden">
-            <div className="flex items-center justify-center min-h-screen p-4">
+            <div className="flex items-center justify-center min-h-screen sm:p-4">
                 <div className="fixed inset-0 bg-black opacity-50" onClick={onClose}></div>
-                <div className="relative bg-white rounded-lg shadow-xl w-full max-w-6xl h-[85vh] flex overflow-hidden">
+                <div className="relative bg-white sm:rounded-lg shadow-xl w-full max-w-6xl h-full sm:h-[85vh] flex flex-col overflow-hidden">
                     {/* Header fixo */}
-                    <div className="absolute top-0 left-0 right-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
+                    <div className="flex-shrink-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-xl font-semibold text-gray-900">
+                                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                                     {schedule ? 'Editar Escala' : 'Nova Escala'}
                                 </h2>
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="text-xs sm:text-sm text-gray-500 mt-1 hidden sm:block">
                                     Configure os detalhes e selecione os membros
                                 </p>
                             </div>
@@ -246,10 +246,10 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Conteúdo principal com padding-top para o header fixo */}
-                    <div className="flex w-full pt-20">
-                        {/* Sidebar de Navegação - largura fixa */}
-                        <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0">
+                    {/* Conteúdo principal */}
+                    <div className="flex flex-col sm:flex-row w-full flex-1 overflow-hidden">
+                        {/* Sidebar de Navegação - responsiva */}
+                        <div className="hidden sm:flex sm:w-80 bg-gray-50 border-r border-gray-200 flex-col flex-shrink-0">
                             <nav className="flex-1 p-6">
                                 <div className="space-y-3">
                                     <button
@@ -320,11 +320,46 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                             )}
                         </div>
 
+                        {/* Navegação Mobile - Tabs horizontais */}
+                        <div className="sm:hidden flex-shrink-0 bg-gray-50 border-b border-gray-200 px-4 py-2">
+                            <div className="flex space-x-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('details')}
+                                    className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                        activeTab === 'details'
+                                            ? 'bg-primary-600 text-white shadow-sm'
+                                            : 'text-gray-600 bg-white border border-gray-300'
+                                    }`}
+                                >
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    Detalhes
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('members')}
+                                    className={`flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                        activeTab === 'members'
+                                            ? 'bg-primary-600 text-white shadow-sm'
+                                            : 'text-gray-600 bg-white border border-gray-300'
+                                    }`}
+                                >
+                                    <Users className="w-4 h-4 mr-2" />
+                                    Membros
+                                    {selectedMemberIds?.length > 0 && (
+                                        <span className="ml-1 bg-white text-primary-600 text-xs rounded-full px-2 py-0.5 font-semibold">
+                                            {selectedMemberIds.length}
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Conteúdo Principal - área fixa */}
-                        <div className="flex-1 flex flex-col min-w-0">
+                        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                             <form onSubmit={handleSubmit(handleFormSubmit)} className="flex-1 flex flex-col h-full">
                                 {/* Área de Conteúdo - altura fixa com scroll */}
-                                <div className="flex-1 overflow-y-auto p-6">
+                                <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                                     {activeTab === 'details' && (
                                         <div className="max-w-4xl space-y-6">
                                             <div className="mb-6">
@@ -337,9 +372,9 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                 </p>
                                             </div>
 
-                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                                 {/* Coluna 1 */}
-                                                <div className="space-y-6">
+                                                <div className="space-y-4 sm:space-y-6">
                                                     {/* Título */}
                                                     <div>
                                                         <label className="label">Título da Escala *</label>
@@ -401,7 +436,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                 </div>
 
                                                 {/* Coluna 2 */}
-                                                <div className="space-y-6">
+                                                <div className="space-y-4 sm:space-y-6">
                                                     {/* Descrição */}
                                                     <div>
                                                         <label className="label">Descrição (Opcional)</label>
@@ -438,18 +473,18 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                             </div>
 
                                             {/* Card de ação */}
-                                            <div className="bg-gradient-to-r from-primary-50 to-blue-50 p-6 rounded-lg border border-primary-200">
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <h4 className="font-medium text-gray-900">Próximo Passo</h4>
-                                                        <p className="text-sm text-gray-600 mt-1">
+                                            <div className="bg-gradient-to-r from-primary-50 to-blue-50 p-3 sm:p-6 rounded-lg border border-primary-200">
+                                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                                                    <div className="flex-1">
+                                                        <h4 className="text-sm sm:text-base font-medium text-gray-900">Próximo Passo</h4>
+                                                        <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                                                             Selecione os membros e defina suas funções específicas
                                                         </p>
                                                     </div>
                                                     <button
                                                         type="button"
                                                         onClick={() => setActiveTab('members')}
-                                                        className="btn btn-primary flex items-center"
+                                                        className="btn btn-primary flex items-center justify-center w-full sm:w-auto text-sm"
                                                     >
                                                         <Users className="w-4 h-4 mr-2" />
                                                         Selecionar Membros
@@ -462,32 +497,32 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
 
                                     {activeTab === 'members' && (
                                         <div className="space-y-6">
-                                            <div className="mb-6">
-                                                <h3 className="text-lg font-medium text-gray-900 mb-2 flex items-center">
-                                                    <Users className="w-5 h-5 mr-2" />
+                                            <div className="mb-3 sm:mb-6">
+                                                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-1 sm:mb-2 flex items-center">
+                                                    <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                                     Seleção de Membros e Funções
                                                 </h3>
-                                                <p className="text-sm text-gray-500">
+                                                <p className="text-xs sm:text-sm text-gray-500">
                                                     Escolha os membros e defina suas funções específicas.
                                                 </p>
                                             </div>
 
                                             {/* Filtro por Campus e Info de Disponibilidade */}
-                                            <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                                <div className="flex flex-col space-y-3">
+                                            <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
+                                                <div className="flex flex-col space-y-2 sm:space-y-3">
                                                     <div>
-                                                        <label className="label mb-2">
-                                                            Filtrar membros por campus
+                                                        <label className="text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2 block">
+                                                            Filtrar por campus
                                                             <span className="text-xs text-gray-500 font-normal ml-2">
-                                                                ({filteredMembers.length} membro{filteredMembers.length !== 1 ? 's' : ''} encontrado{filteredMembers.length !== 1 ? 's' : ''})
+                                                                ({filteredMembers.length} encontrado{filteredMembers.length !== 1 ? 's' : ''})
                                                             </span>
                                                         </label>
                                                         <select
-                                                            className="input max-w-sm"
+                                                            className="w-full text-xs sm:text-sm px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                                                             value={filterCampusId}
                                                             onChange={(e) => setFilterCampusId(e.target.value)}
                                                         >
-                                                            <option value="all">Todos os membros ({members.length})</option>
+                                                            <option value="all">Todos ({members.length})</option>
                                                             {campuses.map(campus => {
                                                                 const membersInCampus = getMembersCountForCampus(campus.id);
                                                                 return (
@@ -501,30 +536,30 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                     
                                                     {/* Info de disponibilidade */}
                                                     {selectedDate && (
-                                                        <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-md">
-                                                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                        <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md">
+                                                            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                                                             </svg>
-                                                            Mostrando apenas membros disponíveis para {selectedDate.toLocaleDateString('pt-BR')}
+                                                            <span className="text-xs">Disponíveis para {selectedDate.toLocaleDateString('pt-BR')}</span>
                                                         </div>
                                                     )}
-                                                    
+
                                                     {!selectedDate && (
-                                                        <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">
-                                                            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                        <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md">
+                                                            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                                             </svg>
-                                                            Selecione uma data para filtrar por disponibilidade
+                                                            <span className="text-xs">Selecione data para filtrar disponibilidade</span>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
 
                                             {/* Lista de Membros */}
-                                            <div className="bg-white rounded-lg border border-gray-200 flex flex-col" style={{maxHeight: '500px'}}>
-                                                <div className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
-                                                    <h4 className="text-sm font-medium text-gray-900 flex items-center">
-                                                        <UserCheck className="w-4 h-4 mr-2" />
+                                            <div className="bg-white rounded-lg border border-gray-200">
+                                                <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200 bg-white sticky top-0 z-10">
+                                                    <h4 className="text-xs sm:text-sm font-medium text-gray-900 flex items-center">
+                                                        <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                                                         Membros Disponíveis
                                                         {filterCampusId !== 'all' && (
                                                             <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
@@ -534,7 +569,16 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                                     </h4>
                                                 </div>
 
-                                                <div className="flex-1 overflow-y-auto" style={{scrollBehavior: 'smooth'}}>
+                                                <div
+                                                    style={{
+                                                        maxHeight: 'calc(100vh - 350px)',
+                                                        minHeight: '400px',
+                                                        overflowY: 'auto',
+                                                        overflowX: 'hidden',
+                                                        WebkitOverflowScrolling: 'touch',
+                                                        overscrollBehavior: 'contain'
+                                                    }}
+                                                >
                                                     {filteredMembers.length === 0 ? (
                                                         <div className="text-center py-8">
                                                             <Users className="mx-auto h-8 w-8 text-gray-400 mb-2" />
@@ -552,9 +596,9 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
 
                                                                 return (
                                                                     <div key={member.id} className="relative">
-                                                                        <div className="p-4 hover:bg-gray-50 transition-colors">
-                                                                            <div className="flex items-start space-x-3">
-                                                                                <div className="flex items-center h-5">
+                                                                        <div className="p-2 sm:p-4 hover:bg-gray-50 transition-colors">
+                                                                            <div className="flex items-start space-x-2 sm:space-x-3">
+                                                                                <div className="flex items-center h-5 pt-0.5">
                                                                                     <input
                                                                                         type="checkbox"
                                                                                         className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
@@ -565,34 +609,34 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
 
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex items-center justify-between">
-                                                                                        <div>
-                                                                                            <p className="text-sm font-medium text-gray-900">
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                                                                                                 {member.name}
                                                                                             </p>
-                                                                                            <p className="text-xs text-gray-500">
+                                                                                            <p className="text-xs text-gray-500 truncate">
                                                                                                 {member.email}
-                                                                                                {member.campus?.name && (
-                                                                                                    <span className="ml-2 text-blue-600">
-                                                                                                        📍 {member.campus.name}
-                                                                                                    </span>
-                                                                                                )}
                                                                                             </p>
+                                                                                            {member.campus?.name && (
+                                                                                                <p className="text-xs text-blue-600 truncate mt-0.5">
+                                                                                                    📍 {member.campus.name}
+                                                                                                </p>
+                                                                                            )}
                                                                                         </div>
 
                                                                                         {isSelected && (
-                                                                                            <div className="flex items-center text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
-                                                                                                <Settings className="w-3 h-3 mr-1" />
-                                                                                                Selecionado
+                                                                                            <div className="flex items-center text-xs text-green-600 bg-green-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ml-2 flex-shrink-0">
+                                                                                                <Settings className="w-3 h-3 sm:mr-1" />
+                                                                                                <span className="hidden sm:inline">Selecionado</span>
                                                                                             </div>
                                                                                         )}
                                                                                     </div>
 
                                                                                     {/* Seletor de Funções - Otimizado */}
                                                                                     {isSelected && (
-                                                                                        <div className="mt-3 p-3 bg-gray-50 rounded-lg border relative z-10">
-                                                                                            <label className="block text-xs font-medium text-gray-700 mb-2">
-                                                                                                <Settings className="w-3 h-3 inline mr-1" />
-                                                                                                Funções do membro:
+                                                                                        <div className="mt-2 p-2 bg-gray-50 rounded-lg border">
+                                                                                            <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-1">
+                                                                                                <Settings className="w-2.5 h-2.5 inline mr-0.5" />
+                                                                                                Funções:
                                                                                             </label>
                                                                                             <MemberFunctionSelector
                                                                                                 member={member}
@@ -634,28 +678,28 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                 </div>
 
                                 {/* Footer com botões */}
-                                <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex space-x-3">
+                                <div className="border-t border-gray-200 bg-gray-50 px-4 sm:px-6 py-3 sm:py-4">
+                                    <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center space-y-2 sm:space-y-0">
+                                        <div className="flex space-x-3 order-2 sm:order-1">
                                             {activeTab === 'members' && (
                                                 <button
                                                     type="button"
                                                     onClick={() => setActiveTab('details')}
-                                                    className="btn btn-outline"
+                                                    className="btn btn-outline flex-1 sm:flex-initial"
                                                 >
                                                     Voltar aos Detalhes
                                                 </button>
                                             )}
                                         </div>
 
-                                        <div className="flex space-x-3">
+                                        <div className="flex space-x-3 order-1 sm:order-2">
                                             <button
                                                 type="submit"
                                                 disabled={loading || !selectedMemberIds || selectedMemberIds.length === 0 || !selectedDate || !selectedTime}
-                                                className="btn btn-primary"
+                                                className="btn btn-primary flex-1 sm:flex-initial"
                                             >
                                                 {loading ? (
-                                                    <div className="flex items-center">
+                                                    <div className="flex items-center justify-center">
                                                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                                                         Salvando...
                                                     </div>

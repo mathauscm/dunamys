@@ -223,14 +223,14 @@ const AdminSchedules = () => {
                             </div>
 
                             {/* Search and Filter */}
-                            <div className="flex items-center space-x-4">
-                                <div className="relative">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full lg:w-auto">
+                                <div className="relative flex-1 sm:flex-initial">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <Search className="h-5 w-5 text-gray-400" />
                                     </div>
                                     <input
                                         type="text"
-                                        className="input pl-10 w-64"
+                                        className="input pl-10 w-full sm:w-64"
                                         placeholder="Buscar escalas..."
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
@@ -239,7 +239,7 @@ const AdminSchedules = () => {
 
                                 <button
                                     onClick={refresh}
-                                    className="btn btn-secondary flex items-center"
+                                    className="btn btn-secondary flex items-center justify-center"
                                 >
                                     <Filter className="h-4 w-4 mr-2" />
                                     Atualizar

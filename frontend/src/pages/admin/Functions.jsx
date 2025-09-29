@@ -325,40 +325,42 @@ const Functions = () => {
                     groups.map((group) => (
                         <div key={group.id} className="card">
                             <div className="card-header">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <h3 className="text-lg font-medium text-gray-900">{group.name}</h3>
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate">{group.name}</h3>
                                         {group.description && (
-                                            <p className="text-sm text-gray-500">{group.description}</p>
+                                            <p className="text-xs sm:text-sm text-gray-500 truncate">{group.description}</p>
                                         )}
                                     </div>
-                                    <div className="flex space-x-2">
+                                    <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:space-x-2 sm:gap-0">
                                         <button
                                             onClick={() => handleManageAdmins(group)}
-                                            className="btn btn-sm btn-info"
+                                            className="btn btn-sm btn-info flex-1 sm:flex-initial justify-center"
                                             title="Gerenciar Administradores"
                                         >
-                                            <Shield className="w-4 h-4 mr-1" />
-                                            Admins
+                                            <Shield className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                                            <span className="hidden sm:inline">Admins</span>
                                         </button>
                                         <button
                                             onClick={() => handleCreateFunction(group.id)}
-                                            className="btn btn-sm btn-secondary"
+                                            className="btn btn-sm btn-secondary flex-1 sm:flex-initial justify-center"
                                         >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            Função
+                                            <Plus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                                            <span className="hidden sm:inline">Função</span>
                                         </button>
                                         <button
                                             onClick={() => handleEditGroup(group)}
                                             className="btn btn-sm btn-outline"
+                                            title="Editar"
                                         >
-                                            <Edit className="w-4 h-4" />
+                                            <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDeleteGroup(group)}
                                             className="btn btn-sm btn-danger"
+                                            title="Excluir"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                                         </button>
                                     </div>
                                 </div>
@@ -370,35 +372,37 @@ const Functions = () => {
                                         {group.functions.map((func) => (
                                             <div
                                                 key={func.id}
-                                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg gap-2"
                                             >
-                                                <div className="flex items-center">
-                                                    <div className="flex-shrink-0 mr-3">
-                                                        {renderIcon(func.icon, "w-5 h-5 text-gray-600")}
+                                                <div className="flex items-center min-w-0 flex-1">
+                                                    <div className="flex-shrink-0 mr-2 sm:mr-3">
+                                                        {renderIcon(func.icon, "w-4 h-4 sm:w-5 sm:h-5 text-gray-600")}
                                                     </div>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                                                             {func.name}
                                                         </div>
                                                         {func.description && (
-                                                            <div className="text-xs text-gray-500">
+                                                            <div className="text-xs text-gray-500 truncate">
                                                                 {func.description}
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="flex space-x-1">
+                                                <div className="flex space-x-1 flex-shrink-0">
                                                     <button
                                                         onClick={() => handleEditFunction(func)}
-                                                        className="p-1 text-gray-400 hover:text-gray-600"
+                                                        className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                                                        title="Editar"
                                                     >
-                                                        <Edit className="w-4 h-4" />
+                                                        <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteFunction(func)}
-                                                        className="p-1 text-gray-400 hover:text-red-600"
+                                                        className="p-1.5 sm:p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                        title="Excluir"
                                                     >
-                                                        <Trash2 className="w-4 h-4" />
+                                                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                     </button>
                                                 </div>
                                             </div>
