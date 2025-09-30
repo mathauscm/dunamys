@@ -79,4 +79,16 @@ router.post('/refresh-token', authenticateToken, AuthController.refreshToken);
 router.post('/change-password', authenticateToken, AuthController.changePassword);
 router.post('/forgot-password', validate(validators.forgotPassword), AuthController.forgotPassword);
 
+// DEBUG ENDPOINT: Mostra informações do token do usuário atual
+router.get('/me', authenticateToken, (req, res) => {
+  res.json({
+    userId: req.user.userId,
+    email: req.user.email,
+    role: req.user.role,
+    userType: req.user.userType,
+    adminGroups: req.user.adminGroups,
+    campusId: req.user.campusId
+  });
+});
+
 module.exports = router;

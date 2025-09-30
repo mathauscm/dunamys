@@ -32,13 +32,34 @@ class FunctionService {
       throw new Error('Já existe um grupo de funções com este nome');
     }
 
-    return await prisma.functionGroup.create({
-      data: {
-        name,
-        description,
-        active: true
-      }
+    // NOVO: Criar o grupo de funções E o ministério automaticamente em uma transação
+    const result = await prisma.$transaction(async (tx) => {
+      // Criar o ministério com o mesmo nome (se não existir)
+      const ministry = await tx.ministry.upsert({
+        where: { name },
+        update: {},
+        create: {
+          name,
+          description: description || `Ministério de ${name}`,
+          active: true
+        }
+      });
+
+      // Criar o grupo de funções
+      const functionGroup = await tx.functionGroup.create({
+        data: {
+          name,
+          description,
+          active: true
+        }
+      });
+
+      logger.info(`✅ Grupo de funções "${name}" criado e ministério "${ministry.name}" criado/atualizado automaticamente`);
+
+      return functionGroup;
     });
+
+    return result;
   }
 
   static async updateFunctionGroup(groupId, data) {
@@ -63,14 +84,40 @@ class FunctionService {
       }
     }
 
-    return await prisma.functionGroup.update({
-      where: { id: groupId },
-      data: {
-        name,
-        description,
-        active
+    // NOVO: Atualizar grupo E ministério em uma transação
+    const result = await prisma.$transaction(async (tx) => {
+      // Se o nome mudou, renomear o ministério também
+      if (name && name !== existingGroup.name) {
+        const oldMinistry = await tx.ministry.findUnique({
+          where: { name: existingGroup.name }
+        });
+
+        if (oldMinistry) {
+          await tx.ministry.update({
+            where: { id: oldMinistry.id },
+            data: {
+              name,
+              description: description || oldMinistry.description
+            }
+          });
+          logger.info(`✅ Ministério "${existingGroup.name}" renomeado para "${name}"`);
+        }
       }
+
+      // Atualizar o grupo de funções
+      const updatedGroup = await tx.functionGroup.update({
+        where: { id: groupId },
+        data: {
+          name,
+          description,
+          active
+        }
+      });
+
+      return updatedGroup;
     });
+
+    return result;
   }
 
   static async deleteFunctionGroup(groupId) {
@@ -90,7 +137,7 @@ class FunctionService {
     }
 
     // Verificar se há funções sendo usadas em escalas
-    const functionsInUse = group.functions.some(func => 
+    const functionsInUse = group.functions.some(func =>
       func.scheduleMemberFunctions.length > 0
     );
 
@@ -98,9 +145,36 @@ class FunctionService {
       throw new Error('Não é possível excluir o grupo pois existem funções sendo usadas em escalas');
     }
 
-    return await prisma.functionGroup.delete({
-      where: { id: groupId }
+    // NOVO: Deletar grupo E ministério em uma transação
+    const result = await prisma.$transaction(async (tx) => {
+      // Deletar o grupo de funções
+      const deletedGroup = await tx.functionGroup.delete({
+        where: { id: groupId }
+      });
+
+      // Deletar o ministério com o mesmo nome (se existir e não tiver membros)
+      const ministry = await tx.ministry.findUnique({
+        where: { name: group.name },
+        include: {
+          users: true
+        }
+      });
+
+      if (ministry) {
+        if (ministry.users.length > 0) {
+          logger.warn(`⚠️ Ministério "${ministry.name}" não foi deletado pois tem ${ministry.users.length} membros associados`);
+        } else {
+          await tx.ministry.delete({
+            where: { id: ministry.id }
+          });
+          logger.info(`✅ Ministério "${ministry.name}" deletado automaticamente junto com o grupo de funções`);
+        }
+      }
+
+      return deletedGroup;
     });
+
+    return result;
   }
 
   // ==================== FUNÇÕES ====================

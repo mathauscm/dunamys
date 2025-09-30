@@ -111,6 +111,35 @@ class FunctionGroupAdminService {
     return userGroups.map(admin => admin.functionGroup);
   }
 
+  // NOVO: Método para pegar os ministérios associados aos grupos do admin (por NOME)
+  static async getUserMinistries(userId) {
+    const userGroups = await this.getUserGroups(userId);
+
+    // Pegar os nomes dos grupos que o admin gerencia
+    const groupNames = userGroups.map(group => group.name);
+
+    if (groupNames.length === 0) {
+      return [];
+    }
+
+    // Buscar ministérios com os MESMOS NOMES dos grupos
+    const ministries = await prisma.ministry.findMany({
+      where: {
+        name: {
+          in: groupNames
+        },
+        active: true
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true
+      }
+    });
+
+    return ministries;
+  }
+
   static async getGroupAdmins(functionGroupId) {
     const admins = await prisma.functionGroupAdmin.findMany({
       where: { functionGroupId },

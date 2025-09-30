@@ -456,7 +456,7 @@ class AdminMemberService {
   /**
    * Obtém membros disponíveis para uma data específica
    * @param {string} date - Data no formato YYYY-MM-DD
-   * @param {Object} filters - Filtros adicionais (campusId, etc.)
+   * @param {Object} filters - Filtros adicionais (campusId, ministryIds, userRole, etc.)
    * @returns {Object} - Lista de membros disponíveis
    */
   static async getAvailableMembers(date, filters = {}) {
@@ -478,8 +478,19 @@ class AdminMemberService {
         whereClause.campusId = parseInt(filters.campusId);
       }
 
+      // NOVO: Filtro por ministério - suporta array de IDs para groupAdmins
       if (filters.ministryId) {
         whereClause.ministryId = parseInt(filters.ministryId);
+      } else if (filters.ministryIds && Array.isArray(filters.ministryIds) && filters.ministryIds.length > 0) {
+        // Se for groupAdmin, filtrar APENAS pelos ministérios associados
+        // IMPORTANTE: Isso exclui membros sem ministério (ministryId = null)
+        whereClause.ministryId = {
+          in: filters.ministryIds.map(id => parseInt(id))
+        };
+        // Garantir que membros sem ministério sejam excluídos
+        whereClause.NOT = {
+          ministryId: null
+        };
       }
 
       if (filters.search) {

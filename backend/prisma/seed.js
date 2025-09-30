@@ -30,11 +30,11 @@ async function main() {
     console.log('✅ Campus criados:', [campusUbajara.name, campusTiangua.name]);
 
     // SEGUNDO: Criar ministérios
-    const ministerioMidia = await prisma.ministry.upsert({
-        where: { name: 'Ministério de Mídia' },
+    const ministerioMultimidia = await prisma.ministry.upsert({
+        where: { name: 'Ministério Multimídia' },
         update: {},
         create: {
-            name: 'Ministério de Mídia',
+            name: 'Ministério Multimídia',
             description: 'Responsável pela transmissão, gravação e equipamentos audiovisuais',
             active: true
         }
@@ -70,46 +70,84 @@ async function main() {
         }
     });
 
-    const ministerioRecepcao = await prisma.ministry.upsert({
-        where: { name: 'Ministério de Recepção' },
+    const ministerioSonorizacao = await prisma.ministry.upsert({
+        where: { name: 'Sonorização e Iluminação' },
         update: {},
         create: {
-            name: 'Ministério de Recepção',
-            description: 'Acolhimento e orientação dos visitantes',
+            name: 'Sonorização e Iluminação',
+            description: 'Responsável por som e iluminação dos cultos e eventos',
             active: true
         }
     });
 
     console.log('✅ Ministérios criados:', [
-        ministerioMidia.name,
+        ministerioMultimidia.name,
         ministerioLouvor.name,
         voluntariado.name,
         ministerioInfantil.name,
-        ministerioRecepcao.name
+        ministerioSonorizacao.name
     ]);
 
-    // NOVO: Criar grupos de funções e funções
+    // NOVO: Criar grupos de funções e funções COM ASSOCIAÇÃO AOS MINISTÉRIOS
     console.log('🎯 Criando grupos de funções e funções...');
 
     // Criar grupo Voluntariado Geral
     const voluntariadoGeral = await prisma.functionGroup.upsert({
         where: { name: 'Voluntariado Geral' },
-        update: {},
+        update: { ministryId: voluntariado.id },
         create: {
             name: 'Voluntariado Geral',
             description: 'Funções gerais de apoio aos cultos e eventos',
-            active: true
+            active: true,
+            ministryId: voluntariado.id
         }
     });
 
     // Criar grupo Multimídia
     const multimidia = await prisma.functionGroup.upsert({
         where: { name: 'Multimídia' },
-        update: {},
+        update: { ministryId: ministerioMultimidia.id },
         create: {
             name: 'Multimídia',
             description: 'Funções relacionadas à produção audiovisual',
-            active: true
+            active: true,
+            ministryId: ministerioMultimidia.id
+        }
+    });
+
+    // Criar grupo Ministério de Louvor
+    const grupoLouvor = await prisma.functionGroup.upsert({
+        where: { name: 'Ministério de Louvor' },
+        update: { ministryId: ministerioLouvor.id },
+        create: {
+            name: 'Ministério de Louvor',
+            description: 'Funções relacionadas ao louvor e adoração',
+            active: true,
+            ministryId: ministerioLouvor.id
+        }
+    });
+
+    // Criar grupo Sonorização e Iluminação
+    const grupoSonorizacao = await prisma.functionGroup.upsert({
+        where: { name: 'Sonorização e Iluminação' },
+        update: { ministryId: ministerioSonorizacao.id },
+        create: {
+            name: 'Sonorização e Iluminação',
+            description: 'Funções de som e iluminação',
+            active: true,
+            ministryId: ministerioSonorizacao.id
+        }
+    });
+
+    // Criar grupo Kids
+    const grupoKids = await prisma.functionGroup.upsert({
+        where: { name: 'Kids' },
+        update: { ministryId: ministerioInfantil.id },
+        create: {
+            name: 'Kids',
+            description: 'Funções relacionadas ao ministério infantil',
+            active: true,
+            ministryId: ministerioInfantil.id
         }
     });
 
@@ -154,11 +192,11 @@ async function main() {
 
     for (const func of multimidiaFunctions) {
         await prisma.function.upsert({
-            where: { 
-                name_groupId: { 
-                    name: func.name, 
-                    groupId: multimidia.id 
-                } 
+            where: {
+                name_groupId: {
+                    name: func.name,
+                    groupId: multimidia.id
+                }
             },
             update: {},
             create: {
@@ -170,6 +208,67 @@ async function main() {
             }
         });
     }
+
+    // Função do Ministério de Louvor
+    await prisma.function.upsert({
+        where: {
+            name_groupId: {
+                name: 'Ministério de Louvor',
+                groupId: grupoLouvor.id
+            }
+        },
+        update: {},
+        create: {
+            name: 'Ministério de Louvor',
+            description: 'Participação no ministério de louvor',
+            icon: 'radio',
+            groupId: grupoLouvor.id,
+            active: true
+        }
+    });
+
+    // Funções de Sonorização e Iluminação
+    const sonorizacaoFunctions = [
+        { name: 'Iluminação', icon: 'briefcase', description: 'Operação de iluminação dos cultos' },
+        { name: 'Sonorização', icon: 'radio', description: 'Operação de som dos cultos' }
+    ];
+
+    for (const func of sonorizacaoFunctions) {
+        await prisma.function.upsert({
+            where: {
+                name_groupId: {
+                    name: func.name,
+                    groupId: grupoSonorizacao.id
+                }
+            },
+            update: {},
+            create: {
+                name: func.name,
+                description: func.description,
+                icon: func.icon,
+                groupId: grupoSonorizacao.id,
+                active: true
+            }
+        });
+    }
+
+    // Função Kids
+    await prisma.function.upsert({
+        where: {
+            name_groupId: {
+                name: 'Voluntariado Kids',
+                groupId: grupoKids.id
+            }
+        },
+        update: {},
+        create: {
+            name: 'Voluntariado Kids',
+            description: 'Trabalho com crianças no ministério infantil',
+            icon: 'users',
+            groupId: grupoKids.id,
+            active: true
+        }
+    });
 
     console.log('✅ Grupos de funções e funções criados com sucesso!');
 

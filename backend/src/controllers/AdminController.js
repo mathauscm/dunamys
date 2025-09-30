@@ -112,7 +112,7 @@ class AdminController {
   static async getAvailableMembers(req, res, next) {
     try {
       const { date, campusId, ministryId, search } = req.query;
-      
+
       if (!date) {
         return res.status(400).json({
           error: 'Data é obrigatória (formato: YYYY-MM-DD)'
@@ -124,8 +124,42 @@ class AdminController {
       if (ministryId) filters.ministryId = ministryId;
       if (search) filters.search = search;
 
+      // NOVO: Se for groupAdmin, filtrar pelos ministérios associados
+      console.log('🔍 [DEBUG] req.user:', {
+        userId: req.user.userId,
+        userType: req.user.userType,
+        role: req.user.role
+      });
+
+      if (req.user.userType === 'groupAdmin') {
+        console.log('✅ [DEBUG] User é groupAdmin, buscando ministérios...');
+        const FunctionGroupAdminService = require('../services/FunctionGroupAdminService');
+        const userMinistries = await FunctionGroupAdminService.getUserMinistries(req.user.userId);
+        const ministryIds = userMinistries.map(m => m.id);
+
+        console.log('📋 [DEBUG] Ministérios encontrados:', userMinistries);
+        console.log('🔢 [DEBUG] Ministry IDs:', ministryIds);
+
+        // Se o groupAdmin não tiver ministérios associados, retornar vazio
+        if (ministryIds.length === 0) {
+          console.log('⚠️ [DEBUG] Nenhum ministério associado!');
+          return res.json({
+            members: [],
+            unavailableCount: 0,
+            totalAvailable: 0,
+            message: 'Nenhum ministério associado ao seu grupo de funções'
+          });
+        }
+
+        // Adicionar filtro de ministérios
+        filters.ministryIds = ministryIds;
+        console.log('🎯 [DEBUG] Filtros aplicados:', filters);
+      } else {
+        console.log('ℹ️ [DEBUG] User NÃO é groupAdmin, mostrando todos os membros');
+      }
+
       const result = await AdminService.getAvailableMembers(date, filters);
-      
+
       res.json(result);
     } catch (error) {
       next(error);
