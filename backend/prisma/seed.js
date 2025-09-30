@@ -369,7 +369,7 @@ async function main() {
                 role: 'MEMBER',
                 status: 'ACTIVE',
                 campusId: campusTiangua.id,
-                ministryId: ministerioRecepcao.id
+                ministryId: ministerioMultimidia.id
             }
         })
     ]);
