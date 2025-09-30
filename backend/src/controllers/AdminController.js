@@ -113,9 +113,6 @@ class AdminController {
     try {
       const { date, campusId, ministryId, search, userRole, userId } = req.query;
 
-      console.log('🔍 [AdminController] req.query:', req.query);
-      console.log('🔍 [AdminController] Extracted params:', { date, campusId, ministryId, search, userRole, userId });
-
       if (!date) {
         return res.status(400).json({
           error: 'Data é obrigatória (formato: YYYY-MM-DD)'
@@ -126,10 +123,8 @@ class AdminController {
       if (campusId) filters.campusId = campusId;
       if (ministryId) filters.ministryId = ministryId;
       if (search) filters.search = search;
-      if (userRole) filters.userRole = userRole;  // <-- NOVA LINHA
-      if (userId) filters.userId = userId;  // <-- NOVA LINHA
-
-      console.log('🔍 [AdminController] Filters object being sent to service:', filters);
+      if (userRole) filters.userRole = userRole;
+      if (userId) filters.userId = userId;
 
       const result = await AdminService.getAvailableMembers(date, filters);
 

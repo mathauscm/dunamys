@@ -461,8 +461,6 @@ class AdminMemberService {
    */
   static async getAvailableMembers(date, filters = {}) {
     try {
-      console.log('🔍 [AdminMemberService] getAvailableMembers called with:', { date, filters });
-
       // Buscar indisponibilidades para a data
       const { unavailableMembers } = await this.getMemberUnavailabilities(date);
       const unavailableMemberIds = unavailableMembers.map(member => member.id);
@@ -480,11 +478,8 @@ class AdminMemberService {
         whereClause.campusId = parseInt(filters.campusId);
       }
 
-      console.log('🔍 [AdminMemberService] Checking groupAdmin filter - userRole:', filters.userRole, 'userId:', filters.userId);
-
       // FILTRO PARA GROUP ADMIN: Ver apenas membros do ministério que ele administra
       if (filters.userRole === 'groupAdmin' && filters.userId) {
-        console.log('✅ [AdminMemberService] ENTRANDO NO FILTRO GROUPADMIN');
         // Buscar os grupos de funções que o usuário administra
         const adminGroups = await prisma.functionGroupAdmin.findMany({
           where: { userId: parseInt(filters.userId) },
@@ -542,8 +537,6 @@ class AdminMemberService {
           ];
         }
       }
-
-      console.log('🔍 [AdminMemberService] Final whereClause:', JSON.stringify(whereClause, null, 2));
 
       const availableMembers = await prisma.user.findMany({
         where: whereClause,

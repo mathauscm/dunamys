@@ -198,17 +198,11 @@ class FunctionGroupAdminService {
   }
 
   static async getFunctionsForUserGroups(userId) {
-    console.log('🔍 [getFunctionsForUserGroups] userId:', userId);
-
     // Buscar os grupos que o usuário administra
     const userGroups = await this.getUserGroups(userId);
-    console.log('🔍 [getFunctionsForUserGroups] userGroups:', userGroups.map(g => ({ id: g.id, name: g.name })));
-
     const groupIds = userGroups.map(group => group.id);
-    console.log('🔍 [getFunctionsForUserGroups] groupIds:', groupIds);
 
     if (groupIds.length === 0) {
-      console.log('⚠️ [getFunctionsForUserGroups] Nenhum grupo encontrado para o usuário');
       return [];
     }
 
@@ -233,9 +227,6 @@ class FunctionGroupAdminService {
         { name: 'asc' }
       ]
     });
-
-    console.log('🔍 [getFunctionsForUserGroups] functions found:', functions.length);
-    console.log('🔍 [getFunctionsForUserGroups] functions:', functions.map(f => ({ id: f.id, name: f.name, group: f.group.name })));
 
     return functions;
   }
