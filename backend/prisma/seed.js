@@ -286,7 +286,7 @@ async function main() {
             role: 'ADMIN',
             status: 'ACTIVE',
             campusId: campusUbajara.id,
-            ministryId: ministerioMidia.id // Admin master do ministério de mídia
+            ministryId: ministerioMultimidia.id // Admin master do ministério de mídia
         }
     });
 
