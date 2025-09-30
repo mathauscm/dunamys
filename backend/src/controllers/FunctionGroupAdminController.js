@@ -93,7 +93,16 @@ class FunctionGroupAdminController {
 
   static async getMyFunctions(req, res, next) {
     try {
-      const functions = await FunctionGroupAdminService.getFunctionsForUserGroups(req.user.userId);
+      console.log('🔍 [getMyFunctions] req.user:', req.user);
+
+      // Usar req.user.id ao invés de req.user.userId
+      const userId = req.user.id || req.user.userId;
+      console.log('🔍 [getMyFunctions] userId:', userId);
+
+      const functions = await FunctionGroupAdminService.getFunctionsForUserGroups(userId);
+
+      console.log('🔍 [getMyFunctions] Functions returned:', functions.length);
+      console.log('🔍 [getMyFunctions] Function groups:', [...new Set(functions.map(f => f.group.name))]);
 
       res.json({ functions });
     } catch (error) {
