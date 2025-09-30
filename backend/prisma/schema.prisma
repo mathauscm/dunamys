@@ -57,8 +57,9 @@ model Ministry {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relacionamento: Um ministério pode ter vários usuários
+  // Relacionamento: Um ministério pode ter vários usuários e grupos de funções
   users User[]
+  functionGroups FunctionGroup[]
 
   @@map("ministries")
 }
@@ -197,10 +198,12 @@ model FunctionGroup {
   name        String   @unique
   description String?
   active      Boolean  @default(true)
+  ministryId  Int?     // Referência ao Ministério (nullable para compatibilidade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relacionamento: Um grupo pode ter várias funções
+  // Relacionamentos
+  ministry  Ministry? @relation(fields: [ministryId], references: [id], onDelete: Cascade)
   functions Function[]
   admins    FunctionGroupAdmin[]
 

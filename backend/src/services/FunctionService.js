@@ -45,16 +45,17 @@ class FunctionService {
         }
       });
 
-      // Criar o grupo de funções
+      // Criar o grupo de funções COM REFERÊNCIA AO MINISTÉRIO
       const functionGroup = await tx.functionGroup.create({
         data: {
           name,
           description,
-          active: true
+          active: true,
+          ministryId: ministry.id  // <-- NOVA LINHA: Associar ao ministério
         }
       });
 
-      logger.info(`✅ Grupo de funções "${name}" criado e ministério "${ministry.name}" criado/atualizado automaticamente`);
+      logger.info(`✅ Grupo de funções "${name}" criado e associado ao ministério "${ministry.name}" (ID: ${ministry.id})`);
 
       return functionGroup;
     });

@@ -456,11 +456,13 @@ class AdminMemberService {
   /**
    * Obtém membros disponíveis para uma data específica
    * @param {string} date - Data no formato YYYY-MM-DD
-   * @param {Object} filters - Filtros adicionais (campusId, ministryIds, userRole, etc.)
+   * @param {Object} filters - Filtros adicionais (campusId, userId, userRole, etc.)
    * @returns {Object} - Lista de membros disponíveis
    */
   static async getAvailableMembers(date, filters = {}) {
     try {
+      console.log('🔍 [AdminMemberService] getAvailableMembers called with:', { date, filters });
+
       // Buscar indisponibilidades para a data
       const { unavailableMembers } = await this.getMemberUnavailabilities(date);
       const unavailableMemberIds = unavailableMembers.map(member => member.id);
@@ -478,27 +480,70 @@ class AdminMemberService {
         whereClause.campusId = parseInt(filters.campusId);
       }
 
-      // NOVO: Filtro por ministério - suporta array de IDs para groupAdmins
-      if (filters.ministryId) {
-        whereClause.ministryId = parseInt(filters.ministryId);
-      } else if (filters.ministryIds && Array.isArray(filters.ministryIds) && filters.ministryIds.length > 0) {
-        // Se for groupAdmin, filtrar APENAS pelos ministérios associados
-        // IMPORTANTE: Isso exclui membros sem ministério (ministryId = null)
-        whereClause.ministryId = {
-          in: filters.ministryIds.map(id => parseInt(id))
-        };
-        // Garantir que membros sem ministério sejam excluídos
-        whereClause.NOT = {
-          ministryId: null
-        };
+      console.log('🔍 [AdminMemberService] Checking groupAdmin filter - userRole:', filters.userRole, 'userId:', filters.userId);
+
+      // FILTRO PARA GROUP ADMIN: Ver apenas membros do ministério que ele administra
+      if (filters.userRole === 'groupAdmin' && filters.userId) {
+        console.log('✅ [AdminMemberService] ENTRANDO NO FILTRO GROUPADMIN');
+        // Buscar os grupos de funções que o usuário administra
+        const adminGroups = await prisma.functionGroupAdmin.findMany({
+          where: { userId: parseInt(filters.userId) },
+          include: {
+            functionGroup: {
+              select: {
+                id: true,
+                name: true,
+                ministryId: true
+              }
+            }
+          }
+        });
+
+        if (adminGroups.length > 0) {
+          // Extrair IDs únicos dos ministérios
+          const ministryIds = [...new Set(
+            adminGroups
+              .map(ag => ag.functionGroup.ministryId)
+              .filter(id => id !== null)
+          )];
+
+          if (ministryIds.length > 0) {
+            // Filtrar membros APENAS pelo ministryId (sem incluir membros sem ministério)
+            whereClause.ministryId = { in: ministryIds };
+            logger.info(`🔒 GroupAdmin ${filters.userId} vendo APENAS membros dos ministérios: ${ministryIds.join(', ')}`);
+          } else {
+            // Se não há ministérios, não retorna nenhum membro
+            whereClause.id = -1;
+            logger.warn(`⚠️ GroupAdmin ${filters.userId} não tem ministérios associados - nenhum membro será exibido`);
+          }
+        } else {
+          // Se o groupAdmin não gerencia grupos, não retorna membros
+          whereClause.id = -1;
+          logger.warn(`⚠️ GroupAdmin ${filters.userId} não gerencia nenhum grupo de funções`);
+        }
       }
 
       if (filters.search) {
-        whereClause.OR = [
-          { name: { contains: filters.search, mode: 'insensitive' } },
-          { email: { contains: filters.search, mode: 'insensitive' } }
-        ];
+        // Se já houver um filtro de ministério, combinar com AND
+        if (whereClause.ministryId) {
+          const ministryFilter = whereClause.ministryId;
+          whereClause = {
+            ...whereClause,
+            ministryId: ministryFilter,
+            OR: [
+              { name: { contains: filters.search, mode: 'insensitive' } },
+              { email: { contains: filters.search, mode: 'insensitive' } }
+            ]
+          };
+        } else {
+          whereClause.OR = [
+            { name: { contains: filters.search, mode: 'insensitive' } },
+            { email: { contains: filters.search, mode: 'insensitive' } }
+          ];
+        }
       }
+
+      console.log('🔍 [AdminMemberService] Final whereClause:', JSON.stringify(whereClause, null, 2));
 
       const availableMembers = await prisma.user.findMany({
         where: whereClause,

@@ -17,8 +17,10 @@ import { api } from '../../services/api';
 import MemberFunctionSelector from './MemberFunctionSelector';
 import { DatePicker, TimePicker } from './DateTimePicker';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../../hooks/useAuth';
 
 const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
+    const { user } = useAuth(); // Obter dados do usuário logado
     const [members, setMembers] = useState([]);
     const [loadingMembers, setLoadingMembers] = useState(true);
     const [selectedDate, setSelectedDate] = useState(
@@ -89,15 +91,24 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
         const fetchMembers = async () => {
             try {
                 setLoadingMembers(true);
-                
+
                 if (selectedDate) {
                     // Se há data selecionada, buscar apenas membros disponíveis
                     const dateStr = selectedDate.toISOString().split('T')[0];
-                    const response = await adminService.getAvailableMembers(dateStr, { limit: 100 });
+                    const filters = { limit: 100 };
+
+                    // Se for groupAdmin, adicionar filtros de userRole e userId
+                    if (user && user.userType === 'groupAdmin') {
+                        filters.userRole = 'groupAdmin';
+                        filters.userId = user.id;
+                        console.log(`🔒 Carregando membros para groupAdmin ${user.id} (${user.name})`);
+                    }
+
+                    const response = await adminService.getAvailableMembers(dateStr, filters);
                     setMembers(response.members);
-                    console.log(`Carregados ${response.members.length} membros disponíveis para ${dateStr}`);
+                    console.log(`✅ Carregados ${response.members.length} membros disponíveis para ${dateStr}`);
                     if (response.unavailableCount > 0) {
-                        console.log(`${response.unavailableCount} membros indisponíveis foram filtrados`);
+                        console.log(`ℹ️  ${response.unavailableCount} membros indisponíveis foram filtrados`);
                     }
                 } else {
                     // Se não há data, carregar todos os membros ativos
@@ -118,7 +129,7 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
             }
         };
         fetchMembers();
-    }, [selectedDate]); // Dependência da data selecionada
+    }, [selectedDate, user]); // Dependências: data selecionada e usuário
 
     // Carrega campuses
     useEffect(() => {

@@ -111,7 +111,10 @@ class AdminController {
    */
   static async getAvailableMembers(req, res, next) {
     try {
-      const { date, campusId, ministryId, search } = req.query;
+      const { date, campusId, ministryId, search, userRole, userId } = req.query;
+
+      console.log('🔍 [AdminController] req.query:', req.query);
+      console.log('🔍 [AdminController] Extracted params:', { date, campusId, ministryId, search, userRole, userId });
 
       if (!date) {
         return res.status(400).json({
@@ -123,40 +126,10 @@ class AdminController {
       if (campusId) filters.campusId = campusId;
       if (ministryId) filters.ministryId = ministryId;
       if (search) filters.search = search;
+      if (userRole) filters.userRole = userRole;  // <-- NOVA LINHA
+      if (userId) filters.userId = userId;  // <-- NOVA LINHA
 
-      // NOVO: Se for groupAdmin, filtrar pelos ministérios associados
-      console.log('🔍 [DEBUG] req.user:', {
-        userId: req.user.userId,
-        userType: req.user.userType,
-        role: req.user.role
-      });
-
-      if (req.user.userType === 'groupAdmin') {
-        console.log('✅ [DEBUG] User é groupAdmin, buscando ministérios...');
-        const FunctionGroupAdminService = require('../services/FunctionGroupAdminService');
-        const userMinistries = await FunctionGroupAdminService.getUserMinistries(req.user.userId);
-        const ministryIds = userMinistries.map(m => m.id);
-
-        console.log('📋 [DEBUG] Ministérios encontrados:', userMinistries);
-        console.log('🔢 [DEBUG] Ministry IDs:', ministryIds);
-
-        // Se o groupAdmin não tiver ministérios associados, retornar vazio
-        if (ministryIds.length === 0) {
-          console.log('⚠️ [DEBUG] Nenhum ministério associado!');
-          return res.json({
-            members: [],
-            unavailableCount: 0,
-            totalAvailable: 0,
-            message: 'Nenhum ministério associado ao seu grupo de funções'
-          });
-        }
-
-        // Adicionar filtro de ministérios
-        filters.ministryIds = ministryIds;
-        console.log('🎯 [DEBUG] Filtros aplicados:', filters);
-      } else {
-        console.log('ℹ️ [DEBUG] User NÃO é groupAdmin, mostrando todos os membros');
-      }
+      console.log('🔍 [AdminController] Filters object being sent to service:', filters);
 
       const result = await AdminService.getAvailableMembers(date, filters);
 
