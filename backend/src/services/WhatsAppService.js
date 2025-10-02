@@ -20,6 +20,9 @@ class WhatsAppService {
             console.log('🔄 Inicializando WhatsApp Service...');
             logger.info('Inicializando WhatsApp Service...');
 
+            // IMPORTANTE: Limpar processos Chrome órfãos ANTES de inicializar
+            await this.killOrphanedChrome();
+
             // Verificar e preparar diretório de sessão
             await this.ensureSessionDirectory();
 
@@ -72,6 +75,17 @@ class WhatsAppService {
             this.client.on('authenticated', () => {
                 console.log('🔐 WhatsApp Web autenticado com sucesso');
                 logger.info('WhatsApp Web autenticado com sucesso');
+
+                // WORKAROUND: Alguns ambientes não emitem 'ready' após 'authenticated'
+                // Aguardar 5 segundos e marcar como pronto se ainda não estiver
+                setTimeout(() => {
+                    if (!this.isReady) {
+                        console.log('⚠️ Evento ready não foi disparado, forçando isReady = true após autenticação');
+                        logger.warn('Evento ready não foi disparado, forçando isReady = true após autenticação');
+                        this.isReady = true;
+                        this.qrCode = null;
+                    }
+                }, 5000);
             });
 
             this.client.on('ready', () => {
@@ -79,6 +93,7 @@ class WhatsAppService {
                 logger.info('WhatsApp Web conectado e pronto para uso');
                 this.isReady = true;
                 this.qrCode = null;
+                console.log(`✅ isReady setado para: ${this.isReady}`);
             });
 
             this.client.on('auth_failure', (msg) => {
@@ -349,13 +364,18 @@ class WhatsAppService {
             const { promisify } = require('util');
             const execAsync = promisify(exec);
 
-            console.log('🔄 Limpando processos Chrome orfãos...');
+            console.log('🔄 Limpando processos Chrome órfãos...');
 
-            // Matar processos Chrome defunct
-            await execAsync('pkill -f "chrome|chromium" || true');
+            // Matar processos Chrome/Chromium com força
+            try {
+                await execAsync('pkill -9 chromium 2>/dev/null || true');
+                await execAsync('pkill -9 chrome 2>/dev/null || true');
+            } catch (e) {
+                console.log('Alguns processos podem não ter sido encontrados (ok)');
+            }
 
-            // Aguardar um pouco
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Aguardar os processos morrerem
+            await new Promise(resolve => setTimeout(resolve, 2000));
 
             console.log('✅ Processos Chrome limpos');
         } catch (error) {
@@ -377,6 +397,21 @@ class WhatsAppService {
                 // Criar se não existir
                 await fs.mkdir(sessionPath, { recursive: true, mode: 0o755 });
                 console.log('📁 Diretório de sessão criado:', sessionPath);
+            }
+
+            // IMPORTANTE: Remover arquivos de lock (evita erro de múltiplas instâncias)
+            const lockFiles = ['SingletonLock', 'SingletonCookie', 'SingletonSocket', 'DevToolsActivePort'];
+            for (const lockFile of lockFiles) {
+                try {
+                    const lockPath = path.join(sessionPath, lockFile);
+                    await fs.unlink(lockPath);
+                    console.log(`🧹 ${lockFile} removido`);
+                } catch (error) {
+                    // Ignorar se não existir
+                    if (error.code !== 'ENOENT') {
+                        console.warn(`⚠️ Erro ao remover ${lockFile}:`, error.message);
+                    }
+                }
             }
 
             console.log('✅ Diretório de sessão verificado');

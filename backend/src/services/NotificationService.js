@@ -55,6 +55,9 @@ class NotificationService {
                 logger.info(`📧 Notificação por email desabilitada para ${member.email}`);
 
                 // WhatsApp
+                console.log(`🔍 DEBUG: whatsappConnected = ${whatsappConnected}`);
+                logger.info(`🔍 DEBUG: whatsappConnected = ${whatsappConnected}`);
+
                 if (whatsappConnected) {
                     try {
                         logger.info(`📱 DADOS DO MEMBRO PARA WHATSAPP:`, {
@@ -63,18 +66,23 @@ class NotificationService {
                             email: member.email,
                             id: member.id
                         });
-                        
+
                         if (!member.phone) {
+                            console.log(`❌ Membro ${member.name} não tem telefone cadastrado`);
                             logger.warn(`❌ Membro ${member.name} não tem telefone cadastrado`);
                         } else {
+                            console.log(`📱 TENTANDO enviar WhatsApp para ${member.name} no número: ${member.phone}`);
                             logger.info(`📱 Enviando WhatsApp para ${member.name} no número: ${member.phone}`);
                             await this.sendScheduleWhatsApp(schedule, member, 'assignment');
+                            console.log(`✅✅✅ WhatsApp ENVIADO com sucesso para ${member.name} (${member.phone})`);
                             logger.info(`✅ WhatsApp enviado com sucesso para ${member.name} (${member.phone})`);
                         }
                     } catch (whatsappError) {
+                        console.error(`❌❌❌ ERRO ao enviar WhatsApp para ${member.name} (${member.phone}):`, whatsappError);
                         logger.error(`❌ Erro ao enviar WhatsApp para ${member.name} (${member.phone}):`, whatsappError);
                     }
                 } else {
+                    console.log(`⚠️⚠️⚠️ WhatsApp NÃO CONECTADO - pulando envio para ${member.name}`);
                     logger.warn(`⚠️ WhatsApp não conectado - pulando envio para ${member.name}`);
                 }
 
