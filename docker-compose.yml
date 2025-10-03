@@ -17,6 +17,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - MASTER_ADMIN_EMAIL=${MASTER_ADMIN_EMAIL}
       - WHATSAPP_ENABLED=${WHATSAPP_ENABLED:-true}
+      - WHATSAPP_SERVICE_URL=http://whatsapp:3000
     volumes:
       - ./backend/logs:/app/logs
       - ./backend/whatsapp-session:/app/whatsapp-session
@@ -88,8 +89,8 @@ services:
       dockerfile: Dockerfile
     container_name: dunamys-whatsapp
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3000:3000"  # Comentado - só acessível internamente
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
