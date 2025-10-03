@@ -62,6 +62,12 @@ class WhatsAppService {
                     const response = await axios.get(`${this.serviceUrl}/health`, { timeout: 5000 });
                     logger.info('✅ Microserviço WhatsApp está disponível');
                     console.log('✅ Microserviço WhatsApp está disponível');
+
+                    // Atualizar cache imediatamente após inicialização
+                    await this.refreshStatus();
+                    logger.info(`📱 Status inicial do WhatsApp: ${this.cachedStatus.connected ? 'conectado' : 'desconectado'}`);
+                    console.log(`📱 Status inicial do WhatsApp: ${this.cachedStatus.connected ? 'conectado' : 'desconectado'}`);
+
                     return;
                 } catch (error) {
                     retries++;

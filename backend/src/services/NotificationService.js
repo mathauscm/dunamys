@@ -645,7 +645,7 @@ class NotificationService {
                     message += `\n⚙️ Função: ${user.functions.join(', ')}`;
                 }
                 
-                message += `\n\nContamos com sua presença! 🙏`;
+                message += `\n\nConfirme sua escala em https://voluntarios.mathaus.dev/`;
                 break;
 
             case 'update':
