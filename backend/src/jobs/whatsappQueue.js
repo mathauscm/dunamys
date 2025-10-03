@@ -1,5 +1,5 @@
 const Queue = require('bull');
-const WhatsAppService = require('../services/WhatsAppService');
+const WhatsAppService = require('../services/WhatsAppServiceHTTP');
 const logger = require('../utils/logger');
 
 // Criar fila do WhatsApp

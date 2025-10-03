@@ -1,0 +1,16 @@
+{
+  "name": "dunamys-whatsapp-service",
+  "version": "1.0.0",
+  "description": "Microserviço WhatsApp para Dunamys",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "whatsapp-web.js": "^1.21.0",
+    "qrcode": "^1.5.3",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5"
+  }
+}

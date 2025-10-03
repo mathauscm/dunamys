@@ -37,7 +37,7 @@ const applyRoutes = (app) => {
  * @param {Express} app - Instância do Express
  */
 const applyHealthRoutes = (app) => {
-  const WhatsAppService = require('../services/WhatsAppService');
+  const WhatsAppService = require('../services/WhatsAppServiceHTTP');
 
   // Health check endpoint simples
   app.get('/health', (req, res) => {
@@ -72,7 +72,7 @@ const applyHealthRoutes = (app) => {
  */
 const applyDevelopmentRoutes = (app) => {
   if (process.env.NODE_ENV === 'development') {
-    const WhatsAppService = require('../services/WhatsAppService');
+    const WhatsAppService = require('../services/WhatsAppServiceHTTP');
 
     // Debug endpoint para desenvolvimento
     app.get('/api/debug', (req, res) => {

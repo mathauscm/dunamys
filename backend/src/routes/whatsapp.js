@@ -1,7 +1,7 @@
 const express = require('express');
 const { authenticateToken } = require('../middlewares/auth');
 const { requireMasterAdmin } = require('../middlewares/admin');
-const whatsappService = require('../services/WhatsAppService');
+const whatsappService = require('../services/WhatsAppServiceHTTP');
 const logger = require('../utils/logger');
 
 const router = express.Router();

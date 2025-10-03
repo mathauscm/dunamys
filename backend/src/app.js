@@ -34,7 +34,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('../docs/swagger');
 
 // WhatsApp service initialization
-const WhatsAppService = require('./services/WhatsAppService');
+const WhatsAppService = require('./services/WhatsAppServiceHTTP');
 
 // Jobs initialization
 const emailQueue = require('./jobs/emailQueue');

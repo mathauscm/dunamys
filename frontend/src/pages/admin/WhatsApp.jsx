@@ -1,24 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  MessageSquare, 
-  QrCode, 
-  Power, 
-  PowerOff, 
-  RefreshCw, 
-  CheckCircle, 
-  XCircle, 
+import {
+  MessageSquare,
+  PowerOff,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
   Clock,
-  AlertCircle 
+  AlertCircle,
+  Terminal
 } from 'lucide-react';
-import Modal from '../../components/common/Modal';
 import whatsappService from '../../services/whatsapp';
 import { useAuth } from '../../hooks/useAuth';
 
 const WhatsApp = () => {
   const { user } = useAuth();
   const [status, setStatus] = useState('disconnected');
-  const [qrCode, setQrCode] = useState(null);
-  const [showQrModal, setShowQrModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -38,28 +34,6 @@ const WhatsApp = () => {
     }
   }, []);
 
-  // Obter QR Code
-  const fetchQRCode = useCallback(async () => {
-    try {
-      setError(null);
-      setLoading(true);
-      const data = await whatsappService.getQRCode();
-      
-      if (data.qrCode) {
-        setQrCode(data.qrCode);
-        setShowQrModal(true);
-      } else {
-        setError(data.message || 'QR Code não disponível');
-      }
-      
-      setStatus(data.status);
-      setLastUpdated(new Date());
-    } catch (err) {
-      setError(err.error || 'Erro ao obter QR Code');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   // Desconectar WhatsApp
   const handleDisconnect = async () => {
@@ -81,41 +55,13 @@ const WhatsApp = () => {
     }
   };
 
-  // Conectar WhatsApp (primeira conexão)
-  const handleConnect = async () => {
-    try {
-      setError(null);
-      setLoading(true);
-      await whatsappService.initialize();
-      setStatus('awaiting_qr');
-      setQrCode(null);
-      setLastUpdated(new Date());
-
-      // Aguardar um pouco e tentar obter o QR Code
-      setTimeout(() => {
-        fetchQRCode();
-      }, 2000);
-    } catch (err) {
-      setError(err.error || 'Erro ao conectar');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Reconectar WhatsApp
   const handleReconnect = async () => {
     try {
       setError(null);
       setLoading(true);
       await whatsappService.reconnect();
-      setStatus('awaiting_qr');
-      setQrCode(null);
-      setLastUpdated(new Date());
-
-      // Aguardar um pouco e tentar obter o QR Code
-      setTimeout(() => {
-        fetchQRCode();
-      }, 2000);
+      await fetchStatus();
     } catch (err) {
       setError(err.error || 'Erro ao reconectar');
     } finally {
@@ -236,28 +182,6 @@ const WhatsApp = () => {
         </div>
         <div className="card-body">
           <div className="flex flex-wrap gap-3">
-            {status === 'disconnected' && (
-              <button
-                onClick={handleConnect}
-                disabled={loading}
-                className="btn btn-primary flex items-center space-x-2"
-              >
-                <Power size={16} />
-                <span>Conectar</span>
-              </button>
-            )}
-
-            {status === 'awaiting_qr' && (
-              <button
-                onClick={fetchQRCode}
-                disabled={loading}
-                className="btn btn-primary flex items-center space-x-2"
-              >
-                <QrCode size={16} />
-                <span>Mostrar QR Code</span>
-              </button>
-            )}
-
             {status === 'connected' && (
               <button
                 onClick={handleDisconnect}
@@ -284,78 +208,62 @@ const WhatsApp = () => {
       {/* Instruções */}
       <div className="card">
         <div className="card-header">
-          <h2 className="text-lg font-semibold">Instruções</h2>
+          <h2 className="text-lg font-semibold flex items-center space-x-2">
+            <Terminal size={20} />
+            <span>Instruções de Conexão</span>
+          </h2>
         </div>
         <div className="card-body">
-          <div className="space-y-3 text-sm text-gray-600">
-            <p>
-              <strong>Para conectar:</strong> Clique em "Conectar" e escaneie o QR Code com o WhatsApp do celular.
-            </p>
-            <p>
-              <strong>Status "Aguardando QR Code":</strong> Significa que o sistema está pronto para receber a conexão.
-            </p>
-            <p>
-              <strong>Status "Conectado":</strong> O WhatsApp está conectado e pronto para enviar mensagens.
-            </p>
-            <p>
-              <strong>Para desconectar:</strong> Clique em "Desconectar" para finalizar a sessão.
-            </p>
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm font-semibold text-blue-900 mb-2">
+                Como conectar o WhatsApp (via Terminal/Docker):
+              </p>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
+                <li>
+                  <strong>Limpar sessão:</strong>
+                  <code className="ml-2 bg-blue-100 px-2 py-1 rounded text-xs">
+                    docker compose down -v
+                  </code>
+                </li>
+                <li>
+                  <strong>Iniciar containers (modo interativo):</strong>
+                  <code className="ml-2 bg-blue-100 px-2 py-1 rounded text-xs">
+                    docker compose up --build
+                  </code>
+                </li>
+                <li>Aguardar o QR Code aparecer no terminal</li>
+                <li>Escanear o QR Code com o WhatsApp do celular</li>
+                <li>
+                  Quando aparecer "🎉 WhatsApp Web conectado e pronto para uso", pressionar{' '}
+                  <code className="bg-blue-100 px-2 py-1 rounded text-xs">Ctrl+C</code>
+                </li>
+                <li>
+                  <strong>Subir em modo detached:</strong>
+                  <code className="ml-2 bg-blue-100 px-2 py-1 rounded text-xs">
+                    docker compose up -d
+                  </code>
+                </li>
+              </ol>
+            </div>
+
+            <div className="space-y-2 text-sm text-gray-600">
+              <p>
+                <strong>Status "Aguardando QR Code":</strong> O sistema está pronto para receber a conexão.
+              </p>
+              <p>
+                <strong>Status "Conectado":</strong> O WhatsApp está conectado e pronto para enviar mensagens.
+              </p>
+              <p>
+                <strong>Para desconectar:</strong> Clique em "Desconectar" para finalizar a sessão.
+              </p>
+              <p>
+                <strong>Para reconectar:</strong> Use o botão "Reconectar" ou siga os passos de conexão acima.
+              </p>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* QR Code Modal */}
-      <Modal
-        isOpen={showQrModal}
-        onClose={() => setShowQrModal(false)}
-        title="QR Code WhatsApp"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">
-              Escaneie o QR Code abaixo com o WhatsApp do seu celular:
-            </p>
-            {qrCode && (
-              <div className="flex justify-center">
-                <img
-                  src={qrCode}
-                  alt="QR Code WhatsApp"
-                  className="max-w-full h-auto border border-gray-300 rounded-lg"
-                />
-              </div>
-            )}
-          </div>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="text-sm text-blue-800">
-              <p className="font-medium mb-1">Como conectar:</p>
-              <ol className="list-decimal list-inside space-y-1 text-xs">
-                <li>Abra o WhatsApp no seu celular</li>
-                <li>Toque no menu (3 pontos) → Dispositivos conectados</li>
-                <li>Toque em "Conectar um dispositivo"</li>
-                <li>Escaneie o QR Code acima</li>
-              </ol>
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <button
-              onClick={() => setShowQrModal(false)}
-              className="btn btn-secondary"
-            >
-              Fechar
-            </button>
-            <button
-              onClick={fetchQRCode}
-              disabled={loading}
-              className="btn btn-primary"
-            >
-              Atualizar QR Code
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };

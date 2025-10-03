@@ -1,5 +1,5 @@
 const EmailService = require('./EmailService');
-const WhatsAppService = require('./WhatsAppService');
+const WhatsAppService = require('./WhatsAppServiceHTTP');
 const { prisma } = require('../config/database');
 const logger = require('../utils/logger');
 

@@ -4,7 +4,7 @@ const logger = require('./src/utils/logger');
 // Initialize services
 const { connectDatabase } = require('./src/config/database');
 const { connectRedis } = require('./src/config/redis');
-const WhatsAppService = require('./src/services/WhatsAppService');
+const WhatsAppService = require('./src/services/WhatsAppServiceHTTP');
 
 const PORT = process.env.PORT || 5000;
 
@@ -25,9 +25,21 @@ const initializeServices = async () => {
         // Email desabilitado - apenas WhatsApp
         console.log('📧 Email desabilitado (apenas WhatsApp)');
 
-        // WhatsApp será inicializado apenas via endpoint /api/whatsapp/initialize
-        console.log('📱 WhatsApp não inicializado automaticamente');
-        console.log('   Use POST /api/whatsapp/initialize para conectar');
+        // Iniciar WhatsApp Service se estiver habilitado (não bloquear servidor se falhar)
+        if (process.env.WHATSAPP_ENABLED === 'true') {
+            try {
+                await WhatsAppService.initialize();
+                logger.info('WhatsApp Service inicializado automaticamente.');
+                console.log('✅ WhatsApp Service iniciado');
+            } catch (error) {
+                logger.error('⚠️ WhatsApp falhou ao inicializar - pode inicializar depois via endpoint /api/whatsapp/initialize');
+                console.log('⚠️ WhatsApp não iniciou automaticamente (inicialize depois via API)');
+                console.log('💡 Dica: POST /api/whatsapp/initialize');
+            }
+        } else {
+            logger.info('WhatsApp Service desabilitado via variável de ambiente.');
+            console.log('📴 WhatsApp desabilitado');
+        }
 
         console.log('🎉 Todos os serviços principais iniciados com sucesso!');
         logger.info('All services initialized successfully');
