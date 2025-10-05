@@ -366,6 +366,31 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                             </div>
                         </div>
 
+                        {/* Botão Criar/Atualizar Escala - Fixo abaixo das tabs (Mobile e Desktop) */}
+                        <div className="flex-shrink-0 bg-white border-b border-gray-200 px-3 sm:px-6 py-3">
+                            <button
+                                type="submit"
+                                disabled={loading || !selectedMemberIds || selectedMemberIds.length === 0 || !selectedDate || !selectedTime}
+                                className="btn btn-primary w-full text-sm sm:text-base py-2.5 sm:py-3 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleSubmit(handleFormSubmit)();
+                                }}
+                            >
+                                {loading ? (
+                                    <div className="flex items-center justify-center">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Salvando...
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center">
+                                        <Calendar className="w-4 h-4 mr-2" />
+                                        {schedule ? 'Atualizar Escala' : 'Criar Escala'}
+                                    </div>
+                                )}
+                            </button>
+                        </div>
+
                         {/* Conteúdo Principal - área fixa */}
                         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                             <form onSubmit={handleSubmit(handleFormSubmit)} className="flex-1 flex flex-col h-full">
@@ -686,40 +711,6 @@ const ScheduleForm = ({ schedule, onSubmit, loading, onClose }) => {
                                             )}
                                         </div>
                                     )}
-                                </div>
-
-                                {/* Footer com botões */}
-                                <div className="border-t border-gray-200 bg-gray-50 px-4 sm:px-6 py-4 sm:py-4 mt-4">
-                                    <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center space-y-2 sm:space-y-0">
-                                        <div className="flex space-x-3 order-2 sm:order-1">
-                                            {activeTab === 'members' && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setActiveTab('details')}
-                                                    className="btn btn-outline flex-1 sm:flex-initial text-sm py-2"
-                                                >
-                                                    Voltar aos Detalhes
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <div className="flex space-x-3 order-1 sm:order-2">
-                                            <button
-                                                type="submit"
-                                                disabled={loading || !selectedMemberIds || selectedMemberIds.length === 0 || !selectedDate || !selectedTime}
-                                                className="btn btn-primary flex-1 sm:flex-initial text-sm py-2"
-                                            >
-                                                {loading ? (
-                                                    <div className="flex items-center justify-center">
-                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                                        Salvando...
-                                                    </div>
-                                                ) : (
-                                                    schedule ? 'Atualizar Escala' : 'Criar Escala'
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
                             </form>
                         </div>
